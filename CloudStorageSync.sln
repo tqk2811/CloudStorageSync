@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29609.76
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "CloudStorageSync_Pack", "CloudStorageSync_Pack\CloudStorageSync_Pack.wapproj", "{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CssWinrt", "CssWinrt\CssWinrt.vcxproj", "{B3174BC0-EA29-4B8F-ABA4-F7B1651ACC64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CssCs", "CssCs\CssCs.csproj", "{0F04A0EA-6186-47C6-A2A9-13EEBDB23627}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CSS", "CSS\CSS.vcxproj", "{03A556AB-CB51-47A6-8E48-BCBE2D47A537}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CDD1EC9C-3A9C-4749-80A5-FE43D32EAD0D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Debug|x86.ActiveCfg = Debug|x86
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Debug|x86.Build.0 = Debug|x86
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Debug|x86.Deploy.0 = Debug|x86
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Release|x86.ActiveCfg = Release|x86
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Release|x86.Build.0 = Release|x86
+		{1B3C2688-00EA-4D32-A7AD-5BF3F45757D6}.Release|x86.Deploy.0 = Release|x86
+		{B3174BC0-EA29-4B8F-ABA4-F7B1651ACC64}.Debug|x86.ActiveCfg = Debug|Win32
+		{B3174BC0-EA29-4B8F-ABA4-F7B1651ACC64}.Debug|x86.Build.0 = Debug|Win32
+		{B3174BC0-EA29-4B8F-ABA4-F7B1651ACC64}.Release|x86.ActiveCfg = Release|Win32
+		{B3174BC0-EA29-4B8F-ABA4-F7B1651ACC64}.Release|x86.Build.0 = Release|Win32
+		{0F04A0EA-6186-47C6-A2A9-13EEBDB23627}.Debug|x86.ActiveCfg = Debug|x86
+		{0F04A0EA-6186-47C6-A2A9-13EEBDB23627}.Debug|x86.Build.0 = Debug|x86
+		{0F04A0EA-6186-47C6-A2A9-13EEBDB23627}.Release|x86.ActiveCfg = Release|x86
+		{0F04A0EA-6186-47C6-A2A9-13EEBDB23627}.Release|x86.Build.0 = Release|x86
+		{03A556AB-CB51-47A6-8E48-BCBE2D47A537}.Debug|x86.ActiveCfg = Debug|Win32
+		{03A556AB-CB51-47A6-8E48-BCBE2D47A537}.Debug|x86.Build.0 = Debug|Win32
+		{03A556AB-CB51-47A6-8E48-BCBE2D47A537}.Release|x86.ActiveCfg = Release|Win32
+		{03A556AB-CB51-47A6-8E48-BCBE2D47A537}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {479C547B-C199-42CC-91AE-27E2345E0E0A}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,11 @@
+//import "oaidl.idl";
+//import "ocidl.idl";
+
+namespace CssWinrt
+{
+    [default_interface]
+    runtimeclass CustomStateProvider : Windows.Storage.Provider.IStorageProviderItemPropertySource
+    {
+        CustomStateProvider();
+    }
+}

@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{bbefc724-d865-42fc-9f99-0b4517bfba3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ShellService">
+      <UniqueIdentifier>{b92c96f4-aaa8-4718-b5f0-994063d575b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ShellService\IDL">
+      <UniqueIdentifier>{bd167d78-fc94-4b69-9418-739f2ea0a2f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Export">
+      <UniqueIdentifier>{f02edb43-dca9-4c6b-838a-ea69b497e078}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\SyncRoot">
+      <UniqueIdentifier>{d7d52125-ab10-44b4-804f-9e882cb77875}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ClassFactory.h">
+      <Filter>src\ShellService</Filter>
+    </ClInclude>
+    <ClInclude Include="ShellServices.h">
+      <Filter>src\ShellService</Filter>
+    </ClInclude>
+    <ClInclude Include="ThumbnailProvider.h">
+      <Filter>src\ShellService</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomStateProvider.h">
+      <Filter>src\ShellService\IDL</Filter>
+    </ClInclude>
+    <ClInclude Include="UriSource.h">
+      <Filter>src\ShellService\IDL</Filter>
+    </ClInclude>
+    <ClInclude Include="SyncRootRegistrar.h">
+      <Filter>src\SyncRoot</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExportFunction.h">
+      <Filter>src\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="LogWriter.h">
+      <Filter>src\Export</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShellServices.cpp">
+      <Filter>src\ShellService</Filter>
+    </ClCompile>
+    <ClCompile Include="ThumbnailProvider.cpp">
+      <Filter>src\ShellService</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomStateProvider.cpp">
+      <Filter>src\ShellService\IDL</Filter>
+    </ClCompile>
+    <ClCompile Include="UriSource.cpp">
+      <Filter>src\ShellService\IDL</Filter>
+    </ClCompile>
+    <ClCompile Include="SyncRootRegistrar.cpp">
+      <Filter>src\SyncRoot</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="ExportFunction.cpp">
+      <Filter>src\Export</Filter>
+    </ClCompile>
+    <ClCompile Include="LogWriter.cpp">
+      <Filter>src\Export</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PropertySheet.props" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="CustomStateProvider.idl">
+      <Filter>src\ShellService\IDL</Filter>
+    </Midl>
+    <Midl Include="UriSource.idl">
+      <Filter>src\ShellService\IDL</Filter>
+    </Midl>
+  </ItemGroup>
+</Project>

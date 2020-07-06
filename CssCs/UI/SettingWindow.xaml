@@ -1,0 +1,220 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CssCs.UI"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" x:Class="CssCs.UI.SettingWindow"
+        mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding Properties.Resources._32xHappy_Cloud}"
+        Title="Setting" Height="346" Width="1120" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
+    <Grid>
+        <TabControl x:Name="tabControl">
+            <TabItem Header="Accounts">
+                <Grid Background="#FFE5E5E5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <!--<Grid.RowDefinitions>
+                        <RowDefinition Height="247"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>-->
+                    <ListView x:Name="LV_listemail" Grid.Column="0" ItemsSource="{Binding cloudEmailViewModels}" SelectionMode="Single" 
+                              SelectionChanged="LV_listemail_SelectionChanged">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Account Cloud" Width="190">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="16"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Image Grid.Column="0" Source="{Binding Img}" Width="16" Height="16"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Email}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Quota" Width="120">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Grid.Column="1" Text="{Binding QuotaString}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                        <ListView.ContextMenu>
+                            <ContextMenu ItemsSource="{Binding cloudEmailMenuViewModels}">
+                                <ContextMenu.ItemContainerStyle>
+                                    <Style TargetType="{x:Type MenuItem}">
+                                        <Setter Property="Header" Value="{Binding Text}"/>
+                                        <Setter Property="ItemsSource" Value="{Binding Childs}"/>
+                                        <Setter Property="Icon" Value="{Binding Img}"/>
+                                        <EventSetter Event="MenuItem.Click" Handler="LV_listemail_MenuItem_Click"/>
+                                    </Style>
+                                </ContextMenu.ItemContainerStyle>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="DarkGray"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+
+                    <ListView x:Name="LV_SR" Grid.Column="1" ItemsSource="{Binding SRViewModels}" SelectionMode="Single" 
+                              VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn x:Name="SR_CloudFolder" Header="Cloud Folder" Width="200">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding CloudFolderName}">
+                                                    <TextBlock.ToolTip>
+                                                        <ToolTip>
+                                                            <TextBlock Text="{Binding CloudFolderName}"/>
+                                                        </ToolTip>
+                                                    </TextBlock.ToolTip>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="..." Click="CloudPath_changeClick"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="SR_working" Header="On" Width="30">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsWork}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="SR_LocalFolder" Header="Local Folder" Width="200">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding LocalPath}">
+                                                    <TextBlock.ToolTip>
+                                                        <ToolTip>
+                                                            <TextBlock Text="{Binding LocalPath}"/>
+                                                        </ToolTip>
+                                                    </TextBlock.ToolTip>
+                                                </TextBlock>
+                                                <Button Grid.Column="1" Content="..." Click="LocalPath_changeClick"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="SR_Status" Header="Status" Width="125">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding StatusString}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="SR_Message" Header="Message" Width="205">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding Message}">
+                                                <TextBlock.ToolTip>
+                                                    <ToolTip>
+                                                        <TextBlock Text="{Binding Message}"/>
+                                                    </ToolTip>
+                                                </TextBlock.ToolTip>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                        <ListView.ContextMenu>
+                            <ContextMenu ItemsSource="{Binding SRMenuViewModels}">
+                                <ContextMenu.ItemContainerStyle>
+                                    <Style TargetType="{x:Type MenuItem}">
+                                        <Setter Property="Header" Value="{Binding Text}"/>
+                                        <EventSetter Event="MenuItem.Click" Handler="CF_MenuItem_Click"/>
+                                    </Style>
+                                </ContextMenu.ItemContainerStyle>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListViewItem}">
+                                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Height" Value="24px"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="DarkGray"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
+                    </ListView>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Settings">
+                <Grid >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="257" />
+                        <ColumnDefinition Width="275"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="77"/>
+                        <RowDefinition Height="77"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Border Grid.Column="0" Grid.RowSpan="3" Grid.Row="0" BorderBrush="Black" BorderThickness="1,1,0,0" Width="1" Margin="0" Background="{x:Null}" HorizontalAlignment="Right" />
+                    <Border Grid.Column="1" Grid.RowSpan="3" Grid.Row="0" BorderBrush="Black" BorderThickness="1,1,0,0" Width="1" Margin="0" Background="{x:Null}" HorizontalAlignment="Right" />
+                    <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="Black" BorderThickness="1,1,0,0" Height="1" Margin="0" Background="{x:Null}" VerticalAlignment="Bottom" />
+                    <Border Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="Black" BorderThickness="1,1,0,0" Height="1" Margin="0" Background="{x:Null}" VerticalAlignment="Bottom" />
+
+                    <TextBlock Grid.Column="0" x:Name="textBlock" HorizontalAlignment="Left" Margin="10,12,0,0" TextWrapping="Wrap" Text="Files upload at the same time:" VerticalAlignment="Top" Height="16" Width="177"/>
+                    <TextBlock Grid.Column="0" x:Name="textBlock1" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Files download at the same time:" Margin="10,41,0,0" VerticalAlignment="Top" Height="16" Width="182"/>
+                    <TextBlock Grid.Column="1" x:Name="textBlock2" HorizontalAlignment="Left" Margin="10,15,0,0" TextWrapping="Wrap" Text="Speed upload limit (Kib/s):" VerticalAlignment="Top" Height="16" Width="150"/>
+                    <TextBlock Grid.Column="1" x:Name="textBlock3" HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="Speed download limit (Kib/s):" VerticalAlignment="Top" Height="16" Width="160"/>
+
+                    <TextBlock Grid.Row="1" x:Name="textBlock4" HorizontalAlignment="Left" Margin="10,12,0,0" TextWrapping="Wrap" Text="Try again after (sec):" VerticalAlignment="Top" Height="16" Width="107"/>
+                    <TextBlock Grid.Row="1" x:Name="textBlock5" HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="Max try again times:" VerticalAlignment="Top" Height="16" Width="117"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="textBlock6" HorizontalAlignment="Left" Margin="10,12,0,0" TextWrapping="Wrap" Text="Timer Watch change clouds (sec):" VerticalAlignment="Top" Height="16" Width="190"/>
+                    <TextBlock x:Name="textBlock8" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="2" TextWrapping="Wrap" Text="Files Ignore" VerticalAlignment="Top"/>
+
+
+                    <Button x:Name="bt_exit" Content="Exit App" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Foreground="#FFFF0202" Grid.Column="2" Height="20"/>
+                    <Button x:Name="bt_fixplaceholder" Click="bt_fixplaceholder_Click" Content="Fix bug placeholder" Grid.Column="2" Margin="105,10,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120"/>
+
+
+                    <local:TemplateNumericUpDown Grid.Column="0" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.FilesUploadSameTime}" Min="1" Max="16" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 16"/>
+                    <local:TemplateNumericUpDown Grid.Column="0" Height="24" Margin="0,39,10,0" VerticalAlignment="Top" NumValue="0" Min="1" Max="16" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 16" IsEnabled="False"/>
+                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedUploadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit" IsEnabled="False"/>
+                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,39,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedDownloadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit" IsEnabled="False"/>
+
+                    <local:TemplateNumericUpDown Height="24" Margin="0,10,10,0" Grid.Row="1" VerticalAlignment="Top" NumValue="{Binding Setting.TryAgainAfter}" Min="5" Max="30" HorizontalAlignment="Right" Width="55" ToolTip="Min 5&#x0d;&#x0a;Max 30"/>
+                    <local:TemplateNumericUpDown Height="24" Margin="0,39,10,0" Grid.Row="1" VerticalAlignment="Top" NumValue="{Binding Setting.TryAgainTimes}" Min="1" Max="10" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 10"/>
+                    <local:TemplateNumericUpDown Grid.Row="1" Grid.Column="1" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.TimeWatchChangeCloud}" Min="10" Max="60" HorizontalAlignment="Right" Width="50" ToolTip="Min 10&#x0d;&#x0a;Max 60"/>
+
+                    <TextBox x:Name="textBlock7" Margin="10,31,10,10" TextWrapping="Wrap" Text="{Binding Setting.FileIgnore}" Grid.Row="2" IsEnabled="False"/>
+
+                    <CheckBox x:Name="cb_SkipNoticeMalware" IsChecked="{Binding Setting.SkipNoticeMalware}" Content="Skip Notice Malware" Width="140" Grid.Column="1" Margin="10,10,0,0" Grid.Row="2" Height="16" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>

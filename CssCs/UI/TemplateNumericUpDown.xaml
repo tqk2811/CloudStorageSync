@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="CssCs.UI.TemplateNumericUpDown"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CssCs.UI"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             MinHeight="16"
+             x:Name="root"
+             d:DesignHeight="18" d:DesignWidth="60">
+    <Grid Background="{DynamicResource {x:Static SystemColors.WindowFrameBrushKey}}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="24"/>
+        </Grid.ColumnDefinitions>
+        <TextBox x:Name="txtNum" x:FieldModifier="private" Text="{Binding NumValue,RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="12" 
+                 Padding="1,1,1,1" BorderBrush="Black" BorderThickness="1,1,1,1" PreviewKeyDown="txtNum_PreviewKeyDown"  PreviewKeyUp="txtNum_PreviewKeyUp"
+                 FocusableChanged="txtNum_FocusableChanged" TextChanged="TxtNum_TextChanged"/>
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+            <Grid x:Name="up" Background="#FF673AB7" MouseLeave="EventMouseLeave"
+                  MouseLeftButtonDown="EventMouseLeftButtonDown" MouseLeftButtonUp="EventMouseLeftButtonUp">
+                <materialDesign:PackIcon Kind="ChevronUp" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Foreground="White" Height="8"  Width="10"/>
+            </Grid>
+            <Grid x:Name="down" Grid.Row="1" Background="#FF673AB7" MouseLeave="EventMouseLeave"
+                  MouseLeftButtonDown="EventMouseLeftButtonDown" MouseLeftButtonUp="EventMouseLeftButtonUp">
+                <materialDesign:PackIcon Kind="ChevronDown" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Foreground="White" Height="8" Width="10"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

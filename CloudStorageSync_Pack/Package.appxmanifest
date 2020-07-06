@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:desktop3="http://schemas.microsoft.com/appx/manifest/desktop/windows10/3"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  IgnorableNamespaces="uap uap5 mp rescap desktop3 desktop4">
+
+  <Identity
+    Name="CloudStorageSync"
+    Publisher="CN=tqk"
+    Version="0.0.0.0" />
+
+  <Properties>
+    <DisplayName>Cloud Storage Sync</DisplayName>
+    <PublisherDisplayName>tqk2811</PublisherDisplayName>
+    <Logo>Images\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.18362.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="$targetentrypoint$">
+      <uap:VisualElements 
+        DisplayName="Cloud Storage Sync" Description="Cloud Sync Engine Supports Placeholder Files" 
+        BackgroundColor="transparent" Square150x150Logo="Images\MediumTile.png" Square44x44Logo="Images\Square44x44Logo.png">
+        <uap:DefaultTile Square71x71Logo="Images\SmallTile.png" Wide310x150Logo="Images\WideTile.png" Square310x310Logo="Images\LargeTile.png"/>
+      </uap:VisualElements>
+      <Extensions>
+        <uap5:Extension Category="windows.startupTask" Executable="CSS\CSS.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap5:StartupTask TaskId="CloudStorageSyncStartupTask" Enabled="true" DisplayName="Cloud Storage Sync"/>
+        </uap5:Extension>
+        <desktop3:Extension Category="windows.cloudFiles">
+          <desktop3:CloudFiles>
+            <desktop3:CustomStateHandler Clsid="03D0F708-FF49-4E88-811A-0458E1609FCA"/>
+            <desktop3:ThumbnailProviderHandler Clsid="C7459EB2-BF10-49B3-96A9-F3B528F0C07E"/>
+            <!--<desktop3:ExtendedPropertyHandler Clsid="6473D478-0F8F-4ED4-A5E9-315AB2CABBA9"/>-->
+            <desktop3:ExtendedPropertyHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+            <!--<desktop3:BannersHandler Clsid="0F501EDB-AC98-4446-9F2B-FB21365C4400"/>-->
+            <desktop3:BannersHandler Clsid="20000000-0000-0000-0000-000000000001"/>
+            <desktop3:CloudFilesContextMenus>
+              <!--<desktop3:Verb Id="Command1" Clsid="" />-->
+            </desktop3:CloudFilesContextMenus>
+            <desktop4:ContentUriSource Clsid="B3BBD883-0E09-423A-A986-5A9FC4A4A397"/>
+          </desktop3:CloudFiles>
+        </desktop3:Extension>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer DisplayName="CSS Thumbnail Handler" Executable="CSS\CSS.exe">
+              <com:Class Id="C7459EB2-BF10-49B3-96A9-F3B528F0C07E" />
+            </com:ExeServer>
+            <!--<com:ExeServer DisplayName="CSS Command Handler" Executable="CSS\CSS.exe">
+            <com:Class Id="" />
+          </com:ExeServer>-->
+            <com:ExeServer DisplayName="CSS Custom State Handler" Executable="CSS\CSS.exe">
+              <com:Class Id="03D0F708-FF49-4E88-811A-0458E1609FCA" />
+            </com:ExeServer>
+            <com:ExeServer DisplayName="CSS Uri Source" Executable="CSS\CSS.exe">
+              <com:Class Id="B3BBD883-0E09-423A-A986-5A9FC4A4A397" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <Capability Name="internetClient"/>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

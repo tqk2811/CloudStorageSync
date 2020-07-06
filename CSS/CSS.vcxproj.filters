@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{5c667dc0-8ef1-4c45-84cc-9c2c080b8612}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\UI">
+      <UniqueIdentifier>{13047c89-3235-414e-a6a5-6926142e6ba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cfapi">
+      <UniqueIdentifier>{b6060755-8155-4ae5-a304-d7d49c4b97ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Common">
+      <UniqueIdentifier>{4a0ba603-82b8-4e83-95db-5fb7b5830921}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\TrackChanges">
+      <UniqueIdentifier>{4fba193b-569e-4f29-bcd8-b99ddb3139b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ItemAction">
+      <UniqueIdentifier>{88bb4fa7-d579-4a31-a6fe-5129773404df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Shell">
+      <UniqueIdentifier>{4dc9900d-5da3-4aa4-836c-f0808e94f7d4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UiManager.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="TrayIcon.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectSyncRoot.cpp">
+      <Filter>src\cfapi</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities.cpp">
+      <Filter>src\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Placeholders.cpp">
+      <Filter>src\cfapi</Filter>
+    </ClCompile>
+    <ClCompile Include="Bridge.cpp">
+      <Filter>src\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="TrackChanges.cpp">
+      <Filter>src\TrackChanges</Filter>
+    </ClCompile>
+    <ClCompile Include="CloudAction.cpp">
+      <Filter>src\ItemAction</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalAction.cpp">
+      <Filter>src\ItemAction</Filter>
+    </ClCompile>
+    <ClCompile Include="ShellCall.cpp">
+      <Filter>src\Shell</Filter>
+    </ClCompile>
+    <ClCompile Include="SRManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UiManager.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="TrayIcon.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectSyncRoot.h">
+      <Filter>src\cfapi</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.h">
+      <Filter>src\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Placeholders.h">
+      <Filter>src\cfapi</Filter>
+    </ClInclude>
+    <ClInclude Include="Bridge.h">
+      <Filter>src\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="TrackChanges.h">
+      <Filter>src\TrackChanges</Filter>
+    </ClInclude>
+    <ClInclude Include="CloudAction.h">
+      <Filter>src\ItemAction</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalAction.h">
+      <Filter>src\ItemAction</Filter>
+    </ClInclude>
+    <ClInclude Include="ShellCall.h">
+      <Filter>src\Shell</Filter>
+    </ClInclude>
+    <ClInclude Include="SRManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="0_mainicon.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xCloud Checked.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xCloud Cross.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xCloud Storage.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xCloud Sync.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xCloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xDownload From Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xError Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xHappy Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xPrivate Cloud Storage.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xRemote Working.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xSad Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xUnavailable Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xUpload To Cloud.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xMediafire.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xMegaSync.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xDropbox.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xGoogleDrive.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="32xonedrive.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+</Project>

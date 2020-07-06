@@ -1,0 +1,11 @@
+//import "oaidl.idl";
+//import "ocidl.idl";
+
+namespace CssWinrt
+{
+    [default_interface]
+    runtimeclass UriSource : Windows.Storage.Provider.IStorageProviderUriSource
+    {
+        UriSource();
+    }
+}

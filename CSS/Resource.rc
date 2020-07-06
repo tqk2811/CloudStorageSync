@@ -1,0 +1,100 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_MainIcon            ICON                    "0_mainicon.ico"        //0 exe icon
+IDI_CS_Drive            ICON                    "32xGoogleDrive.ico"    //1
+IDI_CS_OneDrive         ICON                    "32xonedrive.ico"       //2
+IDI_CS_MegaNz           ICON                    "32xMegaSync.ico"       //3
+IDI_CS_Dropbox          ICON                    "32xDropbox.ico"        //4
+
+IDI_CloudChecked        ICON                    "32xCloud Checked.ico"
+
+IDI_CloudCross          ICON                    "32xCloud Cross.ico"
+
+IDI_CloudStorage        ICON                    "32xCloud Storage.ico"
+
+IDI_CloudSync           ICON                    "32xCloud Sync.ico"
+
+IDI_Cloud               ICON                    "32xCloud.ico"
+
+IDI_CloudDownload       ICON                    "32xDownload From Cloud.ico"
+
+IDI_CloudError          ICON                    "32xError Cloud.ico"
+
+IDI_CloudHappy          ICON                    "32xHappy Cloud.ico"
+
+IDI_CloudPrivate        ICON                    "32xPrivate Cloud Storage.ico"
+
+IDI_CloudRemoteWorking  ICON                    "32xRemote Working.ico"
+
+IDI_CloudSad            ICON                    "32xSad Cloud.ico"
+
+IDI_CloudUnavailable    ICON                    "32xUnavailable Cloud.ico"
+
+IDI_CloudUpload         ICON                    "32xUpload To Cloud.ico"
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
