@@ -44,7 +44,7 @@
     <AppxBundlePlatforms>x86</AppxBundlePlatforms>
     <AppInstallerUri>C:\Program Files %28x86%29\tqk2811\CSS</AppInstallerUri>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
-    <PackageCertificateThumbprint>7067DE9857558547A2467A0211981F0DB7627D2E</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>AFB3934FD5BEA66D74F73CF44E1372A6E2B3F258</PackageCertificateThumbprint>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
@@ -70,6 +70,7 @@
     <ProjectReference Include="..\CSS\CSS.vcxproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CloudStorageSync_Pack_TemporaryKey.pfx" />
     <Content Include="CSS\EntityFramework.dll" />
     <Content Include="CSS\EntityFramework.SqlServer.dll" />
     <Content Include="CSS\Google.Apis.Auth.PlatformServices.dll" />
@@ -79,7 +80,6 @@
     <Content Include="CSS\SQLite.Interop.dll" />
     <Content Include="CSS\System.Data.SQLite.EF6.dll" />
     <Content Include="CSS\System.Data.SQLite.Linq.dll" />
-    <None Include="CloudStorageSync_Pack_TemporaryKey.pfx" />
     <Content Include="Images\LargeTile.scale-100.png" />
     <Content Include="Images\LargeTile.scale-125.png" />
     <Content Include="Images\LargeTile.scale-150.png" />
