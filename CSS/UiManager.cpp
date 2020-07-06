@@ -14,7 +14,9 @@ namespace CSS
             tray = new TrayIcon(WndProc_trayicon, L"Cloud Storage Sync", true, LoadIconFromResource(IDI_Cloud));
             tray_menu = CreatePopupMenu();
             AppendMenu(tray_menu, MF_STRING, IDM_SETTING, L"Setting");
+#if _DEBUG
             AppendMenu(tray_menu, MF_STRING, IDM_EXIT, L"Exit");
+#endif
             WriteLog(L"UiManager::Init end");
         }
 	}

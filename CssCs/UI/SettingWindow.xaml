@@ -197,8 +197,8 @@
                     <TextBlock x:Name="textBlock8" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="2" TextWrapping="Wrap" Text="Files Ignore" VerticalAlignment="Top"/>
 
 
-                    <Button x:Name="bt_exit" Content="Exit App" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Foreground="#FFFF0202" Grid.Column="2" Height="20"/>
-                    <Button x:Name="bt_fixplaceholder" Click="bt_fixplaceholder_Click" Content="Fix bug placeholder" Grid.Column="2" Margin="105,10,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120"/>
+                    <Button x:Name="bt_exit" Content="Exit App" Click="bt_exit_Click" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Foreground="#FFFF0202" Grid.Column="2" Height="20"/>
+                    <!--<Button x:Name="bt_fixplaceholder" Click="bt_fixplaceholder_Click" Content="Fix bug placeholder" Grid.Column="2" Margin="105,10,0,0" Height="20" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120"/>-->
 
 
                     <local:TemplateNumericUpDown Grid.Column="0" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.FilesUploadSameTime}" Min="1" Max="16" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 16"/>

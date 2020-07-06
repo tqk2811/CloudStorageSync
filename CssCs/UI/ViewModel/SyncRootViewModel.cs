@@ -88,12 +88,12 @@ namespace CssCs.UI.ViewModel
     #region Non MVVM Property
     public CloudEmailViewModel CEVM { get; }
     public string SRId { get; }
-    public string CloudFolderId { get; internal set; } = "1jM1Mm5i3YEMwbTYfdS8zo9_wiUUgtiku";
+    public string CloudFolderId { get; internal set; }
     public bool IsListedAll { get; set; } = false;
-    #endregion
+#endregion
 
-    #region MVVM
-    string _CloudFolderName = "Test";//string.Empty;
+#region MVVM
+    string _CloudFolderName = string.Empty;
     public string CloudFolderName
     {
       get { return _CloudFolderName; }
@@ -119,7 +119,7 @@ namespace CssCs.UI.ViewModel
       }
     }
 
-    string _LocalPath = "D:\\TestCSSFolder";//string.Empty;
+    string _LocalPath = string.Empty;
     public string LocalPath
     {
       get { return _LocalPath; }
@@ -139,14 +139,14 @@ namespace CssCs.UI.ViewModel
       get { return _Message; }
       set { _Message = value; NotifyPropertyChange(); }
     }
-    #region INotifyPropertyChanged
+#region INotifyPropertyChanged
     private void NotifyPropertyChange([CallerMemberName] string name = "")
     {
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
     public event PropertyChangedEventHandler PropertyChanged;
-    #endregion
-    #endregion
+#endregion
+#endregion
 
     internal void Insert()
     {
@@ -163,7 +163,7 @@ namespace CssCs.UI.ViewModel
       SRVMS.Remove(this);
     }
 
-    #region SyncRoot
+#region SyncRoot
     void UpdateStatus()
     {
       if ((_Status & SyncRootStatus.Error) == SyncRootStatus.Error)
@@ -239,7 +239,7 @@ namespace CssCs.UI.ViewModel
     public long ConnectionKey { get; set; } = 0;
     public Watcher Watcher { get; }
 
-    #endregion
+#endregion
 
 
   }

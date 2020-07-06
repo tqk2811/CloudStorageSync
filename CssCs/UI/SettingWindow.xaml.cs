@@ -7,6 +7,7 @@ using Microsoft.Identity.Client;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -267,6 +268,12 @@ namespace CssCs.UI
       }        
     }
 
-
+    [DllImport("User32.dll")]
+    private static extern void PostQuitMessage(int nExitCode);
+    private void bt_exit_Click(object sender, RoutedEventArgs e)
+    {
+      if(MessageBoxResult.Yes == MessageBox.Show("Are you sure want to quit?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question))
+        PostQuitMessage(0);
+    }
   }
 }
