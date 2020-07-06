@@ -378,7 +378,7 @@ namespace CssCs.Cloud
       aboutrequest.Fields = "storageQuota";
       var about = await aboutrequest.ExecuteAsync();
       Quota quota = new Quota();
-      quota.Limit = about.StorageQuota.Limit.Value;
+      quota.Limit = about.StorageQuota.Limit;
       quota.Usage = about.StorageQuota.Usage.Value;
       return quota;
     }

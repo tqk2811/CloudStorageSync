@@ -403,7 +403,7 @@ namespace CssCs.Cloud
       Drive drive = await MyDrive.Request().GetAsync();
       Quota quota = new Quota();
       quota.Usage = drive.Quota.Used.Value;
-      quota.Limit = drive.Quota.Total.Value;
+      quota.Limit = drive.Quota.Total;
       return quota;
     }
 

@@ -10,7 +10,7 @@ namespace CssCs.Cloud
 {
   public class Quota
   {
-    public long Limit { get; set; } = 0;
+    public long? Limit { get; set; }
     public long Usage { get; set; } = 0;
   }
   public class UpdateCloudItem

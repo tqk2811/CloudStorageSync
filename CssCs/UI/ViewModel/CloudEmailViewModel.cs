@@ -130,8 +130,12 @@ namespace CssCs.UI.ViewModel
     {
       Quota quota = await Cloud.GetQuota();
       string usage = UnitConventer.ConvertSize(quota.Usage, 2, UnitConventer.unit_size);
-      string limit = UnitConventer.ConvertSize(quota.Limit, 2, UnitConventer.unit_size);
-      QuotaString = usage + "/" + limit;
+      if(quota.Limit == null) QuotaString = usage + "/Unlimited";
+      else
+      {
+        string limit = UnitConventer.ConvertSize(quota.Limit.Value, 2, UnitConventer.unit_size);
+        QuotaString = usage + "/" + limit;
+      }
     }
 
     internal void Insert()
