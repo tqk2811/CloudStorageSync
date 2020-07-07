@@ -99,34 +99,6 @@ namespace CssCs
       return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-
-    //public static string ToBase64String(this string input)
-    //{
-    //  return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(input));
-    //}
-    //public static string FromBase64String(this string base64)
-    //{
-    //  return System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(base64));
-    //}
-
-    public static string MakeSplitString(this IList<string> ids)
-    {
-      if (ids == null) return null;
-      StringBuilder stringBuilder = new StringBuilder();
-      if (ids.Count > 0) stringBuilder.Append(ids[0]);
-      for (int i = 1; i < ids.Count; i++)
-      {
-        stringBuilder.Append('|');
-        stringBuilder.Append(ids[i]);
-      }
-      return stringBuilder.ToString();
-    }
-    public static IList<string> StringSplit(this string parents)
-    {
-      List<string> list = new List<string>();
-      if (!string.IsNullOrEmpty(parents)) list.AddRange(parents.Split(new char[] { '|' }));
-      return list;
-    }
     public static string ParentsCommaSeparatedList(this IList<string> ids)
     {
       if (ids == null) return null;

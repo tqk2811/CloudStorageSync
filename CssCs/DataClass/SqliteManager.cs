@@ -3,11 +3,32 @@ using System.Data.SQLite;
 using CssCs.UI.ViewModel;
 using System.IO;
 using System;
+using System.Text;
 
 namespace CssCs.DataClass
 {
   internal static class SqliteManager
   {
+    static string MakeSplitString(this IList<string> ids)
+    {
+      if (ids == null) return null;
+      StringBuilder stringBuilder = new StringBuilder();
+      if (ids.Count > 0) stringBuilder.Append(ids[0]);
+      for (int i = 1; i < ids.Count; i++)
+      {
+        stringBuilder.Append('|');
+        stringBuilder.Append(ids[i]);
+      }
+      return stringBuilder.ToString();
+    }
+    static IList<string> StringSplit(this string parents)
+    {
+      List<string> list = new List<string>();
+      if (!string.IsNullOrEmpty(parents)) list.AddRange(parents.Split(new char[] { '|' }));
+      return list;
+    }
+
+
     private static List<string> create_tables = new List<string>()
     {
       _cevm_create,
@@ -191,7 +212,7 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
                                     Id CHAR(128)        NOT NULL,
                                     IdEmail CHAR(32)    NOT NULL,
                                     Name TEXT           NOT NULL,
-                                    Parents TEXT        NOT NULL,
+                                    Parents TEXT,
                                     Size BIG INT        DEFAULT 0,
                                     DateCreate BIG INT  DEFAULT 0,
                                     DateMod BIG INT     DEFAULT 0,
@@ -222,7 +243,7 @@ where Id = $Id AND IdEmail = $IdEmail;";
           ci.Id = reader.GetString(0);
           ci.IdEmail = reader.GetString(1);
           ci.Name = reader.GetString(2);
-          ci.ParentsId = reader.GetString(3).StringSplit();
+          ci.ParentsId = reader.GetString(3)?.StringSplit();
           ci.Size = reader.GetInt64(4);
           ci.DateCreate = reader.GetInt64(5);
           ci.DateMod = reader.GetInt64(6);

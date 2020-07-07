@@ -116,7 +116,6 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cloud\EmptyCloud.cs" />
     <Compile Include="UI\TemplateNumericUpDown.xaml.cs">
       <DependentUpon>TemplateNumericUpDown.xaml</DependentUpon>
     </Compile>

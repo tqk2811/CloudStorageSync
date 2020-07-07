@@ -47,7 +47,7 @@ namespace CssCs.Queues
 
     async void Work()
     {
-      if (srvm.CEVM.CloudName == CloudName.Empty) return;
+      if ((int)srvm.CEVM.CloudName > 200) return;
       string fullpath = string.Empty;
       
       try

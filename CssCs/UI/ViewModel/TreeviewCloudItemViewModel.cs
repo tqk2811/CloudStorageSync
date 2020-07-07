@@ -14,9 +14,9 @@ namespace CssCs.UI.ViewModel
       this.CloudName = CloudName.Folder;
       this.Img = this.CloudName.ToBitmapImage();
     }
-    internal TreeviewCloudItemViewModel(string id, string name, CloudName cloudName)
+    internal TreeviewCloudItemViewModel(string name, CloudName cloudName)
     {
-      this.Id = id;
+      this.Id = "root";
       this.Name = name;
       this.CloudName = cloudName;
       this.Img = cloudName.ToBitmapImage();

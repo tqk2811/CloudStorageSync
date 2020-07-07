@@ -84,19 +84,13 @@ namespace CSS
 	void SRManager::UnRegister(SyncRootViewModel^ srvm)
 	{
 		PinStr2(SRid, srvm->SRId);
-		if (srvm->Status.HasFlag(SyncRootStatus::Error)) SyncRoot_UnRegister(SRid);
-		else
-		{
-			srvm->Watcher->Stop();
-			ConnectSyncRoot::DisconnectSyncRootTransferCallbacks(srvm->ConnectionKey);
-			SyncRoot_UnRegister(SRid);
-			srvm->IsListedAll = false;
-			if (srvm->CEVM->CloudName != CloudName::Empty)
-			{
-				LocalItem::Clear(srvm);
-				srvm->Update();
-			}
-		}
+		srvm->Watcher->Stop();
+		ConnectSyncRoot::DisconnectSyncRootTransferCallbacks(srvm->ConnectionKey);
+		srvm->ConnectionKey = 0;
+		SyncRoot_UnRegister(SRid);
+		srvm->IsListedAll = false;
+		LocalItem::Clear(srvm);
+		srvm->Update();		
 		srvm->Status = SyncRootStatus::NotWorking;
 		LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(SRid), 2);
 	}

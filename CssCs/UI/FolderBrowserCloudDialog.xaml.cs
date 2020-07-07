@@ -39,9 +39,12 @@ namespace CssCs.UI
       menuViewModels.Add(new MenuViewModel(MenuAction.Rename));
       menuViewModels.Add(new MenuViewModel(MenuAction.Delete));
 
-      treeview_CloudItemViewModels.Add(new TreeviewCloudItemViewModel("root", cevm.Email, cevm.CloudName));
-      await LoadChildTV(treeview_CloudItemViewModels[0]);
-      treeview_CloudItemViewModels[0].IsExpanded = true;
+      TreeviewCloudItemViewModel rootcloud = new TreeviewCloudItemViewModel(cevm.Email, cevm.CloudName);
+      CloudItem ci = await cevm.Cloud.GetMetadata(rootcloud.Id);
+      rootcloud.Id = ci.Id;
+      treeview_CloudItemViewModels.Add(rootcloud);
+      await LoadChildTV(rootcloud);
+      rootcloud.IsExpanded = true;
     }
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -139,7 +142,7 @@ namespace CssCs.UI
           {
             case MenuAction.NewFolder:
               Result.IsExpanded = true;
-              TreeviewCloudItemViewModel newfolder = new TreeviewCloudItemViewModel("", "New Folder", CloudName.Folder);
+              TreeviewCloudItemViewModel newfolder = new TreeviewCloudItemViewModel("New Folder", CloudName.Folder);
               Result.Childs.Add(newfolder);
               newfolder.Parent = Result;
               newfolder.IsEditing = true;

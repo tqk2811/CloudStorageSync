@@ -19,13 +19,12 @@ namespace CssCs.UI.ViewModel
 
     File = 250,
     Folder = 251,
-    Empty = 252,
+    //Empty = 252,
     None = 255
   }
   public sealed class CloudEmailViewModel : INotifyPropertyChanged
   {
     #region Static function and Property
-    public static CloudEmailViewModel EmptyCEVM { get; set; } = new CloudEmailViewModel("email@empty.com", CloudName.Empty, "tokenEmpty");
     public static ObservableCollection<CloudEmailViewModel> CEVMS { get; private set; }
     internal static void Load(IList<CloudEmailViewModel> cevms)
     {
@@ -76,9 +75,6 @@ namespace CssCs.UI.ViewModel
           //
           break;
 
-        case CloudName.Empty:
-          Cloud = new EmptyCloud();
-          return;
         default: throw new Exception("This cloud not support: " + cloudName.ToString());
       }
       this.Img = Img.ToImageSource();
@@ -123,6 +119,7 @@ namespace CssCs.UI.ViewModel
     public CloudName CloudName { get; }
     public string Token { get; internal set; }
     public string WatchToken { get; internal set; }
+    public bool IsDeleted { get; internal set; } = false;
     #endregion
 
     #region Function
@@ -147,6 +144,7 @@ namespace CssCs.UI.ViewModel
     internal void Delete()
     {
       SqliteManager.CEVMDelete(this);
+      IsDeleted = true;
       CEVMS.Remove(this);
     }
 

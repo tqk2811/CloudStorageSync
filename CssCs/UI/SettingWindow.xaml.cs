@@ -67,7 +67,7 @@ namespace CssCs.UI
       }
     }
 
-    private void LV_listemail_MenuItem_Click(object sender, RoutedEventArgs e)
+    private async void LV_listemail_MenuItem_Click(object sender, RoutedEventArgs e)
     {
       MenuItem menuItem = sender as MenuItem;
       MenuViewModel menuDataModel = menuItem.DataContext as MenuViewModel;
@@ -92,7 +92,8 @@ namespace CssCs.UI
               srvm.Delete();
               SRViewModels.Remove(srvm);
             });
-            ceSelected.Delete();
+
+            if(await ceSelected.Cloud.LogOut()) ceSelected.Delete();
           }
           
           break;
@@ -245,28 +246,6 @@ namespace CssCs.UI
       }
     }
     #endregion
-
-
-    private void bt_fixplaceholder_Click(object sender, RoutedEventArgs e)
-    {
-      var dialog = new System.Windows.Forms.FolderBrowserDialog()
-      {
-        RootFolder = Environment.SpecialFolder.MyComputer
-      };
-      var result = dialog.ShowDialog();
-      if (result == System.Windows.Forms.DialogResult.OK || result == System.Windows.Forms.DialogResult.Yes)
-      {
-        SyncRootViewModel srvm = new SyncRootViewModel(CloudEmailViewModel.EmptyCEVM);
-        srvm.LocalPath = dialog.SelectedPath;
-        srvm.IsListedAll = true;
-        srvm.CloudFolderId = "cloudid";
-        srvm.CloudFolderName = "cloud folder";
-        srvm.IsWork = true;
-        Task.Delay(1000).Wait();
-        srvm.TaskRun.Wait();
-        srvm.IsWork = false;
-      }        
-    }
 
     [DllImport("User32.dll")]
     private static extern void PostQuitMessage(int nExitCode);

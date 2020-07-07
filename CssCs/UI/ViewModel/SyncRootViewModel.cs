@@ -155,7 +155,7 @@ namespace CssCs.UI.ViewModel
     }
     public void Update()
     {
-      if(CEVM.CloudName != CloudName.Empty) SqliteManager.SRVMUpdate(this);
+      SqliteManager.SRVMUpdate(this);
     }
     internal void Delete()
     {

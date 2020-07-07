@@ -51,25 +51,19 @@ namespace CssCs.Cloud
   }
   public interface ICloud
   {
+    Task<bool> LogOut();
 
     Task<Stream> Download(string fileid, long? start, long? end);
     Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null);
+
     Task<CloudItem> CreateFolder(string name, IList<string> ParentIds);
 
     Task<IList<CloudChangeType>> WatchChange();
 
     void ListAllItemsToDb(SyncRootViewModel srvm, string StartFolderId);
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="itemid"></param>
-    /// <returns>IList CloudItem, (only Id and Name)</returns>
-    IList<CloudItem> CloudFolderGetChildFolder(string itemid);
 
-    /// <summary>
-    /// Update Metadata
-    /// </summary>
-    /// <returns></returns>
+    IList<CloudItem> CloudFolderGetChildFolder(string itemId);
+
     Task UpdateMetadata(UpdateCloudItem updateCloudItem);
 
     Task TrashItem(string Id);
@@ -77,5 +71,7 @@ namespace CssCs.Cloud
     Task<Quota> GetQuota();
 
     bool HashCheck(string filepath, CloudItem ci);
+
+    Task<CloudItem> GetMetadata(string Id);
   }
 }
