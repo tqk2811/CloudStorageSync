@@ -88,6 +88,11 @@ namespace CSS
             DestroyWindow(hWnd);
             return 0;
         }
+        case WM_ENDSESSION:
+        case WM_QUERYENDSESSION:        
+            PostQuitMessage(0);
+            return 0;
+        
         default:
         {
             break;
