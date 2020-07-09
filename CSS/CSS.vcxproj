@@ -167,14 +167,14 @@
     <ClCompile Include="LocalAction.cpp" />
     <ClCompile Include="ShellCall.cpp" />
     <ClCompile Include="TrackChanges.cpp" />
-    <ClCompile Include="SRManager.cpp" />
+    <ClCompile Include="SRManaged.cpp" />
     <ClCompile Include="ConnectSyncRoot.cpp" />
     <ClCompile Include="Bridge.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Placeholders.cpp" />
     <ClCompile Include="TrayIcon.cpp" />
-    <ClCompile Include="UiManager.cpp" />
+    <ClCompile Include="UiManaged.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -182,14 +182,14 @@
     <ClInclude Include="LocalAction.h" />
     <ClInclude Include="ShellCall.h" />
     <ClInclude Include="TrackChanges.h" />
-    <ClInclude Include="SRManager.h" />
+    <ClInclude Include="SRManaged.h" />
     <ClInclude Include="ConnectSyncRoot.h" />
     <ClInclude Include="Bridge.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Placeholders.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TrayIcon.h" />
-    <ClInclude Include="UiManager.h" />
+    <ClInclude Include="UiManaged.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>

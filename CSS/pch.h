@@ -40,11 +40,11 @@ namespace CSS
 #include "ShellCall.h"
 #include "Bridge.h"
 #include "Placeholders.h"
-#include "UiManager.h"
+#include "UiManaged.h"
 #include "ConnectSyncRoot.h"
 #include "LocalAction.h"
 #include "TrackChanges.h"
-#include "SRManager.h"
+#include "SRManaged.h"
 #include "CloudAction.h"
 
 //include

@@ -84,15 +84,28 @@ namespace CssCs
     public int SpeedUploadLimit
     {
       get { return _SpeedUploadLimit; }
-      set { _SpeedUploadLimit = value; NotifyPropertyChange(); }
+      set
+      {
+        _SpeedUploadLimit = value;
+        SpeedUploadLimitByte = value * 1024;
+        NotifyPropertyChange();
+      }
     }
+    internal int SpeedUploadLimitByte { get; private set; } = 0;
+
 
     int _SpeedDownloadLimit = 0;
     public int SpeedDownloadLimit
     {
       get { return _SpeedDownloadLimit; }
-      set { _SpeedDownloadLimit = value; NotifyPropertyChange(); }
+      set
+      {
+        _SpeedDownloadLimit = value;
+        SpeedDownloadLimitByte = value * 1024;
+        NotifyPropertyChange();
+      }
     }
+    internal int SpeedDownloadLimitByte { get; private set; } = 0;
 
     public int _TimeWatchChangeCloud = 15;
     public int TimeWatchChangeCloud

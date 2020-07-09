@@ -1,4 +1,5 @@
 ﻿using CssCs.DataClass;
+using CssCs.StreamLimit;
 using CssCs.UI.ViewModel;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
@@ -185,18 +186,21 @@ namespace CssCs.Cloud
       return result;
     }
 
-    private Task<Stream> Download_(string uri, long? start, long? end)
+    private async Task<Stream> Download_(string uri, long? start, long? end)
     {
       var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
       requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
       var response = ds.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result;
-      if (response.IsSuccessStatusCode) return response.Content.ReadAsStreamAsync();
+      if (response.IsSuccessStatusCode)
+      {
+        return new ThrottledStream(await response.Content.ReadAsStreamAsync(), ThrottledManaged.download);
+      }
       else
       {
         if (Settings.Setting.SkipNoticeMalware)
         {
-          if (uri.LastIndexOf("&acknowledgeAbuse=true") >= 0) throw new HttpRequestException(response.Content.ReadAsStringAsync().Result);
-          else return Download_(uri += "&acknowledgeAbuse=true", start, end);
+          if (uri.IndexOf("&acknowledgeAbuse=true") >= 0) throw new HttpRequestException(response.Content.ReadAsStringAsync().Result);
+          else return await Download_(uri += "&acknowledgeAbuse=true", start, end);
         }
         else return null;
       }
@@ -234,12 +238,12 @@ namespace CssCs.Cloud
       }
     }
 
-    public Task<Stream> Download(string fileId, long? start, long? end)
+    public async Task<Stream> Download(string fileId, long? start, long? end)
     {
       if (string.IsNullOrEmpty(fileId)) throw new ArgumentNullException("fileid");
 
       string uri = string.Format(DownloadUri, fileId);
-      return Download_(uri, start, end);
+      return await Download_(uri, start, end);
     }
     public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
     {

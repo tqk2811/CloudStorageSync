@@ -22,8 +22,8 @@ namespace CSS
 		CssCs::CPPCLR_Callback::OutPutDebugString = gcnew CssCs::_OutPutDebugString(WriteLog);
 		CssCs::CPPCLR_Callback::TestWatchCloud = gcnew CssCs::_TestWatchCloud(TestWatchCloud);
 
-		CssCs::CPPCLR_Callback::SRRegister = gcnew CssCs::_SRRegister(SRManager::Register);
-		CssCs::CPPCLR_Callback::SRUnRegister = gcnew CssCs::_SRUnRegister(SRManager::UnRegister);
+		CssCs::CPPCLR_Callback::SRRegister = gcnew CssCs::_SRRegister(SRManaged::Register);
+		CssCs::CPPCLR_Callback::SRUnRegister = gcnew CssCs::_SRUnRegister(SRManaged::UnRegister);
 
 		CssCs::CPPCLR_Callback::ConvertToPlaceholder = gcnew CssCs::_ConvertToPlaceholder(ConvertToPlaceholder);
 		CssCs::CPPCLR_Callback::UpdatePlaceholder = gcnew CssCs::_UpdatePlaceholder(UpdatePlaceholder);

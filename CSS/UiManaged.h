@@ -2,7 +2,7 @@
 namespace CSS
 {
 	LRESULT CALLBACK WndProc_trayicon(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	ref class UiManager
+	ref class UiManaged
 	{
 	public:
 		static void Init();

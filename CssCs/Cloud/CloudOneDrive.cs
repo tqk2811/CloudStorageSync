@@ -14,6 +14,7 @@ using System.Text;
 using System.Net;
 using System.Web;
 using System.Threading;
+using CssCs.StreamLimit;
 
 namespace CssCs.Cloud
 {
@@ -219,17 +220,17 @@ namespace CssCs.Cloud
       return true;
     }
 
-    public Task<Stream> Download(string fileId, long? start, long? end)
+    public async Task<Stream> Download(string fileId, long? start, long? end)
     {
       if (string.IsNullOrEmpty(fileId)) throw new ArgumentNullException("fileId");
+
+      var request = MyDrive.Items[fileId].Content.Request();
       if (start != null && end != null)
       {
         HeaderOption ho = new HeaderOption("Range", start.Value.ToString() + "-" + end.Value.ToString());
-        var request = MyDrive.Items[fileId].Content.Request();
         request.Headers.Add(ho);
-        return request.GetAsync();
       }
-      else return MyDrive.Items[fileId].Content.Request().GetAsync();
+      return new ThrottledStream(await request.GetAsync(), ThrottledManaged.download);
     }
     /// <summary>
     /// Upload file.

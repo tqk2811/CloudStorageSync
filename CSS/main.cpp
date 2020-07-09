@@ -9,8 +9,8 @@ void MainThread()
 {
     CSS::Bridge::LoadCallback();
     CssCs::CPPCLR_Callback::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()));
-    CSS::SRManager::Init();
-    CSS::UiManager::Init();
+    CSS::SRManaged::Init();
+    CSS::UiManaged::Init();
     resetEvent->Set();
     //------------------------main loop-----------------------------
     while (GetMessage(&g_msg, NULL, 0, 0))
@@ -19,8 +19,8 @@ void MainThread()
         DispatchMessage(&g_msg);
     }
     //------------- close app---------------------------------------
-    CSS::SRManager::UnInit();
-    CSS::UiManager::UnInit();
+    CSS::SRManaged::UnInit();
+    CSS::UiManaged::UnInit();
     //--------------------------------------------------------------
 }
 

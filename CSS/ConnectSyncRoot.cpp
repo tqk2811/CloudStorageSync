@@ -75,16 +75,14 @@ namespace CSS
     //when download file
     void CALLBACK ConnectSyncRoot::FETCH_DATA(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
     {
-        if (!IsThisProcess(callbackInfo->ProcessInfo))
+        SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
+        CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+        if (ci)
         {
-            SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-            CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-            if (ci)
-            {
-                CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
-                return;
-            }
+            CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
+            return;
         }
+
         LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Cancel,path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
         //cancel
         TransferData(

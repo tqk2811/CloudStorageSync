@@ -202,8 +202,8 @@
 
                     <local:TemplateNumericUpDown Grid.Column="0" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.FilesUploadSameTime}" Min="1" Max="16" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 16"/>
                     <local:TemplateNumericUpDown Grid.Column="0" Height="24" Margin="0,39,10,0" VerticalAlignment="Top" NumValue="0" Min="1" Max="16" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 16" IsEnabled="False"/>
-                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedUploadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit" IsEnabled="False"/>
-                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,39,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedDownloadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit" IsEnabled="False"/>
+                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,10,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedUploadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit"/>
+                    <local:TemplateNumericUpDown Grid.Column="1" Height="24" Margin="0,39,10,0" VerticalAlignment="Top" NumValue="{Binding Setting.SpeedDownloadLimit}" Min="0" Max="1048576" HorizontalAlignment="Right" Width="80" ToolTip="0 is unlimit"/>
 
                     <local:TemplateNumericUpDown Height="24" Margin="0,10,10,0" Grid.Row="1" VerticalAlignment="Top" NumValue="{Binding Setting.TryAgainAfter}" Min="5" Max="30" HorizontalAlignment="Right" Width="55" ToolTip="Min 5&#x0d;&#x0a;Max 30"/>
                     <local:TemplateNumericUpDown Height="24" Margin="0,39,10,0" Grid.Row="1" VerticalAlignment="Top" NumValue="{Binding Setting.TryAgainTimes}" Min="1" Max="10" HorizontalAlignment="Right" Width="55" ToolTip="Min 1&#x0d;&#x0a;Max 10"/>

@@ -42,9 +42,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UiManager.cpp">
-      <Filter>src\UI</Filter>
-    </ClCompile>
     <ClCompile Include="TrayIcon.cpp">
       <Filter>src\UI</Filter>
     </ClCompile>
@@ -72,7 +69,10 @@
     <ClCompile Include="ShellCall.cpp">
       <Filter>src\Shell</Filter>
     </ClCompile>
-    <ClCompile Include="SRManager.cpp">
+    <ClCompile Include="UiManaged.cpp">
+      <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="SRManaged.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -82,9 +82,6 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UiManager.h">
-      <Filter>src\UI</Filter>
     </ClInclude>
     <ClInclude Include="TrayIcon.h">
       <Filter>src\UI</Filter>
@@ -113,7 +110,10 @@
     <ClInclude Include="ShellCall.h">
       <Filter>src\Shell</Filter>
     </ClInclude>
-    <ClInclude Include="SRManager.h">
+    <ClInclude Include="UiManaged.h">
+      <Filter>src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="SRManaged.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

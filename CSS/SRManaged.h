@@ -1,7 +1,7 @@
 #pragma once
 namespace CSS
 {
-	class SRManager
+	class SRManaged
 	{
 	public:
 		static void Init();

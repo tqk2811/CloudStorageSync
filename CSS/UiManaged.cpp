@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "UiManager.h"
+#include "UiManaged.h"
 
 #include "TrayIcon.h"
 
@@ -7,7 +7,7 @@ namespace CSS
 {
     TrayIcon* tray{ nullptr };
     HMENU tray_menu{ NULL };
-	void UiManager::Init()
+	void UiManaged::Init()
 	{
         if (!tray)
         {
@@ -17,11 +17,11 @@ namespace CSS
 #if _DEBUG
             AppendMenu(tray_menu, MF_STRING, IDM_EXIT, L"Exit");
 #endif
-            WriteLog(L"UiManager::Init end");
+            WriteLog(L"UiManaged::Init end");
         }
 	}
 
-    void UiManager::UnInit()
+    void UiManaged::UnInit()
     {
         if (!tray) 
             return;
@@ -34,10 +34,10 @@ namespace CSS
         tray_menu = NULL;
     }
 
-    void UiManager::OnClosed(System::Object^ sender, System::EventArgs^ e)
+    void UiManaged::OnClosed(System::Object^ sender, System::EventArgs^ e)
     {
-        delete UiManager::settingwindow;
-        UiManager::settingwindow = nullptr;
+        delete UiManaged::settingwindow;
+        UiManaged::settingwindow = nullptr;
         GC::Collect();
     }
 
@@ -67,13 +67,13 @@ namespace CSS
             switch (wmId)
             {
             case IDM_SETTING:
-                if (UiManager::settingwindow == nullptr) 
+                if (UiManaged::settingwindow == nullptr) 
                 {
-                    UiManager::settingwindow = gcnew CssCs::UI::SettingWindow();
-                    UiManager::settingwindow->Closed += gcnew System::EventHandler(&CSS::UiManager::OnClosed);
-                    UiManager::settingwindow->Show();
+                    UiManaged::settingwindow = gcnew CssCs::UI::SettingWindow();
+                    UiManaged::settingwindow->Closed += gcnew System::EventHandler(&CSS::UiManaged::OnClosed);
+                    UiManaged::settingwindow->Show();
                 }
-                else UiManager::settingwindow->Show();
+                else UiManaged::settingwindow->Show();
                 return 0;
             case IDM_EXIT:
                 PostQuitMessage(0);
