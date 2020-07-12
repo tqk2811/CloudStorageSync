@@ -117,37 +117,22 @@ namespace CSS
 		{
 		case WatcherChangeTypes::Changed://attribute,file change,...
 		{
+			LocalItem^ li = LocalItem::FindFromPath(srvm, e->FullPath, 0);
 			switch (e->ChangeInfo)
 			{
 			case ChangeInfo::Attribute:
 			{
 				if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))//file only
 				{
-					HANDLE hfile = CreateFile(pin_fullpath, FILE_READ_ATTRIBUTES | WRITE_DAC, FILE_SHARE_ALL, nullptr, OPEN_EXISTING, 0, nullptr);
-					if (hfile == INVALID_HANDLE_VALUE)
-						return;
-
-					CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(hfile);
+					CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_fullpath);
 					if (state == CF_PLACEHOLDER_STATE_INVALID)
 						return;
 
-					if ((state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)//placeholder
+					if (li && (state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)//placeholder
 					{
-						LARGE_INTEGER offset = { 0 };
-						LARGE_INTEGER length;
-						length.QuadPart = MAXLONGLONG;
-						if (attrib & FILE_ATTRIBUTE_PINNED)
-						{
-							CheckHr(CfHydratePlaceholder(hfile, offset, length, CF_HYDRATE_FLAG_NONE, NULL),
-								L"TrackChanges::LocalOnChanged CfHydratePlaceholder", pin_fullpath, true);
-						}
-						else if (attrib & FILE_ATTRIBUTE_UNPINNED)
-						{
-							CheckHr(CfDehydratePlaceholder(hfile, offset, length, CF_DEHYDRATE_FLAG_BACKGROUND, NULL),
-								L"TrackChanges::LocalOnChanged CfDehydratePlaceholder", pin_fullpath, true);
-						}
+						if (attrib & FILE_ATTRIBUTE_PINNED) Placeholders::Hydrate(srvm, li, false);
+						else if (attrib & FILE_ATTRIBUTE_UNPINNED) Placeholders::Dehydrate(srvm, li, false);
 					}
-					CloseHandle(hfile);
 				}
 				break;
 			}
