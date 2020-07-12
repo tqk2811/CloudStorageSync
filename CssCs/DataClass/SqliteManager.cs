@@ -451,6 +451,13 @@ where Id = $Id AND IdEmail = $IdEmail;";
     #endregion
 
     #region setting
+    enum SettingBoolFlag : int
+    {
+      None = 0,
+      SkipNoticeMalware = 1 << 0,
+      UploadPrioritizeFirst = 1 << 1,
+      DownloadPrioritizeFirst = 1 << 2,
+    }
     const string _setting_create = @"create table if not exists Setting(
                                       Lock char(1) not null default 'X',
 
@@ -461,7 +468,7 @@ where Id = $Id AND IdEmail = $IdEmail;";
                                       SpeedUploadLimit integer not null default 0,
                                       SpeedDownloadLimit integer not null default 0,
                                       TimeWatchChangeCloud integer not null default 15,
-                                      SkipNoticeMalware bool default true,
+                                      SettingBoolFlag integer default 7,
 
                                       constraint PK_T1 PRIMARY KEY (Lock),
                                       constraint CK_T1_Locked CHECK (Lock='X'));";
@@ -474,7 +481,7 @@ FilesUploadSameTime = $FilesUploadSameTime,
 SpeedUploadLimit = $SpeedUploadLimit, 
 SpeedDownloadLimit = $SpeedDownloadLimit, 
 TimeWatchChangeCloud = $TimeWatchChangeCloud, 
-SkipNoticeMalware = $SkipNoticeMalware 
+SettingBoolFlag = $SettingBoolFlag
 where Lock = 'X';";
     private static void SettingInsert()
     {
@@ -499,7 +506,10 @@ where Lock = 'X';";
           Settings.Setting.SpeedUploadLimit = reader.GetInt32(5);
           Settings.Setting.SpeedDownloadLimit = reader.GetInt32(6);
           Settings.Setting.TimeWatchChangeCloud = reader.GetInt32(7);
-          Settings.Setting.SkipNoticeMalware = reader.GetBoolean(8);
+          SettingBoolFlag flag = (SettingBoolFlag)reader.GetInt32(8);
+          Settings.Setting.SkipNoticeMalware = flag.HasFlag(SettingBoolFlag.SkipNoticeMalware);
+          Settings.Setting.UploadPrioritizeFirst = flag.HasFlag(SettingBoolFlag.UploadPrioritizeFirst);
+          Settings.Setting.DownloadPrioritizeFirst = flag.HasFlag(SettingBoolFlag.DownloadPrioritizeFirst);
           Settings.Setting.LoadSetting = false;
         }
       }
@@ -515,7 +525,11 @@ where Lock = 'X';";
       command.Parameters.AddWithValue("$SpeedUploadLimit", Settings.Setting.SpeedUploadLimit);
       command.Parameters.AddWithValue("$SpeedDownloadLimit", Settings.Setting.SpeedDownloadLimit);
       command.Parameters.AddWithValue("$TimeWatchChangeCloud", Settings.Setting.TimeWatchChangeCloud);
-      command.Parameters.AddWithValue("$SkipNoticeMalware", Settings.Setting.SkipNoticeMalware);
+      SettingBoolFlag flag = SettingBoolFlag.None;
+      if (Settings.Setting.SkipNoticeMalware) flag |= SettingBoolFlag.SkipNoticeMalware;
+      if (Settings.Setting.UploadPrioritizeFirst) flag |= SettingBoolFlag.UploadPrioritizeFirst;
+      if (Settings.Setting.DownloadPrioritizeFirst) flag |= SettingBoolFlag.DownloadPrioritizeFirst;
+      command.Parameters.AddWithValue("$SettingBoolFlag", (int)flag);
       command.ExecuteNonQuery();
     }
     #endregion

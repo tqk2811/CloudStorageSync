@@ -53,7 +53,7 @@ namespace CssCs.Cloud
   {
     Task<bool> LogOut();
 
-    Task<Stream> Download(string fileid, long? start, long? end);
+    Task<Stream> Download(CloudItem ci, long start, long end);
     Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null);
 
     Task<CloudItem> CreateFolder(string name, IList<string> ParentIds);

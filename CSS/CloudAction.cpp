@@ -14,6 +14,7 @@ namespace CSS
         TransferData_CB TransferData;
         void Cancel()
         {
+            LogWriter::WriteLog(L"DownloadItem cancel", 1);
             TransferData(
                 CallbackInfo_ConnectionKey,
                 CallbackInfo_TransferKey,
@@ -46,6 +47,13 @@ namespace CSS
         {
             if (t->IsCanceled || t->IsFaulted || !t->Result)
             {
+                if (t->IsFaulted)
+                {
+                    AggregateException^ ae = (AggregateException^)t->Exception;
+                    WriteLog(String::Format("DownloadItem: Faulted, Exception Message:{0} ,StackTrace:{1}", 
+                        ae->InnerException->Message, 
+                        ae->InnerException->StackTrace), 0);
+                }
                 data->Cancel();
                 return;
             }
@@ -94,6 +102,8 @@ namespace CSS
                 LogWriter::WriteLog(std::wstring(L"Download exception message:").append(pin_message)
                     .append(L", Filepath:").append(pin_FullPath));
             }
+            stream->Close();
+            delete this;
         }
         DownloadItem()
         {
@@ -101,16 +111,16 @@ namespace CSS
         }
         ~DownloadItem()
         {
+            LogWriter::WriteLog(L"DownloadItem Deconstructor", 10);
             delete data;
         }
     };
 	void CloudAction::Download(SyncRootViewModel^ srvm, CloudItem^ ci,
         CONST CF_CALLBACK_INFO* callbackInfo, CONST CF_CALLBACK_PARAMETERS* callbackParameters,TransferData_CB TransferData)
 	{
-        auto cevm = srvm->CEVM;
         LONGLONG start = callbackParameters->FetchData.RequiredFileOffset.QuadPart;
-        LONGLONG end = callbackParameters->FetchData.RequiredLength.QuadPart + start;
-        auto task_stream = cevm->Cloud->Download(gcnew String(ci->Id), Nullable<LONGLONG>(start), Nullable<LONGLONG>(end));
+        LONGLONG end = callbackParameters->FetchData.RequiredLength.QuadPart + start - 1;
+        auto task_stream = srvm->CEVM->Cloud->Download(ci, start, end);
 
         std::wstring fullClientPath(callbackInfo->VolumeDosName);
         fullClientPath.append(callbackInfo->NormalizedPath);
@@ -125,6 +135,7 @@ namespace CSS
         di->data->CallbackInfo_RequestKey = callbackInfo->RequestKey;
         di->FullPath = gcnew String(fullClientPath.c_str());
 
+        WriteLog(String::Format("DownloadItem Request:{0}", di->FullPath), 1);
         auto action = gcnew Action<Task<Stream^>^, Object^>(di, &DownloadItem::Download);
         task_stream->ContinueWith(action, di);
         return;

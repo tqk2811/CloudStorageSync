@@ -43,7 +43,11 @@ namespace CssCs.Queues
       return false;
     }
 
-    public void Cancel() => source.Cancel();
+    public void Cancel()
+    {
+      CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: canceling, filepath:{0}",li.GetFullPath()), 1);
+      source.Cancel();
+    }
 
     async void Work()
     {
@@ -59,22 +63,36 @@ namespace CssCs.Queues
         if(string.IsNullOrEmpty(parent_li.CloudId))//parent not have id -> TryAgain (wait parent created in cloud)
         {
           tryagain++;
-          if (tryagain > Settings.Setting.TryAgainTimes) return;
+          if (tryagain > Settings.Setting.TryAgainTimes)
+          {
+            CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because cloud folder hasn't id, path:{0}", fullpath), 1);
+            return;
+          }
           Task.Delay(Settings.Setting.TryAgainAfter * 1000).ContinueWith((Task task) => TaskQueues.UploadQueues.Add(this));
+          CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload try again because cloud folder hasn't id, path:{0}", fullpath), 1);
           return;
         }
         else
         {
           CloudItem ci_parent = CloudItem.Select(parent_li.CloudId, srvm.CEVM.Sqlid);
-          if (!ci_parent.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.CanAddChildren)) return;//folder can't add child (because user not have permission)
+          if (!ci_parent.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.CanAddChildren))
+          {
+            CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because cloud folder hasn't permision for add child, path:{0}", fullpath), 1);
+            return;//folder can't add child (because user not have permission)
+          }
         }
 
         bool isNewUpload = string.IsNullOrEmpty(li.CloudId);        
         if(!isNewUpload)
         {
           CloudItem ci = CloudItem.Select(li.CloudId, srvm.CEVM.Sqlid);
-          if (srvm.CEVM.Cloud.HashCheck(fullpath, ci)) return;//if upload revision -> check hash before upload -> if hash equal > skip
+          if (srvm.CEVM.Cloud.HashCheck(fullpath, ci))
+          {
+            CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because same hash, path:{0}", fullpath), 1);
+            return;//if upload revision -> check hash before upload -> if hash equal > skip
+          }
         }
+        CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Starting Upload, path:{0}", fullpath), 1);
         CloudItem ci_back = await srvm.CEVM.Cloud.Upload(fullpath, new List<string>() { parent_li.CloudId }, li.CloudId);
         if(ci_back != null)
         {

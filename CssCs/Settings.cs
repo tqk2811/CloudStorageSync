@@ -1,5 +1,6 @@
 ﻿using CssCs.DataClass;
 using CssCs.Queues;
+using CssCs.StreamLimit;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -89,10 +90,16 @@ namespace CssCs
         _SpeedUploadLimit = value;
         SpeedUploadLimitByte = value * 1024;
         NotifyPropertyChange();
+        ThrottledStream.Up.LimitChange();
       }
     }
     internal int SpeedUploadLimitByte { get; private set; } = 0;
-
+    bool _uploadPrioritizeFirst = true;
+    public bool UploadPrioritizeFirst
+    {
+      get { return _uploadPrioritizeFirst; }
+      set { _uploadPrioritizeFirst = value; NotifyPropertyChange(); ThrottledStream.Up.PrioritizeFirst = value; }
+    }
 
     int _SpeedDownloadLimit = 0;
     public int SpeedDownloadLimit
@@ -103,9 +110,17 @@ namespace CssCs
         _SpeedDownloadLimit = value;
         SpeedDownloadLimitByte = value * 1024;
         NotifyPropertyChange();
+        ThrottledStream.Down.LimitChange();
       }
     }
     internal int SpeedDownloadLimitByte { get; private set; } = 0;
+    bool _downloadPrioritizeFirst = true;
+    public bool DownloadPrioritizeFirst
+    {
+      get { return _downloadPrioritizeFirst; }
+      set { _downloadPrioritizeFirst = value; NotifyPropertyChange(); ThrottledStream.Down.PrioritizeFirst = value; }
+    }
+
 
     public int _TimeWatchChangeCloud = 15;
     public int TimeWatchChangeCloud
@@ -114,12 +129,17 @@ namespace CssCs
       set { _TimeWatchChangeCloud = value; NotifyPropertyChange(); }
     }
 
-    public int OauthWait { get; set; } = 5*60000;
 
-    public async Task Save() => SqliteManager.UpdateSetting();
+    
 
+
+
+    async Task Save() => SqliteManager.UpdateSetting();
     public void Load() => SqliteManager.SettingSelect();
-
     internal bool LoadSetting { get; set; } = false;
+
+
+    public const int ChunkUploadDownload = 50 * 1024 * 1024;//50Mib
+    public const int OauthWait = 5 * 60000;
   }
 }

@@ -116,7 +116,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="StreamLimit\ThrottledManaged.cs" />
+    <Compile Include="StreamLimit\LimitTransferStream.cs" />
     <Compile Include="StreamLimit\ThrottledStream.cs" />
     <Compile Include="UI\TemplateNumericUpDown.xaml.cs">
       <DependentUpon>TemplateNumericUpDown.xaml</DependentUpon>

@@ -25,14 +25,12 @@ namespace CssCs
       CPPCLR_Callback.UWPLocalStatePath = UWPLocalStatePath;
       CloudOneDrive.Init();
       SqliteManager.Init();
-      ThrottledManaged.Init();
       SqliteManager.SettingSelect();
     }
     public static string UWPLocalStatePath { get; private set; } = null;
 
     public static void ShutDown()
     {
-      ThrottledManaged.UnInit();
       SqliteManager.Close();
     }
 

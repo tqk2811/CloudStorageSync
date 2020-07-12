@@ -72,7 +72,6 @@ namespace CssCs.Cloud
       public string nextLink { get; set; }
     }
 
-
     const string api_endpoint = "https://graph.microsoft.com/v1.0";
     const string oauth_nativeclient = "https://login.microsoftonline.com/common/oauth2/nativeclient";
     const string create_upload_session = api_endpoint + "/me{0}:/createUploadSession";
@@ -95,7 +94,6 @@ namespace CssCs.Cloud
     {
       return publicClientApplication.AcquireTokenInteractive(Scopes).ExecuteAsync();
     }
-
     static async Task<IAccount> GetAccount(string HomeAccountId_Identifier)
     {
       var accounts = await publicClientApplication.GetAccountsAsync();
@@ -107,7 +105,16 @@ namespace CssCs.Cloud
 
       return publicClientApplication.AcquireTokenSilent(Scopes, account).ExecuteAsync();
     }
-
+    static GraphServiceClient GetGraphServiceClient(IAccount account)
+    {
+      return new GraphServiceClient(api_endpoint,
+        new DelegateAuthenticationProvider(async (requestMessage) =>
+        {
+          var auth_result = await GetAuthenticationResult(account);
+          requestMessage.Headers.Authorization =
+              new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth_result.AccessToken);
+        }));
+    }
 
 
     internal CloudOneDrive(CloudEmailViewModel cevm)
@@ -124,19 +131,6 @@ namespace CssCs.Cloud
     readonly CloudEmailViewModel cevm;
     readonly GraphServiceClient graphServiceClient;
     IDriveRequestBuilder MyDrive { get { return graphServiceClient.Me.Drive; } }
-
-
-    GraphServiceClient GetGraphServiceClient(IAccount account)
-    {
-      return new GraphServiceClient(api_endpoint,
-        new DelegateAuthenticationProvider(async (requestMessage) =>
-      {
-        var auth_result = await GetAuthenticationResult(account);
-        requestMessage.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth_result.AccessToken);
-      }));
-    }
-
 
     internal CloudItem InsertToDb(DriveItem driveItem)
     {
@@ -211,8 +205,6 @@ namespace CssCs.Cloud
     }
 
 
-
-
     #region ICloud
     public async Task<bool> LogOut()
     {
@@ -220,17 +212,22 @@ namespace CssCs.Cloud
       return true;
     }
 
-    public async Task<Stream> Download(string fileId, long? start, long? end)
+    public async Task<Stream> Download(CloudItem ci, long start, long end)
     {
-      if (string.IsNullOrEmpty(fileId)) throw new ArgumentNullException("fileId");
+      if (null == ci || string.IsNullOrEmpty(ci.Id)) throw new ArgumentNullException("ci or ci.Id is null");
+      if (start < 0 || end < 0 || end > ci.Size - 1 || start > end) throw new ArgumentException("Start and end is invalid.");
 
-      var request = MyDrive.Items[fileId].Content.Request();
-      if (start != null && end != null)
+      var driveItemInfo = await MyDrive.Items[ci.Id].Request().GetAsync();
+      object downloadUrl;
+      driveItemInfo.AdditionalData.TryGetValue("@microsoft.graph.downloadUrl", out downloadUrl);
+      var requestMessage = new HttpRequestMessage(HttpMethod.Get, (string)downloadUrl);
+      requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
+      var response = await httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
+      if (response.IsSuccessStatusCode)
       {
-        HeaderOption ho = new HeaderOption("Range", start.Value.ToString() + "-" + end.Value.ToString());
-        request.Headers.Add(ho);
+        return new ThrottledStream(await response.Content.ReadAsStreamAsync(), true);
       }
-      return new ThrottledStream(await request.GetAsync(), ThrottledManaged.download);
+      else return null;
     }
     /// <summary>
     /// Upload file.
@@ -296,24 +293,45 @@ namespace CssCs.Cloud
         else
         {
           UploadSessionResource uploadSessionResource = JsonConvert.DeserializeObject<UploadSessionResource>(await responseMessage.Content.ReadAsStringAsync());
-          using (FileStream fs = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite))
+          using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite),false))
           {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uploadSessionResource.uploadUrl);
-            request.Method = "PUT";
-            request.AllowWriteStreamBuffering = false;
-            request.ContentType = "application/octet-stream";
-            request.ContentLength = fs.Length;
-            using (var requestStream = request.GetRequestStream()) fs.CopyTo(requestStream);
-            var response = request.GetResponse();
-            StreamReader sr = new StreamReader(response.GetResponseStream());
-            string result = sr.ReadToEnd();
-            DriveItem driveItem = JsonConvert.DeserializeObject<DriveItem>(result);
-            return await GetMetadata(driveItem.Id);
+            long part = fs.Length / Settings.ChunkUploadDownload;
+            if (part * Settings.ChunkUploadDownload < fs.Length) part++;
+
+            for(int i = 0; i < part; i++)
+            {
+              long start_offset = Settings.ChunkUploadDownload * i;
+              long end_offset = Settings.ChunkUploadDownload * (i + 1) - 1;
+              if (end_offset > fs.Length) end_offset = fs.Length - 1;
+              long contentlength = end_offset - start_offset + 1;
+
+              HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uploadSessionResource.uploadUrl);
+              request.Method = "PUT";
+              request.AllowWriteStreamBuffering = false;
+              request.ContentType = "application/octet-stream";
+              request.KeepAlive = true;
+              request.ContentLength = contentlength;
+              request.Timeout = System.Threading.Timeout.Infinite;
+              request.Headers.Add(HttpRequestHeader.ContentRange, string.Format("bytes {0}-{1}/{2}", start_offset, end_offset,fs.Length));
+              using (var requestStream = request.GetRequestStream())
+              {
+                using (var part_stream = new LimitTransferStream(fs, Settings.ChunkUploadDownload)) part_stream.CopyTo(requestStream);
+
+                var response = request.GetResponse();
+                StreamReader sr = new StreamReader(response.GetResponseStream());
+                string result = sr.ReadToEnd();
+                if(i == part -1)
+                {
+                  DriveItem driveItem = JsonConvert.DeserializeObject<DriveItem>(result);
+                  return await GetMetadata(driveItem.Id);
+                }
+              }
+            }
+            throw new Exception("Error transfer");
           }
         }
       }
     }
-
 
     public async Task<IList<CloudChangeType>> WatchChange()
     {

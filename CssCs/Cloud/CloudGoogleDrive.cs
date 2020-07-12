@@ -63,7 +63,7 @@ namespace CssCs.Cloud
         user = Extensions.RandomString(32);
 #endif
       }
-      using (CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(Settings.Setting.OauthWait))
+      using (CancellationTokenSource cancellationTokenSource = new CancellationTokenSource(Settings.OauthWait))
       {
         return await GoogleWebAuthorizationBroker.AuthorizeAsync(
             clientSecrets,
@@ -186,14 +186,14 @@ namespace CssCs.Cloud
       return result;
     }
 
-    private async Task<Stream> Download_(string uri, long? start, long? end)
+    private async Task<Stream> Download_(string uri, long start, long end)
     {
       var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
       requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
       var response = ds.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result;
       if (response.IsSuccessStatusCode)
       {
-        return new ThrottledStream(await response.Content.ReadAsStreamAsync(), ThrottledManaged.download);
+        return new ThrottledStream(await response.Content.ReadAsStreamAsync(), true);
       }
       else
       {
@@ -238,11 +238,12 @@ namespace CssCs.Cloud
       }
     }
 
-    public async Task<Stream> Download(string fileId, long? start, long? end)
+    public async Task<Stream> Download(CloudItem ci, long start, long end)
     {
-      if (string.IsNullOrEmpty(fileId)) throw new ArgumentNullException("fileid");
+      if (null == ci || string.IsNullOrEmpty(ci.Id)) throw new ArgumentNullException("ci or ci.Id is null");
+      if (start < 0 || end < 0 || end > ci.Size - 1 || start > end) throw new ArgumentException("Start and end is invalid.");
 
-      string uri = string.Format(DownloadUri, fileId);
+      string uri = string.Format(DownloadUri, ci.Id);
       return await Download_(uri, start, end);
     }
     public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
@@ -289,11 +290,12 @@ namespace CssCs.Cloud
         uploadid = responseMessage.Headers.Location;
 
         //Upload file
-        using (FileStream fs = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite))
+        using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite),false))
         {
           HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uploadid);
           request.Method = "PUT";
           request.AllowWriteStreamBuffering = false;
+          request.KeepAlive = true;
           request.ContentType = "application/octet-stream";
           if (fs.Length != 0) request.Headers.Add(HttpRequestHeader.ContentRange, string.Format("bytes {0}-{1}/{2}", 0, fs.Length - 1, fs.Length));
           request.ContentLength = fs.Length;
