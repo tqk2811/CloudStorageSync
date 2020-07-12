@@ -68,7 +68,7 @@ namespace CssCs.Queues
             CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because cloud folder hasn't id, path:{0}", fullpath), 1);
             return;
           }
-          Task.Delay(Settings.Setting.TryAgainAfter * 1000).ContinueWith((Task task) => TaskQueues.UploadQueues.Add(this));
+          Task.Delay(Settings.Setting.TryAgainAfter * 1000).ContinueWith((Task task) => TaskQueues.Add(this));
           CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload try again because cloud folder hasn't id, path:{0}", fullpath), 1);
           return;
         }
@@ -117,7 +117,7 @@ namespace CssCs.Queues
           if (hresult == 0x80070020)//can't open file because other process opening (not share read) -> re-queue
           {
             Task t = Task.Delay(Settings.Setting.TryAgainAfter);
-            t.ContinueWith((Task task) => TaskQueues.UploadQueues.Add(this));
+            t.ContinueWith((Task task) => TaskQueues.Add(this));
           }
         }
         CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue.DoWork: Exception, Message:{0}",ae.InnerException.Message));

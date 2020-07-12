@@ -13,104 +13,70 @@ namespace CssCs.Queues
     bool Check(IQueue queue);
     void Cancel();
   }  
-  public sealed class TaskQueues
+  public static class TaskQueues
   {
-    public static TaskQueues UploadQueues { get; internal set; } = new TaskQueues();
+    static List<IQueue> Queues = new List<IQueue>();
+    static List<IQueue> Runnings = new List<IQueue>();
 
-    System.Timers.Timer timer;
-    List<IQueue> Queues;
-    List<IQueue> Runnings;
-    int timeloop = 2000;
-		bool runtask = true;
-    List<Task> RunningTasks = new List<Task>();
-
-    public int MaxRun { get; set; } = 1;
-    internal TaskQueues()
+    static int _MaxRun = 1;
+    public static int MaxRun
     {
-      this.Queues = new List<IQueue>();
-      this.Runnings = new List<IQueue>();
-      Task.Factory.StartNew(OnStartTask, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+      get { return _MaxRun; }
+      set
+      {
+        bool flag = value > _MaxRun;
+        _MaxRun = value; 
+        if(flag) RunNewQueue();
+      }
+    }    
+
+    static void ContinueTaskResult(Task Result,object queue_obj)
+    {
+      IQueue queue = queue_obj as IQueue;
+      lock (Runnings) Runnings.Remove(queue);
+      RunNewQueue();
     }
 
-
-    
-    void OnStartTask()
+    static void RunNewQueue()
     {
-      while(runtask)
+      if (Runnings.Count >= MaxRun || Queues.Count == 0) return;
+      lock(Queues)
       {
-        if (Queues.Count > 0)
-        {
-          IQueue queue;
-          lock (Queues)
-          {
-            queue = Queues[0];
-            Queues.RemoveAt(0);
-          }
-          lock (Runnings) Runnings.Add(queue);
-
-          Task task = queue.DoWork();
-          task.ContinueWith((Task t) => { lock (Runnings) Runnings.Remove(queue); });//auto clear running
-
-          RunningTasks.Add(task);
-          if(RunningTasks.Count >= MaxRun)
-          {
-            Task.WaitAny(RunningTasks.ToArray());
-            RunningTasks.RemoveAll((t) => t.IsCompleted || t.IsFaulted || t.IsCanceled);
-          }
-        }
-        else Task.Delay(timeloop).Wait();
+        IQueue queue = Queues[0];
+        Queues.RemoveAt(0);
+        lock (Runnings) Runnings.Add(queue);
+        Task work = queue.DoWork();
+        work.ContinueWith(ContinueTaskResult, queue);
       }
     }
 
-    public void Add(IQueue queue)
+
+    public static void Add(IQueue queue)
     {
       if (queue.IsPrioritize) queue.DoWork();
-      else lock (Queues)
-        {
-          bool flag = true;
-          if (Queues.Any(o => o.Check(queue))) flag = false;
-          else
-          {
-            lock(Runnings)
-            {
-              List<IQueue> runs = Runnings.FindAll(o => o.Check(queue));
-              for (int i = 0; i < runs.Count; i++)
-              {                
-                runs[i].Cancel();
-                if (flag)
-                {
-                  flag = false;
-                  Queues.Add(queue);
-                }
-              }
-            }
-          }
-          if (flag) Queues.Add(queue);
-        }
+      else
+      {
+        lock (Queues) Queues.Add(queue);
+        RunNewQueue();
+      }
     }
 
-    public void Cancel(IQueue queue)
+    public static void Cancel(IQueue queue)
     {
-      lock (Queues)
-      {
-        Queues.RemoveAll(o => o.Check(queue));
-      }
-      lock(Runnings)
-      {
-        Runnings.ForEach(o => { if (o.Check(queue)) o.Cancel(); });
-      }
+      lock (Queues) Queues.RemoveAll(o => o.Check(queue));
+      lock (Runnings) Runnings.ForEach(o => { if (o.Check(queue)) o.Cancel(); });
     }
 
-    public void Reset(IQueue queue)
+    public static void Reset(IQueue queue)
     {
       Cancel(queue);
       Add(queue);
     }
 
-    public void ShutDown()
+    public static void ShutDown()
     {
-      lock (Queues) Queues.Clear();
-      runtask = false;
+      MaxRun = 0;
+      lock (Runnings) Runnings.ForEach(o => o.Cancel());
     }
   }
 }
