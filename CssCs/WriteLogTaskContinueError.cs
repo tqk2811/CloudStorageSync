@@ -21,7 +21,7 @@ namespace CssCs
                                                       ", TaskStatus:" + TaskStatus.Faulted.ToString() +
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
-      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Faulted.ToString(), 1);
+      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
 
     }
   }
@@ -41,7 +41,7 @@ namespace CssCs
                                                       ", TaskStatus:" + TaskStatus.Faulted.ToString() +
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
-      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Faulted.ToString(), 1);
+      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
     }
   }
 }

@@ -17,7 +17,7 @@
   <Class Name="CssCs.Cloud.CloudGoogleDrive" Collapsed="true">
     <Position X="0.5" Y="1.25" Width="1.75" />
     <TypeIdentifier>
-      <HashCode>AJAEAIUpAANBAGwAAAAABAhAABAAAAAAQAUCRABBAAA=</HashCode>
+      <HashCode>AJAEAIUpAANBAGwAAgAABAhAABAAAAAAQAUCRABBAQA=</HashCode>
       <FileName>Cloud\CloudGoogleDrive.cs</FileName>
     </TypeIdentifier>
     <Lollipop Orientation="Right" Position="0.1" />
@@ -25,16 +25,8 @@
   <Class Name="CssCs.Cloud.CloudOneDrive" Collapsed="true">
     <Position X="0.75" Y="2" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AFAEQAEpAABAADABABAAFAgAAAAAEAgAQAUCABBAAAA=</HashCode>
+      <HashCode>AFAEQAEpAABAADABAhAAFAgAAAAAEAgAQAUCQFBAAAA=</HashCode>
       <FileName>Cloud\CloudOneDrive.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Orientation="Right" Position="0.1" />
-  </Class>
-  <Class Name="CssCs.Cloud.EmptyCloud" Collapsed="true">
-    <Position X="1" Y="2.75" Width="1.25" />
-    <TypeIdentifier>
-      <HashCode>ABAEAAEJAAAAAAAAAAAABAgAABAAAAAAAAUAAABAAAA=</HashCode>
-      <FileName>Cloud\EmptyCloud.cs</FileName>
     </TypeIdentifier>
     <Lollipop Orientation="Right" Position="0.1" />
   </Class>
@@ -56,7 +48,7 @@
   <Class Name="CssCs.Queues.TaskQueues" Collapsed="true">
     <Position X="8.5" Y="0.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AIYAIAAAQAAABAAAAAAAQAAAQAAACAAAAAABAQAAIAA=</HashCode>
+      <HashCode>AIIAAAAAQAAABAAAAAAAAAAASAAAAAQAAABBAQAAAAA=</HashCode>
       <FileName>Queues\TaskQueues.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -93,14 +85,14 @@
   <Class Name="CssCs.DataClass.SqliteManager" Collapsed="true">
     <Position X="1" Y="4.5" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>mAgEAAAB4gAAAgoJAQECEYDgAAoIMgQAAgqDEQHAEbo=</HashCode>
+      <HashCode>mAgEAAAR4gAAAgoJAQECEYDgAAoIsgQAAgqDEQHAEbo=</HashCode>
       <FileName>DataClass\SqliteManager.cs</FileName>
     </TypeIdentifier>
   </Class>
   <Class Name="CssCs.UI.ViewModel.CloudEmailViewModel" Collapsed="true">
     <Position X="0.5" Y="7.75" Width="2" />
     <TypeIdentifier>
-      <HashCode>AEQAgEAQAiAAAIAAgBBAAAAQhAEIAAAAACACAAABCAA=</HashCode>
+      <HashCode>AEQAgEAQAiAAAIAAgABAAAAQhAEIAAAAACACAQABCAA=</HashCode>
       <FileName>UI\ViewModel\CloudEmailViewModel.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -119,7 +111,7 @@
   <Class Name="CssCs.UI.ViewModel.MenuViewModel" Collapsed="true">
     <Position X="5.25" Y="7.75" Width="2" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAQAAAAAIAAAAEEAAAAgAAAAAAAAAAAiAAAAAQ=</HashCode>
+      <HashCode>AAAAAAAQAAAAAIAAAAEAAAAAhAAAAAAAAAAAiAAAAAQ=</HashCode>
       <FileName>UI\ViewModel\MenuViewModel.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -158,7 +150,7 @@
   <Class Name="CssCs.UI.SettingWindow" Collapsed="true">
     <Position X="3.25" Y="6.75" Width="1.75" />
     <TypeIdentifier>
-      <HashCode>AAAAAEAAAAAIEwAAAACAAAgEQBACAAAAAAAAIAHAAAA=</HashCode>
+      <HashCode>AAAQAEAAAIAIEgAAAACAAAgEQBAAAAAAAAAAIADgAAA=</HashCode>
       <FileName>UI\SettingWindow.xaml.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -176,40 +168,6 @@
   </Class>
   <Class Name="CssCs.CPPCLR_Callback" Collapsed="true">
     <Position X="4.5" Y="11.75" Width="1.5" />
-    <AssociationLine Name="SRRegister" Type="CssCs._SRRegister" FixedFromPoint="true" FixedToPoint="true">
-      <Path>
-        <Point X="4.688" Y="11.75" />
-        <Point X="4.688" Y="10.781" />
-        <Point X="3.5" Y="10.781" />
-      </Path>
-    </AssociationLine>
-    <AssociationLine Name="SRUnRegister" Type="CssCs._SRUnRegister" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
-      <Path>
-        <Point X="4.562" Y="11.75" />
-        <Point X="4.562" Y="11.5" />
-        <Point X="3.5" Y="11.5" />
-      </Path>
-    </AssociationLine>
-    <AssociationLine Name="UpdatePlaceholder" Type="CssCs._UpdatePlaceholder" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
-      <Path>
-        <Point X="4.688" Y="12.312" />
-        <Point X="4.688" Y="13.562" />
-        <Point X="3.5" Y="13.562" />
-      </Path>
-      <MemberNameLabel ManuallyPlaced="true">
-        <Position X="-0.255" Y="0.102" />
-      </MemberNameLabel>
-    </AssociationLine>
-    <AssociationLine Name="ConvertToPlaceholder" Type="CssCs._ConvertToPlaceholder" FixedFromPoint="true" FixedToPoint="true">
-      <Path>
-        <Point X="4.562" Y="12.312" />
-        <Point X="4.562" Y="12.562" />
-        <Point X="3.5" Y="12.562" />
-      </Path>
-      <MemberNameLabel ManuallyPlaced="true">
-        <Position X="-0.523" Y="0.089" />
-      </MemberNameLabel>
-    </AssociationLine>
     <AssociationLine Name="TestWatchCloud" Type="CssCs._TestWatchCloud">
       <MemberNameLabel ManuallyPlaced="true">
         <Position X="0.027" Y="0.07" />
@@ -225,23 +183,57 @@
         <Position X="-0.036" Y="0.06" />
       </MemberNameLabel>
     </AssociationLine>
+    <AssociationLine Name="SRRegister" Type="CssCs._SRRegister" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.688" Y="11.75" />
+        <Point X="4.688" Y="10.781" />
+        <Point X="3.5" Y="10.781" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="SRUnRegister" Type="CssCs._SRUnRegister" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.562" Y="11.75" />
+        <Point X="4.562" Y="11.5" />
+        <Point X="3.5" Y="11.5" />
+      </Path>
+    </AssociationLine>
+    <AssociationLine Name="ConvertToPlaceholder" Type="CssCs._ConvertToPlaceholder" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.562" Y="12.312" />
+        <Point X="4.562" Y="12.562" />
+        <Point X="3.5" Y="12.562" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-0.523" Y="0.089" />
+      </MemberNameLabel>
+    </AssociationLine>
+    <AssociationLine Name="UpdatePlaceholder" Type="CssCs._UpdatePlaceholder" ManuallyRouted="true" FixedFromPoint="true" FixedToPoint="true">
+      <Path>
+        <Point X="4.688" Y="12.312" />
+        <Point X="4.688" Y="13.562" />
+        <Point X="3.5" Y="13.562" />
+      </Path>
+      <MemberNameLabel ManuallyPlaced="true">
+        <Position X="-0.255" Y="0.102" />
+      </MemberNameLabel>
+    </AssociationLine>
     <TypeIdentifier>
       <HashCode>ACAgAAAAAAABAAAAAAAABAAAAAEAAEAAgAACAQAAAAA=</HashCode>
       <FileName>CPPCLR_Callback.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
-      <Property Name="SRRegister" />
-      <Property Name="SRUnRegister" />
-      <Property Name="UpdatePlaceholder" />
-      <Property Name="ConvertToPlaceholder" />
       <Property Name="TestWatchCloud" />
       <Property Name="OutPutDebugString" />
+      <Property Name="SRRegister" />
+      <Property Name="SRUnRegister" />
+      <Property Name="ConvertToPlaceholder" />
+      <Property Name="UpdatePlaceholder" />
     </ShowAsAssociation>
   </Class>
   <Class Name="CssCs.Settings" Collapsed="true">
     <Position X="0.75" Y="6.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAQAgIAAAAEAAICAEAAACEAAgLAAEAAAhQBABARAIAA=</HashCode>
+      <HashCode>EAQAgIAAAAMAAICAEAAACEAEkLAAECAAhQBABARAIAA=</HashCode>
       <FileName>Settings.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
@@ -249,7 +241,7 @@
   <Interface Name="CssCs.Cloud.ICloud">
     <Position X="2.75" Y="1.25" Width="5.25" />
     <TypeIdentifier>
-      <HashCode>ABAEAAEJAAAAAAAAAAAABAgAAAAAAAAAAAUAAABAAAA=</HashCode>
+      <HashCode>ABAEAAEJAAAAAAAAAgAABAgAAAAAAAAAQAUAAABAAAA=</HashCode>
       <FileName>Cloud\ICloud.cs</FileName>
     </TypeIdentifier>
   </Interface>
@@ -284,7 +276,7 @@
   <Enum Name="CssCs.UI.ViewModel.CloudName" Collapsed="true">
     <Position X="1" Y="8.75" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AEAAAAAAAAAAAAAAEAISAAAAAAAEAAAAAAAAAAAABAA=</HashCode>
+      <HashCode>AEAAAAAAAAAAAAAAEAASAAAAAAAEAAAAAAAAAAEABAA=</HashCode>
       <FileName>UI\ViewModel\CloudEmailViewModel.cs</FileName>
     </TypeIdentifier>
   </Enum>

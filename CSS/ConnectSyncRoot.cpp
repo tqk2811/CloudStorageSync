@@ -8,7 +8,7 @@ namespace CSS
     CF_CALLBACK_REGISTRATION ConnectSyncRoot::s_CallbackTable[] ={
         { CF_CALLBACK_TYPE_FETCH_DATA,                      ConnectSyncRoot::FETCH_DATA },
         //{ CF_CALLBACK_TYPE_CANCEL_FETCH_DATA,               ConnectSyncRoot::CANCEL_FETCH_DATA },
-        { CF_CALLBACK_TYPE_FETCH_PLACEHOLDERS,              ConnectSyncRoot::FETCH_PLACEHOLDERS },
+        //{ CF_CALLBACK_TYPE_FETCH_PLACEHOLDERS,              ConnectSyncRoot::FETCH_PLACEHOLDERS },
         //{ CF_CALLBACK_TYPE_CANCEL_FETCH_PLACEHOLDERS,       ConnectSyncRoot::CANCEL_FETCH_PLACEHOLDERS },
         //{ CF_CALLBACK_TYPE_NOTIFY_FILE_OPEN_COMPLETION,     ConnectSyncRoot::NOTIFY_FILE_OPEN_COMPLETION },
         //{ CF_CALLBACK_TYPE_NOTIFY_FILE_CLOSE_COMPLETION,    ConnectSyncRoot::NOTIFY_FILE_CLOSE_COMPLETION },
@@ -16,7 +16,7 @@ namespace CSS
         //{ CF_CALLBACK_TYPE_NOTIFY_DEHYDRATE_COMPLETION,     ConnectSyncRoot::NOTIFY_DEHYDRATE_COMPLETION },
         { CF_CALLBACK_TYPE_NOTIFY_DELETE,                   ConnectSyncRoot::NOTIFY_DELETE },
         { CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,        ConnectSyncRoot::NOTIFY_DELETE_COMPLETION },
-        { CF_CALLBACK_TYPE_NOTIFY_RENAME,                   ConnectSyncRoot::NOTIFY_RENAME },//when move file
+        { CF_CALLBACK_TYPE_NOTIFY_RENAME,                   ConnectSyncRoot::NOTIFY_RENAME },//when move file or rename
         { CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,        ConnectSyncRoot::NOTIFY_RENAME_COMPLETION },
         //{ CF_CALLBACK_TYPE_VALIDATE_DATA,                   ConnectSyncRoot::VALIDATE_DATA },
         CF_CALLBACK_REGISTRATION_END
@@ -44,8 +44,11 @@ namespace CSS
 
     bool IsThisProcess(_In_ CONST CF_PROCESS_INFO* ProcessInfo)
     {
-        static DWORD currProcessId = GetCurrentProcessId();
-        if (ProcessInfo->ProcessId == currProcessId) return true;
+        if (ProcessInfo)
+        {
+            static DWORD currProcessId = GetCurrentProcessId();
+            if (ProcessInfo->ProcessId == currProcessId) return true;
+        }
         return false;
     }
 
@@ -75,15 +78,26 @@ namespace CSS
     //when download file
     void CALLBACK ConnectSyncRoot::FETCH_DATA(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
     {
-        SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-        CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-        if (ci)
+        LPCWSTR reason = L"";
+        if (CssCs::Settings::Setting->HasInternet)
         {
-            CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
-            return;
+            SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
+            if (srvm)
+            {
+                CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+                if (ci)
+                {
+                    CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
+                    return;
+                }
+                else reason = L"ci not found";
+            }
+            else reason = L"srvm not found";
         }
+        else reason = L"No Internet";
 
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Cancel,path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Cancel, reason:").append(reason)
+            .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
         //cancel
         TransferData(
             callbackInfo->ConnectionKey,
@@ -243,6 +257,7 @@ namespace CSS
     {
         //callbackParameters->Delete.Flags;
         bool SUCCESS{ false };
+        LPCWSTR reason = L"No Error";
         if (CssCs::Settings::Setting->HasInternet)
         {
             if (IsThisProcess(callbackInfo->ProcessInfo)) SUCCESS = true;
@@ -250,63 +265,84 @@ namespace CSS
             {
                 String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
                 SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-                CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-                LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
-                if (li && ci)
+                if (srvm)
                 {
-                    LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
-                    CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm) : nullptr;
-                    if (li_parent && ci_parent)
+                    CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+                    LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
+                    if (li && ci)
                     {
-                        if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
-                            ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))
+                        LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
+                        CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm) : nullptr;
+                        if (li_parent && ci_parent)
                         {
-                            Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
-                            WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem");
-                            SUCCESS = true;
-                        }
-                        else if (li_parent && !ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
-                            ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
-                        {
-                            UpdateCloudItem^ uci = gcnew UpdateCloudItem();
-                            uci->Id = ci->Id;
-                            uci->ParentIdsRemove = gcnew List<String^>();
-                            uci->ParentIdsRemove->Add(ci_parent->Id);
+                            if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))
+                            {
+                                Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
+                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem");
+                                SUCCESS = true;
+                            }
+                            else if (li_parent && !ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
+                            {
+                                UpdateCloudItem^ uci = gcnew UpdateCloudItem();
+                                uci->Id = ci->Id;
+                                uci->ParentIdsRemove = gcnew List<String^>();
+                                uci->ParentIdsRemove->Add(ci_parent->Id);
 
-                            Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                            WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)");
-                            SUCCESS = true;
+                                Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
+                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)");
+                                SUCCESS = true;
+                            }
+                            else reason = L"user not have permision on cloud";
+                            //false
                         }
-                        //false
+                        else
+                        {
+                            SUCCESS = true;
+                            reason = L"li_parent/ci_parent not found";
+                        }
                     }
-                    else SUCCESS = true;
+                    else
+                    {
+                        SUCCESS = true;//ignore when li not found (because trigger 2 times)
+                        reason = L"ci/li not found";
+                    }
                 }
-                else SUCCESS = true;//ignore when li not found (because trigger 2 times)            
+                else reason = L"srvm not found";
             }
         }
+        else reason = L"No Internet";
         AckDelete(callbackInfo->ConnectionKey, callbackInfo->TransferKey, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE Status:").append(SUCCESS ? L"STATUS_SUCCESS" : L"STATUS_UNSUCCESSFUL")
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE:").append(SUCCESS ? L"STATUS_SUCCESS" : reason)
             .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
     }
     void CALLBACK ConnectSyncRoot::NOTIFY_DELETE_COMPLETION(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
     {
         //callbackParameters->DeleteCompletion.Flags;
-        if (IsThisProcess(callbackInfo->ProcessInfo)) 
-            return;
+        //if (IsThisProcess(callbackInfo->ProcessInfo)) 
+        //   return;
+
         bool success{ false };
+        LPCWSTR reason = L"No Error";
         String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
         PinStr(fullpath);
         SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
         //CloudItem^ ci = FindCi(srvm, callbackInfo->FileIdentity);
-        LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
-        if (li)
+        if (srvm)
         {
-            if (PathFileExists(pin_fullpath)) LocalAction::DeleteLocal(srvm, li);
-            li->Delete(true);
-            success = true;
+            LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
+            if (li)
+            {
+                if (PathFileExists(pin_fullpath)) LocalAction::DeleteLocal(srvm, li);
+                li->Delete(true);
+                success = true;
+            }
+            else reason = L"li not found";
         }
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE_COMPLETION ,path:")
-            .append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath).append(L", LocalItemDelete:").append(success ? L"Success" : L"Failed"), 1);
+        else reason = L"srvm not found";
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE_COMPLETION, error:").append(reason)
+            .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath).append(L", LocalItemDelete:").append(success ? L"Success" : L"Failed"), 1);
     }
 
 
@@ -330,6 +366,7 @@ namespace CSS
         //callbackParameters->Rename.Flags;
         //callbackParameters->Rename.TargetPath;
         bool SUCCESS{ false };
+        LPCWSTR reason = L"";
         if (CssCs::Settings::Setting->HasInternet)
         {
             if (IsThisProcess(callbackInfo->ProcessInfo)) SUCCESS = true;
@@ -340,79 +377,93 @@ namespace CSS
                 String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
                 String^ fullpath_new = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackParameters->Rename.TargetPath);
                 SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-                CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-                LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
-                if (ci && li && !li->Flag.HasFlag(LocalItemFlag::LockWaitUpdateFromCloudWatch))
+                if (srvm)
                 {
-                    LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
-                    CloudItem^ ci_parent = CloudItem::Select(li_parent->CloudId, srvm->CEVM->Sqlid);
-                    if (newpathIsInSyncroot)
+                    CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+                    LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
+                    if (ci && li && !li->Flag.HasFlag(LocalItemFlag::LockWaitUpdateFromCloudWatch))
                     {
-                        LocalItem^ li_parentnew = LocalItem::FindFromPath(srvm, fullpath_new, 1);
-                        CloudItem^ ci_parentnew = CloudItem::Select(li_parentnew->CloudId, srvm->CEVM->Sqlid);
-                        List<String^>^ ParentsIdAdd{ nullptr };
-                        List<String^>^ ParentsIdRemove{ nullptr };
-                        bool isChangeParent{ false };
-                        bool isrename{ false };
-                        if (!li_parentnew->Equals(li_parent))//change parent
+                        LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
+                        CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm->CEVM->Sqlid) : nullptr;
+                        if (ci_parent)
                         {
-                            ParentsIdAdd = gcnew List<String^>();
-                            ParentsIdAdd->Add(li_parentnew->CloudId);
-                            ParentsIdRemove = gcnew List<String^>();
-                            ParentsIdRemove->Add(li_parent->CloudId);
-                            isChangeParent = true;
+                            if (newpathIsInSyncroot)
+                            {
+                                LocalItem^ li_parentnew = LocalItem::FindFromPath(srvm, fullpath_new, 1);
+                                CloudItem^ ci_parentnew = li_parentnew ? CloudItem::Select(li_parentnew->CloudId, srvm->CEVM->Sqlid) : nullptr;
+                                if (ci_parentnew)
+                                {
+                                    List<String^>^ ParentsIdAdd{ nullptr };
+                                    List<String^>^ ParentsIdRemove{ nullptr };
+                                    bool isChangeParent{ false };
+                                    bool isrename{ false };
+                                    if (!li_parentnew->Equals(li_parent))//change parent
+                                    {
+                                        ParentsIdAdd = gcnew List<String^>();
+                                        ParentsIdAdd->Add(li_parentnew->CloudId);
+                                        ParentsIdRemove = gcnew List<String^>();
+                                        ParentsIdRemove->Add(li_parent->CloudId);
+                                        isChangeParent = true;
+                                    }
+                                    String^ newname = fullpath_new->Substring(li_parentnew->GetFullPath()->Length + 1);
+                                    isrename = !newname->Equals(li->Name);
+
+                                    if ((isChangeParent && (ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren) &&
+                                        ci_parentnew->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanAddChildren)))
+                                        || (isrename && ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRename)))
+                                    {
+                                        UpdateCloudItem^ uci = gcnew UpdateCloudItem();
+                                        uci->Id = ci->Id;
+                                        uci->NewName = isrename ? newname : nullptr;
+                                        uci->ParentIdsAdd = ParentsIdAdd;
+                                        uci->ParentIdsRemove = ParentsIdRemove;
+
+                                        Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
+                                        WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(CanAddChildren,CanRemoveChildren,CanRename)");
+
+                                        SUCCESS = true;
+                                        if (isrename) li->Name = newname;
+                                        if (isChangeParent) li->LocalParentId = li_parentnew->LocalId;
+                                        li->AddFlagWithLock(LocalItemFlag::LockWaitUpdateFromCloudWatch);
+                                        li->Update();
+                                    }
+                                }
+                            }
+                            else if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))//move out syncroot FETCH_DATA -> and move, cloud delete
+                            {
+                                Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
+                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->TrashItem");
+
+                                li->Delete(true);
+                                SUCCESS = true;
+                            }
+                            else if (!ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
+                            {
+                                UpdateCloudItem^ uci = gcnew UpdateCloudItem();
+                                uci->Id = ci->Id;
+                                uci->ParentIdsRemove = gcnew List<String^>();
+                                uci->ParentIdsRemove->Add(ci_parent->Id);
+
+                                Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
+                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(!OwnedByMe,CanRemoveChildren)");
+
+                                li->Delete(true);
+                                SUCCESS = true;
+                            }
+                            else reason = L"user not have permision on cloud";
                         }
-                        String^ newname = fullpath_new->Substring(li_parentnew->GetFullPath()->Length + 1);
-                        isrename = !newname->Equals(li->Name);
-
-                        if ((isChangeParent && (ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren) &&
-                                                ci_parentnew->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanAddChildren))) 
-                            || (isrename && ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRename)))
-                        {
-                            UpdateCloudItem^ uci = gcnew UpdateCloudItem();
-                            uci->Id = ci->Id;
-                            uci->NewName = isrename ? newname : nullptr;
-                            uci->ParentIdsAdd = ParentsIdAdd;
-                            uci->ParentIdsRemove = ParentsIdRemove;
-
-                            Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                            WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(CanAddChildren,CanRemoveChildren,CanRename)");
-
-                            SUCCESS = true;
-                            if (isrename) li->Name = newname;
-                            if (isChangeParent) li->LocalParentId = li_parentnew->LocalId;
-                            li->AddFlagWithLock(LocalItemFlag::LockWaitUpdateFromCloudWatch);
-                            li->Update();
-                        }
+                        else reason = L"li_parent & ci_parent not found";
                     }
-                    else if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) && 
-                        ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))//move out syncroot FETCH_DATA -> and move, cloud delete
-                    {
-                        Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
-                        WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->TrashItem");
-
-                        li->Delete(true);
-                        SUCCESS = true;
-                    }
-                    else if (!ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) && 
-                        ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
-                    {
-                        UpdateCloudItem^ uci = gcnew UpdateCloudItem();
-                        uci->Id = ci->Id;
-                        uci->ParentIdsRemove = gcnew List<String^>();
-                        uci->ParentIdsRemove->Add(ci_parent->Id);
-
-                        Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                        WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(!OwnedByMe,CanRemoveChildren)");
-
-                        li->Delete(true);
-                        SUCCESS = true;
-                    }
+                    else reason = L"ci/li not found or li.Flag has LockWaitUpdateFromCloudWatch";
                 }
+                else reason = L"srvm not found";
             }
         }
+        else reason = L"No Internet";
         AckRename(callbackInfo->ConnectionKey, callbackInfo->TransferKey, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_RENAME Status:").append(SUCCESS ? L"STATUS_SUCCESS" : L"STATUS_UNSUCCESSFUL")
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_RENAME:").append(SUCCESS ? L"STATUS_SUCCESS" : reason)
             .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
     }
     //when rename success
@@ -420,14 +471,24 @@ namespace CSS
     {
         //callbackParameters->RenameCompletion.Flags;
         //callbackParameters->RenameCompletion.SourcePath;
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_RENAME_COMPLETION ,path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
+        LPCWSTR reason = L"No error";
         String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
         PinStr(fullpath);
         SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-        CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-        LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
-        bool newpathIsInSyncroot = (fullpath->Length > srvm->LocalPath->Length) && fullpath->Substring(0, srvm->LocalPath->Length)->Equals(srvm->LocalPath);
-        if(li && newpathIsInSyncroot) Placeholders::Update(srvm, li, ci);//remove insync state (spin icon)
+        if (srvm)
+        {
+            CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+            LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
+            if (ci && li)
+            {
+                bool newpathIsInSyncroot = (fullpath->Length > srvm->LocalPath->Length) && fullpath->Substring(0, srvm->LocalPath->Length)->Equals(srvm->LocalPath);
+                if (newpathIsInSyncroot) Placeholders::Update(srvm, li, ci);//remove insync state (spin icon)
+            }
+            else reason = L"ci/li not found";
+        }
+        else reason = L"srvm not found";
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_RENAME_COMPLETION, error:").append(reason)
+            .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
     }
     
 

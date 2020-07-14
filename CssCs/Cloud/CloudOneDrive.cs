@@ -275,7 +275,7 @@ namespace CssCs.Cloud
         //  return InsertToDb(driveItem);
         //}
 
-        string uploadrequest_json = JsonConvert.SerializeObject(driveItemUploadableProperties, JsonSetting.jsonSerializerSettings);
+        string uploadrequest_json = JsonConvert.SerializeObject(driveItemUploadableProperties, Extensions.jsonSerializerSettings);
         DriveItem di = await MyDrive.Items[ParentIds[0]].Request().GetAsync();
         string itemRelativePath = di.ParentReference.Path + "/" + di.Name + "/" + fi.Name;
         string url = string.Format(create_upload_session, itemRelativePath);

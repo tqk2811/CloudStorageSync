@@ -49,7 +49,7 @@ namespace CSS
 				firsttime = false;
 				Task::WaitAll(taskwait->ToArray());
 				static int count_for_collectGC = 0;
-				if (count_for_collectGC++ >= 360)//~ >1hr
+				if (count_for_collectGC++ >= 36)//~ >10p
 				{
 					count_for_collectGC = 0;
 					GC::Collect();

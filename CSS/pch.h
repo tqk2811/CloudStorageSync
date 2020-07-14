@@ -35,6 +35,7 @@ namespace CSS
 	using namespace System::Text;
 	using namespace System::Text::RegularExpressions;
 }
+
 //no include
 #include "Utilities.h"
 #include "ShellCall.h"

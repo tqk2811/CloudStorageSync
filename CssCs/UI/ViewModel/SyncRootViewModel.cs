@@ -106,9 +106,12 @@ namespace CssCs.UI.ViewModel
       get { return _IsWork; }
       set
       {
-        if (value && (string.IsNullOrEmpty(CloudFolderName) || string.IsNullOrEmpty(LocalPath))) return;
-        if (value && TaskRun != null && !TaskRun.IsCompleted) return;
-        if(!value)
+        if(value)
+        {
+          if(string.IsNullOrEmpty(CloudFolderName) || string.IsNullOrEmpty(LocalPath)) return;
+          if (null != TaskRun && !TaskRun.IsCompleted) return;
+        }
+        else
         {
           MessageBoxResult result = MessageBox.Show("Are you sure to un-register this syncroot?", "Confim", MessageBoxButton.YesNo);
           if (result == MessageBoxResult.No) return;

@@ -8,35 +8,41 @@ namespace CSS
 {
     void Placeholders::CreateAll(SyncRootViewModel^ srvm)
     {
-        LocalItem^ root = gcnew LocalItem();
-        root->CloudId = srvm->CloudFolderId;
-        root->Name = srvm->CloudFolderName;
-        root->LocalParentId = 0;
-        root->SRId = srvm->SRId;
-        root->Flag = LocalItemFlag::Folder;
-        root->Insert();
-        CreateAll(srvm, srvm->CloudFolderId, root->LocalId, String::Empty);
+        if (srvm)
+        {
+            LocalItem^ root = gcnew LocalItem();
+            root->CloudId = srvm->CloudFolderId;
+            root->Name = srvm->CloudFolderName;
+            root->LocalParentId = 0;
+            root->SRId = srvm->SRId;
+            root->Flag = LocalItemFlag::Folder;
+            root->Insert();
+            CreateAll(srvm, srvm->CloudFolderId, root->LocalId, String::Empty);
+        }
     }
 
     void Placeholders::CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId,String^ RelativeOfParent)
     {
-        IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->Sqlid);
-        for (int i = 0; i < childsci->Count; i++)
+        if (srvm) 
         {
-            if (!srvm->IsWork)
+            IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->Sqlid);
+            for (int i = 0; i < childsci->Count; i++)
             {
-                srvm->Status = SyncRootStatus::Error | SyncRootStatus::CreatingPlaceholder;
-                srvm->Message = gcnew String("Cancelling");
-                return;
-            }
-            LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
-            srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
-            if (localitem->LocalId > 0 && childsci[i]->Size == -1)
-            {
-                String^ itemRelative = RelativeOfParent;
-                if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
-                else itemRelative = itemRelative + L"\\" + localitem->Name;
-                CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
+                if (!srvm->IsWork)
+                {
+                    srvm->Status = SyncRootStatus::Error | SyncRootStatus::CreatingPlaceholder;
+                    srvm->Message = gcnew String("Cancelling");
+                    return;
+                }
+                LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
+                srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
+                if (localitem->LocalId > 0 && childsci[i]->Size == -1)
+                {
+                    String^ itemRelative = RelativeOfParent;
+                    if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
+                    else itemRelative = itemRelative + L"\\" + localitem->Name;
+                    CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
+                }
             }
         }
     }

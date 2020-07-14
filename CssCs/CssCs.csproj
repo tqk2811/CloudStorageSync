@@ -131,7 +131,6 @@
     <Compile Include="DataClass\LocalError.cs" />
     <Compile Include="DataClass\LocalItem.cs" />
     <Compile Include="DataClass\SqliteManager.cs" />
-    <Compile Include="JsonSetting.cs" />
     <Compile Include="Queues\TaskQueues.cs" />
     <Compile Include="Queues\UploadQueue.cs" />
     <Compile Include="Settings.cs" />

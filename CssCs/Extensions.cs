@@ -1,4 +1,5 @@
 ﻿using CssCs.UI.ViewModel;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +7,6 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -91,6 +91,11 @@ namespace CssCs
       finally { DeleteObject(handle); }
     }
     #endregion
+
+    public static JsonSerializerSettings jsonSerializerSettings { get; } = new JsonSerializerSettings
+    {
+      NullValueHandling = NullValueHandling.Ignore
+    };
 
     private static Random random = new Random();
     private const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
