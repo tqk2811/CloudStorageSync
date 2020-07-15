@@ -25,21 +25,33 @@ namespace CSS
 	{
 		if (srvm->IsWork && !srvm->Status.HasFlag(SyncRootStatus::Error))
 		{
+			srvm->ConnectionKey = 0;
 			srvm->Status = SyncRootStatus::RegisteringSyncRoot;
 			PinStr2(SRid, srvm->SRId);
 			PinStr2(LocalPath, srvm->LocalPath);
 			PinStr2(displayname, srvm->CloudFolderName + gcnew String(L" - ") + srvm->CEVM->Email);
 
-			switch (CssWinrt::SyncRoot_RegisterWithShell(
-				SRid,
-				LocalPath,
-				displayname,
-				(int)srvm->CEVM->CloudName))
+			SyncRootRegistrarInfo srinfo;
+			srinfo.SrId = SRid;
+			srinfo.LocalPath = LocalPath;
+			srinfo.DisplayName = displayname;
+			srinfo.IconIndex = (int)srvm->CEVM->CloudName;
+			srinfo.Version = L"1.0.0";
+			srinfo.RecycleBinUri = nullptr;
+			srinfo.ShowSiblingsAsGroup = false;
+
+			srinfo.HardlinkPolicy = HardlinkPolicy::Allowed;
+			if(srvm->CEVM->CloudName == CloudName::MegaNz) srinfo.HydrationPolicy = HydrationPolicy::AlwaysFull;
+			else srinfo.HydrationPolicy = HydrationPolicy::Full;
+			srinfo.HydrationPolicyModifier = HydrationPolicyModifier::AutoDehydrationAllowed | HydrationPolicyModifier::StreamingAllowed;
+			srinfo.PopulationPolicy = PopulationPolicy::AlwaysFull;
+			srinfo.InSyncPolicy = InSyncPolicy::FileCreationTime | InSyncPolicy::DirectoryCreationTime;
+
+			switch (CssWinrt::SyncRoot_RegisterWithShell(srinfo))
 			{
-			case SyncRootRegisterStatus::Registed:
+			case SyncRootRegisterStatus::Register:
 			{
 				ShellCall::AddFolderToSearchIndexer(LocalPath);
-
 				srvm->ConnectionKey = ConnectSyncRoot::ConnectSyncRootTransferCallbacks(LocalPath);
 
 				srvm->Status = SyncRootStatus::CreatingPlaceholder;

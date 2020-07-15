@@ -3,37 +3,41 @@
 namespace CssWinrt
 {
 #define STORAGE_PROVIDER_ID L"CSS"
-    SyncRootRegisterStatus SyncRootRegistrar::RegisterWithShell(LPCWSTR CFid, LPCWSTR LocalPath, LPCWSTR DisplayName,int iconindex)//LocalFolder,
+    SyncRootRegisterStatus SyncRootRegistrar::RegisterWithShell(const SyncRootRegistrarInfo& registerarInfo)//LocalFolder,
     {
+        if(!registerarInfo.LocalPath || !registerarInfo.DisplayName || !registerarInfo.SrId)
+            return SyncRootRegisterStatus::Failed;
+
         try
         {
-            auto syncRootID = GetSyncRootId(CFid);// {STORAGE_PROVIDER_ID}!{sidString}!cfid            
+            auto syncRootID = GetSyncRootId(registerarInfo.SrId);// {STORAGE_PROVIDER_ID}!{sidString}!cfid            
             if (!CheckSyncRootExist(syncRootID))
             {
                 winrt::StorageProviderSyncRootInfo info;
                 info.Id(syncRootID);
 
-                auto folder = winrt::StorageFolder::GetFolderFromPathAsync(LocalPath).get();
+                auto folder = winrt::StorageFolder::GetFolderFromPathAsync(registerarInfo.LocalPath).get();
                 info.Path(folder);
 
-                info.DisplayNameResource(DisplayName);
+                info.DisplayNameResource(registerarInfo.DisplayName);
                 std::wstring icon_p = GetExecutablePath();
-                icon_p.append(L",-").append(std::to_wstring(iconindex + 500));
+                icon_p.append(L",-").append(std::to_wstring(registerarInfo.IconIndex + 500));
                 info.IconResource(icon_p.c_str());//L"%SystemRoot%\\system32\\charmap.exe,0"
-                info.HydrationPolicy(winrt::StorageProviderHydrationPolicy::Full);
-                info.HydrationPolicyModifier(winrt::StorageProviderHydrationPolicyModifier::None);
-                info.PopulationPolicy(winrt::StorageProviderPopulationPolicy::AlwaysFull);
-                info.InSyncPolicy(winrt::StorageProviderInSyncPolicy::FileCreationTime | winrt::StorageProviderInSyncPolicy::DirectoryCreationTime);
-                info.Version(L"1.0.0");
-                info.ShowSiblingsAsGroup(false);
-                info.HardlinkPolicy(winrt::StorageProviderHardlinkPolicy::None);
-
-                //winrt::Uri uri(L"http://localhost/CSS/recyclebin");
-                //info.RecycleBinUri(uri);
-
+                info.HydrationPolicy((winrt::StorageProviderHydrationPolicy)registerarInfo.HydrationPolicy);
+                info.HydrationPolicyModifier((winrt::StorageProviderHydrationPolicyModifier)registerarInfo.HydrationPolicyModifier);
+                info.PopulationPolicy((winrt::StorageProviderPopulationPolicy)registerarInfo.PopulationPolicy);
+                info.InSyncPolicy((winrt::StorageProviderInSyncPolicy)registerarInfo.InSyncPolicy);
+                if(registerarInfo.Version) info.Version(registerarInfo.Version);
+                info.ShowSiblingsAsGroup(registerarInfo.ShowSiblingsAsGroup);
+                info.HardlinkPolicy((winrt::StorageProviderHardlinkPolicy)registerarInfo.HardlinkPolicy);
+                //info.ProtectionMode()
+                if (registerarInfo.RecycleBinUri)
+                {
+                    winrt::Uri uri(registerarInfo.RecycleBinUri);
+                    info.RecycleBinUri(uri);
+                }
                 // Context
-                std::wstring syncRootIdentity(CFid);
-
+                std::wstring syncRootIdentity(registerarInfo.SrId);
                 winrt::IBuffer contextBuffer = winrt::CryptographicBuffer::ConvertStringToBinary(syncRootIdentity.data(), winrt::BinaryStringEncoding::Utf8);
                 info.Context(contextBuffer);
 
@@ -45,7 +49,7 @@ namespace CssWinrt
                 winrt::StorageProviderSyncRootManager::Register(info);
                 // Give the cache some time to invalidate
                 Sleep(1000);
-                return SyncRootRegisterStatus::Registed;
+                return SyncRootRegisterStatus::Register;
             } 
             else return SyncRootRegisterStatus::Exist;
         }

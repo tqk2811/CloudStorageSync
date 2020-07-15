@@ -4,7 +4,7 @@ namespace CssWinrt
     class SyncRootRegistrar
     {
     public:
-        static SyncRootRegisterStatus RegisterWithShell(LPCWSTR CFid, LPCWSTR LocalPath, LPCWSTR DisplayName, int iconindex);
+        static SyncRootRegisterStatus RegisterWithShell(const SyncRootRegistrarInfo& registerarInfo);
         static bool Unregister(LPCWSTR CFid);        
     private:
         static bool CheckSyncRootExist(std::wstring& syncRootID);

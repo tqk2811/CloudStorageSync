@@ -1,7 +1,7 @@
 #pragma once
 namespace CssWinrt
 {
-	DLL_EXPORTS SyncRootRegisterStatus SyncRoot_RegisterWithShell(LPCWSTR CFid, LPCWSTR LocalPath, LPCWSTR DisplayName, int iconindex);
+	DLL_EXPORTS SyncRootRegisterStatus SyncRoot_RegisterWithShell(const SyncRootRegistrarInfo& registerarInfo);
 	DLL_EXPORTS bool SyncRoot_UnRegister(LPCWSTR CFid);
 
 

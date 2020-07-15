@@ -60,6 +60,9 @@
     <ClInclude Include="LogWriter.h">
       <Filter>src\Export</Filter>
     </ClInclude>
+    <ClInclude Include="ExportStruct.h">
+      <Filter>src\Export</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

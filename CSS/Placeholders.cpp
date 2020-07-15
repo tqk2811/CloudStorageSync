@@ -44,6 +44,8 @@ namespace CSS
         bool create_placeholder(false);
         bool rename_cloud(false);
         bool file_exist(false);
+        bool create_hardlink(false);
+
         clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, clouditem->Size != -1);
         LocalItem^ localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
 
@@ -142,8 +144,16 @@ namespace CSS
             localitem->Insert();
         }
 
-        if (file_exist && convert_to_placeholder) Convert(srvm, localitem, clouditem->Id);
-        else if (!file_exist && create_placeholder) Create(pin_LocalPath, pin_relativeItem, clouditem);
+
+        if (file_exist)
+        {
+            if(convert_to_placeholder) Convert(srvm, localitem, clouditem->Id);
+        }
+        else
+        {
+            if (create_placeholder) Create(pin_LocalPath, pin_relativeItem, clouditem);
+            else if (create_hardlink) CreateHardLink(pin_fullPathItem, L"", NULL);
+        }
         return localitem;
     }
 

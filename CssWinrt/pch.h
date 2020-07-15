@@ -34,16 +34,8 @@ namespace winrt {
 #else
 #define DLL_EXPORTS __declspec(dllimport)
 #endif
-namespace CssWinrt
-{
-    enum class SyncRootRegisterStatus
-    {
-        Registed,
-        Exist,
-        Failed
-    };
-}
 #include "LogWriter.h"
+#include "ExportStruct.h"
 
 #ifdef CSSWINRT_EXPORTS
 #include "ShellServices.h"

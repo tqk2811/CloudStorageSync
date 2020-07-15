@@ -2,9 +2,9 @@
 #include "ExportFunction.h"
 namespace CssWinrt
 {
-	SyncRootRegisterStatus SyncRoot_RegisterWithShell(LPCWSTR CFid, LPCWSTR LocalPath, LPCWSTR DisplayName, int iconindex)
+	SyncRootRegisterStatus SyncRoot_RegisterWithShell(const SyncRootRegistrarInfo& registerarInfo)
 	{
-		return SyncRootRegistrar::RegisterWithShell(CFid, LocalPath, DisplayName, iconindex);
+		return SyncRootRegistrar::RegisterWithShell(registerarInfo);
 	}
 
 	bool SyncRoot_UnRegister(LPCWSTR CFid)

@@ -111,7 +111,7 @@ namespace CSS
         }
         ~DownloadItem()
         {
-            LogWriter::WriteLog(L"DownloadItem Deconstructor", 10);
+            //LogWriter::WriteLog(L"DownloadItem Deconstructor", 10);
             delete data;
         }
     };
