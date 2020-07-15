@@ -121,7 +121,7 @@
     <Compile Include="UI\TemplateNumericUpDown.xaml.cs">
       <DependentUpon>TemplateNumericUpDown.xaml</DependentUpon>
     </Compile>
-    <Compile Include="WriteLogTaskContinueError.cs" />
+    <Compile Include="TaskContinueWriteLogIfError.cs" />
     <Compile Include="Cloud\CloudGoogleDrive.cs" />
     <Compile Include="Cloud\CloudOneDrive.cs" />
     <Compile Include="Cloud\ICloud.cs" />
@@ -181,7 +181,6 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="ClassDiagram.cd" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

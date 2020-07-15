@@ -3,6 +3,7 @@ namespace CSS
 {
 	class SRManaged
 	{
+		static void CreatePlaceholders(SyncRootViewModel^ srvm);
 	public:
 		static void Init();
 		static void UnInit();

@@ -6,21 +6,6 @@
 #include <propkey.h>
 namespace CSS
 {
-    void Placeholders::CreateAll(SyncRootViewModel^ srvm)
-    {
-        if (srvm)
-        {
-            LocalItem^ root = gcnew LocalItem();
-            root->CloudId = srvm->CloudFolderId;
-            root->Name = srvm->CloudFolderName;
-            root->LocalParentId = 0;
-            root->SRId = srvm->SRId;
-            root->Flag = LocalItemFlag::Folder;
-            root->Insert();
-            CreateAll(srvm, srvm->CloudFolderId, root->LocalId, String::Empty);
-        }
-    }
-
     void Placeholders::CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId,String^ RelativeOfParent)
     {
         if (srvm) 
@@ -35,13 +20,16 @@ namespace CSS
                     return;
                 }
                 LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
-                srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
-                if (localitem->LocalId > 0 && childsci[i]->Size == -1)
+                if (localitem)
                 {
-                    String^ itemRelative = RelativeOfParent;
-                    if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
-                    else itemRelative = itemRelative + L"\\" + localitem->Name;
-                    CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
+                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
+                    if (localitem->LocalId > 0 && childsci[i]->Size == -1)
+                    {
+                        String^ itemRelative = RelativeOfParent;
+                        if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
+                        else itemRelative = itemRelative + L"\\" + localitem->Name;
+                        CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
+                    }
                 }
             }
         }
@@ -49,6 +37,8 @@ namespace CSS
 
     LocalItem^ Placeholders::CreateItem(SyncRootViewModel^ srvm,LONGLONG LI_ParentId, String^ Relative, CloudItem^ clouditem)
     {
+        if (!srvm || !clouditem) return nullptr;
+
         bool cloud_isfolder = clouditem->Size == -1;
         bool convert_to_placeholder(false);
         bool create_placeholder(false);
@@ -98,7 +88,7 @@ namespace CSS
                 if (localIsFolder && cloud_isfolder) convert_to_placeholder = true;//same folder
                 else if (!localIsFolder && !cloud_isfolder)//same file
                 {
-                    srvm->Message = String::Format(L"Checking hash file: {0}", clouditem->Name);
+                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Checking hash file: {0}", clouditem->Name);
                     if (srvm->CEVM->Cloud->HashCheck(fullPathItem, clouditem))
                     {
                         //same size and hash
@@ -182,12 +172,8 @@ namespace CSS
 
         HRESULT hr = CfCreatePlaceholders(syncRootPath, &cloudEntry, 1, CF_CREATE_FLAG_NONE, NULL);
         
-        if (CheckHr(hr,L"Placeholders::Create CfCreatePlaceholders", fullpath.c_str()))
-        {
-            LogWriter::WriteLog(std::wstring(L"CSS::Placeholders::Create CfCreatePlaceholders Success, path:").append(fullpath.c_str()), 1);
-            return true;
-        }
-        return false;
+        if (CheckHr(hr,L"Placeholders::Create CfCreatePlaceholders", fullpath.c_str(),true)) return true;
+        else return false;
     }
 
     bool Placeholders::Revert(SyncRootViewModel^ srvm, LocalItem^ li)
@@ -216,7 +202,7 @@ namespace CSS
         }
         else
         {
-            LogWriter::WriteLog(L"Placeholders::Update LocalItem is null", 0);
+            LogWriter::WriteLog(L"Placeholders::Revert LocalItem is null", 0);
         }
         return result;
     }
@@ -363,6 +349,10 @@ namespace CSS
                 }
             }
         }
+        else
+        {
+            LogWriter::WriteLog(L"Placeholders::Hydrate LocalItem is null", 0);
+        }
         return result;
     }
 
@@ -395,6 +385,10 @@ namespace CSS
                     CloseHandle(hfile);
                 }
             }
+        }
+        else
+        {
+            LogWriter::WriteLog(L"Placeholders::Dehydrate LocalItem is null", 0);
         }
         return result;
     }
@@ -454,11 +448,11 @@ namespace CSS
         return state;
     }
 
-    CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(HANDLE hfile)
-    {
-        FILE_ATTRIBUTE_TAG_INFO info{ 0 };
-        if (GetFileInformationByHandleEx(hfile, FILE_INFO_BY_HANDLE_CLASS::FileAttributeTagInfo, &info, sizeof(FILE_ATTRIBUTE_TAG_INFO)))
-            return CfGetPlaceholderStateFromAttributeTag(info.FileAttributes, info.ReparseTag);
-        else return CF_PLACEHOLDER_STATE::CF_PLACEHOLDER_STATE_INVALID;
-    }
+    //CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(HANDLE hfile)
+    //{
+    //    FILE_ATTRIBUTE_TAG_INFO info{ 0 };
+    //    if (GetFileInformationByHandleEx(hfile, FILE_INFO_BY_HANDLE_CLASS::FileAttributeTagInfo, &info, sizeof(FILE_ATTRIBUTE_TAG_INFO)))
+    //        return CfGetPlaceholderStateFromAttributeTag(info.FileAttributes, info.ReparseTag);
+    //    else return CF_PLACEHOLDER_STATE::CF_PLACEHOLDER_STATE_INVALID;
+    //}
 }

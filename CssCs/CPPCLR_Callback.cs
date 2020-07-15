@@ -8,7 +8,6 @@ using System.Collections.Generic;
 namespace CssCs
 {
   public delegate void _OutPutDebugString(string text, int loglevel = 10);
-  public delegate void _TestWatchCloud();
 
   public delegate void _SRRegister(SyncRootViewModel srvm);
   public delegate void _SRUnRegister(SyncRootViewModel srvm);
@@ -34,7 +33,6 @@ namespace CssCs
       SqliteManager.Close();
     }
 
-    public static _TestWatchCloud TestWatchCloud { get; set; }
     public static _OutPutDebugString OutPutDebugString { get; set; }
 
     public static _SRRegister SRRegister { get; set; }

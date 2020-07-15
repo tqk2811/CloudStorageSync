@@ -6,13 +6,17 @@ namespace CSS
 	public:
 		static void InitTimer();
 		static void UnInitTimer();
-		void LocalOnChanged(SyncRootViewModel^ srvm, CustomFileSystemEventArgs^ e);
+	private:
 		static void OnElapsed(Object^ source, System::Timers::ElapsedEventArgs^ e);
+		static System::Timers::Timer^ aTimer;
+		static ManualResetEvent^ resetevent;
+
+
+	public:
+		void LocalOnChanged(SyncRootViewModel^ srvm, CustomFileSystemEventArgs^ e);		
 	private:
 		void WatchChangeResult(Task<IList<CloudChangeType^>^>^ t, Object^ obj);
 		void UpdateChange(CloudChangeType^ change, SyncRootViewModel^ srvm);
-		static System::Timers::Timer^ aTimer;
-		static ManualResetEvent^ resetevent;
 	};
 	extern gcroot<TrackChanges^> trackchanges;
 }

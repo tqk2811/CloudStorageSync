@@ -2,11 +2,6 @@
 #include "Bridge.h"
 namespace CSS
 {
-	void TestWatchCloud()
-	{
-		TrackChanges::OnElapsed(nullptr, nullptr);
-	}
-
 	bool ConvertToPlaceholder(SyncRootViewModel^ srvm, LocalItem^ li, String^ fileIdentity)
 	{
 		return Placeholders::Convert(srvm, li, fileIdentity);
@@ -20,7 +15,6 @@ namespace CSS
 	void Bridge::LoadCallback()
 	{
 		CssCs::CPPCLR_Callback::OutPutDebugString = gcnew CssCs::_OutPutDebugString(WriteLog);
-		CssCs::CPPCLR_Callback::TestWatchCloud = gcnew CssCs::_TestWatchCloud(TestWatchCloud);
 
 		CssCs::CPPCLR_Callback::SRRegister = gcnew CssCs::_SRRegister(SRManaged::Register);
 		CssCs::CPPCLR_Callback::SRUnRegister = gcnew CssCs::_SRUnRegister(SRManaged::UnRegister);

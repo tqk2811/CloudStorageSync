@@ -21,12 +21,6 @@ namespace CSS
 		TaskQueues::ShutDown();
 	}
 
-	void runtest(SyncRootViewModel^ srvm)
-	{
-		//UploadQueue^ uq = gcnew UploadQueue(nullptr);
-		//uq->RunTest(srvm, gcnew String(L"D:\\test.file"), gcnew String(L"10H_3xg4bqY4Aj2PgP-bVX5Bx9yj6CWD1"));
-	}
-
 	void SRManaged::Register(SyncRootViewModel^ srvm)
 	{
 		if (srvm->IsWork && !srvm->Status.HasFlag(SyncRootStatus::Error))
@@ -49,7 +43,7 @@ namespace CSS
 				srvm->ConnectionKey = ConnectSyncRoot::ConnectSyncRootTransferCallbacks(LocalPath);
 
 				srvm->Status = SyncRootStatus::CreatingPlaceholder;
-				Placeholders::CreateAll(srvm);
+				CreatePlaceholders(srvm);
 				if (srvm->Status.HasFlag(SyncRootStatus::Error)) return;
 				else srvm->Message = String::Empty;
 			}
@@ -81,6 +75,7 @@ namespace CSS
 			GC::Collect();
 		}
 	}
+
 	void SRManaged::UnRegister(SyncRootViewModel^ srvm)
 	{
 		PinStr2(SRid, srvm->SRId);
@@ -93,5 +88,17 @@ namespace CSS
 		srvm->Update();		
 		srvm->Status = SyncRootStatus::NotWorking;
 		LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(SRid), 2);
+	}
+
+	void SRManaged::CreatePlaceholders(SyncRootViewModel^ srvm)
+	{
+		LocalItem^ root = gcnew LocalItem();
+		root->CloudId = srvm->CloudFolderId;
+		root->Name = srvm->CloudFolderName;
+		root->LocalParentId = 0;
+		root->SRId = srvm->SRId;
+		root->Flag = LocalItemFlag::Folder;
+		root->Insert();
+		Placeholders::CreateAll(srvm, srvm->CloudFolderId, root->LocalId, String::Empty);
 	}
 }

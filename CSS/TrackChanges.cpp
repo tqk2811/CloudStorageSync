@@ -165,15 +165,10 @@ namespace CSS
 			//if item is placeholder -> skip
 			//if item is not placeholder -> upload
 			//if can't open for check item -> Queue (for try again later)
-			HANDLE hfile = CreateFile(pin_fullpath, FILE_READ_ATTRIBUTES, FILE_SHARE_ALL, nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-			if (hfile == INVALID_HANDLE_VALUE)
-				return;
-
-			CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(hfile);
+			CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_fullpath);
 			if (state == CF_PLACEHOLDER_STATE_INVALID)
 				return;
 
-			CloseHandle(hfile);
 			if (!(state & CF_PLACEHOLDER_STATE_PLACEHOLDER))//if new item is not placeholder
 			{
 				FileInfo^ finfo = gcnew FileInfo(e->FullPath);

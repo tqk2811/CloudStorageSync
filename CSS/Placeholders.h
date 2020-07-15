@@ -4,9 +4,7 @@ namespace CSS
 	class Placeholders
 	{
 	public:
-		static void CreateAll(SyncRootViewModel^ srvm);
 		static void CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId, String^ RelativeOfParent);
-		//return fullpath item
 		static LocalItem^ CreateItem(SyncRootViewModel^ srvm, LONGLONG LI_ParentId, String^ Relative, CloudItem^ clouditem);
 		static bool Create(LPCWSTR syncRootPath, LPCWSTR relativePathItem, CloudItem^ clouditem);
 		static bool Revert(SyncRootViewModel^ srvm, LocalItem^ li);
@@ -21,6 +19,6 @@ namespace CSS
 
 		//only work after connectsyncroot
 		static CF_PLACEHOLDER_STATE GetPlaceholderState(LPCWSTR fullPathItem);
-		static CF_PLACEHOLDER_STATE GetPlaceholderState(HANDLE hfile);
+		//static CF_PLACEHOLDER_STATE GetPlaceholderState(HANDLE hfile);
 	};
 }

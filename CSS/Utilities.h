@@ -134,8 +134,8 @@ namespace CSS
 
 	inline static void WriteLogTaskIfError(Task^ t, LPCWSTR info)
 	{
-		WriteLogTaskContinueError^ check = gcnew WriteLogTaskContinueError(gcnew String(info));
-		auto action = gcnew Action<Task^>(check, &WriteLogTaskContinueError::Check);
+		TaskContinueWriteLogIfError^ check = gcnew TaskContinueWriteLogIfError(gcnew String(info));
+		auto action = gcnew Action<Task^>(check, &TaskContinueWriteLogIfError::Check);
 		t->ContinueWith(action);
 	}
 }

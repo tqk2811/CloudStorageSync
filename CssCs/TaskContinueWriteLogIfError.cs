@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace CssCs
 {
-  public class WriteLogTaskContinueError
+  public class TaskContinueWriteLogIfError
   {
     string info;
-    public WriteLogTaskContinueError(string info)
+    public TaskContinueWriteLogIfError(string info)
     {
       if (string.IsNullOrEmpty(info)) throw new ArgumentNullException("info");
       this.info = info;
@@ -26,10 +26,10 @@ namespace CssCs
     }
   }
 
-  public class WriteLogTaskContinueError<T>
+  public class TaskContinueWriteLogIfError<T>
   {
     string info;
-    public WriteLogTaskContinueError(string info)
+    public TaskContinueWriteLogIfError(string info)
     {
       if (string.IsNullOrEmpty(info)) throw new ArgumentNullException("info");
       this.info = info;
