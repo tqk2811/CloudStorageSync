@@ -3,13 +3,47 @@ using CssCs.DataClass;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace CssCs.UI.ViewModel
 {
+  public class CustomCollectionInherited<T> : ObservableCollection<T>
+  {
+    public CustomCollectionInherited(IList<T> items):base(items)
+    {
+      
+    }
+    protected override void MoveItem(int oldIndex, int newIndex)
+    {
+      throw new NotImplementedException();
+    }
+    protected override void InsertItem(int index, T item)
+    {
+      throw new NotImplementedException();
+    }
+    protected override void RemoveItem(int index)
+    {
+      throw new NotImplementedException();
+    }
+
+    public void MyInsert(T item)
+    {
+      base.InsertItem(base.Count, item);
+    }
+
+    public void MyRemove(T item)
+    {
+      int index = base.IndexOf(item);
+      if(index >= 0) base.RemoveItem(index);
+    }
+  }
+
+
   public enum CloudName : byte
   {
     GoogleDrive = 0,
@@ -22,18 +56,21 @@ namespace CssCs.UI.ViewModel
     //Empty = 252,
     None = 255
   }
-  public sealed class CloudEmailViewModel : INotifyPropertyChanged
+#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
+  public class CloudEmailViewModel : INotifyPropertyChanged
+#pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
   {
     #region Static function and Property
-    public static ObservableCollection<CloudEmailViewModel> CEVMS { get; private set; }
+    public static CustomCollectionInherited<CloudEmailViewModel> CEVMS { get; private set; }
     internal static void Load(IList<CloudEmailViewModel> cevms)
     {
-      if(CEVMS == null) CEVMS = new ObservableCollection<CloudEmailViewModel>(cevms);
+      if (CEVMS == null) CEVMS = new CustomCollectionInherited<CloudEmailViewModel>(cevms);
     }
     public static CloudEmailViewModel Find(string SqlId)
     {
-      return CEVMS.ToList().Find((cevm) => cevm.Sqlid.Equals(SqlId));
+      return CEVMS.ToList().Find((cevm) => cevm.EmailSqlId.Equals(SqlId));
     }
+
     #endregion
 
     #region Constructor
@@ -44,40 +81,9 @@ namespace CssCs.UI.ViewModel
     /// <param name="cloudName"></param>
     /// <param name="Token"></param>
     /// <exception cref="ArgumentNullException"/>
-    internal CloudEmailViewModel(string Email, CloudName cloudName, string Token)
+    internal CloudEmailViewModel(string Email, CloudName CloudName, string Token) : this(Email, CloudName, Token, null, null)
     {
-      if (string.IsNullOrEmpty(Email)) throw new ArgumentNullException("Email");
-      if (string.IsNullOrEmpty(Token)) throw new ArgumentNullException("Token");
-      this.Email = Email;
-      this.CloudName = cloudName;
-      this.Token = Token;
-      this.Sqlid = Extensions.RandomString(32);
-      System.Drawing.Bitmap Img;
-      switch (cloudName)
-      {
-        case CloudName.GoogleDrive: 
-          Img = Properties.Resources.Google_Drive_Icon256x256;
-          Cloud = new CloudGoogleDrive(this);
-          break;
-
-        case CloudName.OneDrive: 
-          Img = Properties.Resources.onedrive_logo;
-          Cloud = new CloudOneDrive(this);
-          break;
-
-        case CloudName.MegaNz: 
-          Img = Properties.Resources.MegaSync;
-          //
-          break;
-
-        case CloudName.Dropbox: 
-          Img = Properties.Resources.Dropbox256x256;
-          //
-          break;
-
-        default: throw new Exception("This cloud not support: " + cloudName.ToString());
-      }
-      this.Img = Img.ToImageSource();
+      
     }
     /// <summary>
     /// Load From DB
@@ -88,16 +94,54 @@ namespace CssCs.UI.ViewModel
     /// <param name="Token"></param>
     /// <param name="WatchTime"></param>
     /// <param name="WatchToken"></param>
-    internal CloudEmailViewModel(string Email, CloudName cloudName, string Token, string Sqlid, string WatchToken):this(Email, cloudName, Token)
+    internal CloudEmailViewModel(string Email, CloudName CloudName, string Token, string EmailSqlId, string WatchToken)
     {
-      this.Sqlid = Sqlid;
-      this.WatchToken = WatchToken;
+      if (string.IsNullOrEmpty(Email)) throw new ArgumentNullException(nameof(Email));
+      if (string.IsNullOrEmpty(Token)) throw new ArgumentNullException(nameof(Token));
+      bool flagnew = false;
+      if (string.IsNullOrEmpty(EmailSqlId))
+      {
+        this.EmailSqlId = Extensions.RandomString(32);
+        flagnew = true;
+      }
+      else this.EmailSqlId = EmailSqlId;
+
+
+      this.Email = Email;
+      this.CloudName = CloudName;
+      this._Token = Token;
+      this._WatchToken = WatchToken;
+
+      System.Drawing.Bitmap Img;
+      switch (CloudName)
+      {
+        case CloudName.GoogleDrive:
+          Img = Properties.Resources.Google_Drive_Icon256x256;
+          Cloud = new CloudGoogleDrive(this);
+          break;
+
+        case CloudName.OneDrive:
+          Img = Properties.Resources.onedrive_logo;
+          Cloud = new CloudOneDrive(this);
+          break;
+
+        default: throw new Exception("This cloud not support: " + CloudName.ToString());
+      }
+      this.Img = Img.ToImageSource();
+      
+      if (flagnew)
+      {
+        SqliteManager.CEVMInsert(this);
+        CEVMS.MyInsert(this);
+        _ = LoadQuota();
+        Cloud.WatchChange();
+      }
     }
     #endregion
 
     #region MVVM
     public string Email { get; }
-    public System.Windows.Media.ImageSource Img { get; }
+    public System.Windows.Media.ImageSource Img { get; private set; }
     string _QuotaString;
     public string QuotaString
     {
@@ -114,12 +158,25 @@ namespace CssCs.UI.ViewModel
     #endregion
 
     #region Non MVVM Property
-    public ICloud Cloud { get; }
-    public string Sqlid { get; }
-    public CloudName CloudName { get; }
-    public string Token { get; internal set; }
-    public string WatchToken { get; internal set; }
-    public bool IsDeleted { get; internal set; } = false;
+    public readonly ICloud Cloud;
+    public readonly string EmailSqlId;
+    public readonly CloudName CloudName;
+
+    string _Token;
+    public string Token
+    {
+      get { return _Token; }
+      set { _Token = value; Save(); }
+    }
+
+    string _WatchToken;
+    public string WatchToken
+    {
+      get { return _WatchToken; }
+      set { _WatchToken = value; Save(); }
+    }
+
+    public bool IsDeleted { get; private set; } = false;
     #endregion
 
     #region Function
@@ -135,17 +192,14 @@ namespace CssCs.UI.ViewModel
       }
     }
 
-    internal void Insert()
+    internal bool Delete()
     {
-      SqliteManager.CEVMInsert(this);
-      CEVMS.Add(this);
-    }
-    public void Update() => SqliteManager.CEVMUpdate(this);
-    internal void Delete()
-    {
+      if (IsDeleted || SyncRootViewModel.FindAll(this).Count > 0) return false;
+
       SqliteManager.CEVMDelete(this);
       IsDeleted = true;
-      CEVMS.Remove(this);
+      CEVMS.MyRemove(this);
+      return IsDeleted;
     }
 
     public override bool Equals(object obj)
@@ -154,12 +208,15 @@ namespace CssCs.UI.ViewModel
       if(obj is CloudEmailViewModel)
       {
         CloudEmailViewModel cevm = obj as CloudEmailViewModel;
-        result = cevm.Sqlid.Equals(Sqlid);
+        result = cevm.EmailSqlId.Equals(EmailSqlId);
       }
       return result;
     }
+
+    void Save()
+    {
+      if (!IsDeleted) SqliteManager.CEVMUpdate(this);
+    }
     #endregion
-
-
   }
 }

@@ -724,7 +724,7 @@ namespace CssCs.Cloud
     {
       if (extension == null)
       {
-        throw new ArgumentNullException("extension");
+        throw new ArgumentNullException(nameof(extension));
       }
 
       if (!extension.StartsWith("."))
@@ -746,7 +746,7 @@ namespace CssCs.Cloud
     {
       if (mimeType == null)
       {
-        throw new ArgumentNullException("mimeType");
+        throw new ArgumentNullException(nameof(mimeType));
       }
 
       if (mimeType.StartsWith("."))

@@ -9,23 +9,31 @@ using System.Threading.Tasks;
 
 namespace CssCs
 {
-  public class Settings : INotifyPropertyChanged
+  public class Settings : INotifyPropertyChanged, IDisposable
   {
     public static Settings Setting { get; } = new Settings();
+    public const int ChunkUploadDownload = 50 * 1024 * 1024;//50Mib
+    public const int OauthWait = 5 * 60000;
+    public const int AutoSaveTime = 1000;
+
+
+
+
+    public bool HasInternet { get; set; } = false;
     System.Timers.Timer timer;
     internal Settings()
     {
       timer = new System.Timers.Timer();
       timer.Elapsed += Timer_Elapsed;
-      timer.Interval = 2000;
+      timer.Interval = AutoSaveTime;
       timer.AutoReset = false;
     }
-
     private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
     {
-      Save();
+      SqliteManager.UpdateSetting();
     }
 
+    internal bool LoadSetting { get; set; } = false;
     #region INotifyPropertyChanged
     private void NotifyPropertyChange([CallerMemberName] string name = "")
     {
@@ -34,10 +42,17 @@ namespace CssCs
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
       timer.Start();
     }
+
+    public void Dispose()
+    {
+      timer.Dispose();
+    }
+
     public event PropertyChangedEventHandler PropertyChanged;
     #endregion
 
-    public bool HasInternet { get; set; } = false;
+    
+
 
 
     bool _SkipNoticeMalware = false;
@@ -47,12 +62,14 @@ namespace CssCs
       set { _SkipNoticeMalware = value; NotifyPropertyChange(); }
     }
 
+
     string _FileIgnore = "desktop.ini;";
     public string FileIgnore
     {
       get { return _FileIgnore; }
       set { _FileIgnore = value; NotifyPropertyChange(); }
     }
+
 
     int _TryAgainAfter = 5;
     public int TryAgainAfter
@@ -61,12 +78,14 @@ namespace CssCs
       set { _TryAgainAfter = value; NotifyPropertyChange(); }
     }
 
+
     int _TryAgainTimes = 3;
     public int TryAgainTimes
     {
       get { return _TryAgainTimes; }
       set { _TryAgainTimes = value; NotifyPropertyChange(); }
     }
+
 
     int _filesUploadSameTime = 1;
     public int FilesUploadSameTime
@@ -94,12 +113,14 @@ namespace CssCs
       }
     }
     internal int SpeedUploadLimitByte { get; private set; } = 0;
+
     bool _uploadPrioritizeFirst = true;
     public bool UploadPrioritizeFirst
     {
       get { return _uploadPrioritizeFirst; }
       set { _uploadPrioritizeFirst = value; NotifyPropertyChange(); ThrottledStream.Up.PrioritizeFirst = value; }
     }
+
 
     int _SpeedDownloadLimit = 0;
     public int SpeedDownloadLimit
@@ -114,6 +135,7 @@ namespace CssCs
       }
     }
     internal int SpeedDownloadLimitByte { get; private set; } = 0;
+
     bool _downloadPrioritizeFirst = true;
     public bool DownloadPrioritizeFirst
     {
@@ -128,18 +150,5 @@ namespace CssCs
       get { return _TimeWatchChangeCloud; }
       set { _TimeWatchChangeCloud = value; NotifyPropertyChange(); }
     }
-
-
-    
-
-
-
-    async Task Save() => SqliteManager.UpdateSetting();
-    public void Load() => SqliteManager.SettingSelect();
-    internal bool LoadSetting { get; set; } = false;
-
-
-    public const int ChunkUploadDownload = 50 * 1024 * 1024;//50Mib
-    public const int OauthWait = 5 * 60000;
   }
 }

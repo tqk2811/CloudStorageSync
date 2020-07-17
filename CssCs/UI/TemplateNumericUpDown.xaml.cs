@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -8,7 +9,7 @@ namespace CssCs.UI
   /// <summary>
   /// Interaction logic for TemplateNumericUpDown.xaml
   /// </summary>
-  public partial class TemplateNumericUpDown : UserControl//, INotifyPropertyChanged
+  public partial class TemplateNumericUpDown : UserControl, IDisposable//, INotifyPropertyChanged
   {
     public static readonly DependencyProperty NumValueProperty = DependencyProperty.Register(
       "NumValue", 
@@ -169,6 +170,12 @@ namespace CssCs.UI
     {
       timer.Stop();
       timer2.Stop();
+    }
+
+    public void Dispose()
+    {
+      timer.Dispose();
+      timer2.Dispose();
     }
   }
 }

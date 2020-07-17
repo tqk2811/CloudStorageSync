@@ -176,7 +176,7 @@ namespace CSS
 				LocalItem^ li_parent = LocalItem::FindFromPath(srvm, parent_fullpath, 0);
 				if (!String::IsNullOrEmpty(li_parent->CloudId))
 				{
-					CloudItem^ ci_parent = CloudItem::Select(li_parent->CloudId, srvm->CEVM->Sqlid);
+					CloudItem^ ci_parent = CloudItem::Select(li_parent->CloudId, srvm->CEVM->EmailSqlId);
 					if (!ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanAddChildren)) return;//can't upload child
 				}				
 

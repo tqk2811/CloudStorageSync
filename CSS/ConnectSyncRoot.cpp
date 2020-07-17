@@ -384,13 +384,13 @@ namespace CSS
                     if (ci && li && !li->Flag.HasFlag(LocalItemFlag::LockWaitUpdateFromCloudWatch))
                     {
                         LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
-                        CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm->CEVM->Sqlid) : nullptr;
+                        CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm->CEVM->EmailSqlId) : nullptr;
                         if (ci_parent)
                         {
                             if (newpathIsInSyncroot)
                             {
                                 LocalItem^ li_parentnew = LocalItem::FindFromPath(srvm, fullpath_new, 1);
-                                CloudItem^ ci_parentnew = li_parentnew ? CloudItem::Select(li_parentnew->CloudId, srvm->CEVM->Sqlid) : nullptr;
+                                CloudItem^ ci_parentnew = li_parentnew ? CloudItem::Select(li_parentnew->CloudId, srvm->CEVM->EmailSqlId) : nullptr;
                                 if (ci_parentnew)
                                 {
                                     List<String^>^ ParentsIdAdd{ nullptr };

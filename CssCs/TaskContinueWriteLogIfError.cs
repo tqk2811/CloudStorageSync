@@ -11,7 +11,7 @@ namespace CssCs
     string info;
     public TaskContinueWriteLogIfError(string info)
     {
-      if (string.IsNullOrEmpty(info)) throw new ArgumentNullException("info");
+      if (string.IsNullOrEmpty(info)) throw new ArgumentNullException(nameof(info));
       this.info = info;
     }
 
@@ -31,7 +31,7 @@ namespace CssCs
     string info;
     public TaskContinueWriteLogIfError(string info)
     {
-      if (string.IsNullOrEmpty(info)) throw new ArgumentNullException("info");
+      if (string.IsNullOrEmpty(info)) throw new ArgumentNullException(nameof(info));
       this.info = info;
     }
 

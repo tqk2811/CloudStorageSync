@@ -110,7 +110,7 @@ namespace CssCs.DataClass
     {
       var command = _con.CreateCommand();
       command.CommandText = _cevm_insert;
-      command.Parameters.AddWithValue("$Id", cevm.Sqlid);
+      command.Parameters.AddWithValue("$Id", cevm.EmailSqlId);
       command.Parameters.AddWithValue("$Email", cevm.Email);
       command.Parameters.AddWithValue("$CloudName", (int)cevm.CloudName);
       command.Parameters.AddWithValue("$Token", cevm.Token);
@@ -121,7 +121,7 @@ namespace CssCs.DataClass
     {
       var command = _con.CreateCommand();
       command.CommandText = _cevm_update;
-      command.Parameters.AddWithValue("$Id", cevm.Sqlid);
+      command.Parameters.AddWithValue("$Id", cevm.EmailSqlId);
       command.Parameters.AddWithValue("$Email", cevm.Email);
       command.Parameters.AddWithValue("$CloudName", (int)cevm.CloudName);
       command.Parameters.AddWithValue("$Token", cevm.Token);
@@ -132,7 +132,7 @@ namespace CssCs.DataClass
     {
       var command = _con.CreateCommand();
       command.CommandText = _cevm_delete;
-      command.Parameters.AddWithValue("$Id", cevm.Sqlid);
+      command.Parameters.AddWithValue("$Id", cevm.EmailSqlId);
       command.ExecuteNonQuery();
     }
     #endregion
@@ -179,7 +179,7 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
       var command = _con.CreateCommand();
       command.CommandText = _srvm_insert;
       command.Parameters.AddWithValue("$Id", srvm.SRId);
-      command.Parameters.AddWithValue("$IdEmail", srvm.CEVM.Sqlid);
+      command.Parameters.AddWithValue("$IdEmail", srvm.CEVM.EmailSqlId);
       command.Parameters.AddWithValue("$CloudFolderName", srvm.CloudFolderName);
       command.Parameters.AddWithValue("$CloudFolderId", srvm.CloudFolderId);
       command.Parameters.AddWithValue("$LocalPath", srvm.LocalPath);
@@ -190,7 +190,7 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
       var command = _con.CreateCommand();
       command.CommandText = _srvm_update;
       command.Parameters.AddWithValue("$Id", srvm.SRId);
-      command.Parameters.AddWithValue("$IdEmail", srvm.CEVM.Sqlid);
+      command.Parameters.AddWithValue("$IdEmail", srvm.CEVM.EmailSqlId);
       command.Parameters.AddWithValue("$CloudFolderName", srvm.CloudFolderName);
       command.Parameters.AddWithValue("$CloudFolderId", srvm.CloudFolderId);
       command.Parameters.AddWithValue("$LocalPath", srvm.LocalPath);
@@ -229,8 +229,8 @@ where Id = $Id AND IdEmail = $IdEmail;";
     const string _ci_findchild = "select * from CloudItem where IdEmail = $IdEmail and Parents like $Parent;";
     internal static CloudItem CISelect(string Id,string IdEmail)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("Id");
-      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException("IdEmail");
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
+      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException(nameof(IdEmail));
       var command = _con.CreateCommand();
       command.CommandText = _ci_select;
       command.Parameters.AddWithValue("$Id", Id);
@@ -271,8 +271,8 @@ where Id = $Id AND IdEmail = $IdEmail;";
     }
     internal static void CIDelete(string Id, string IdEmail)
     {
-      if (string.IsNullOrEmpty(Id))throw new ArgumentNullException("Id");
-      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException("IdEmail");
+      if (string.IsNullOrEmpty(Id))throw new ArgumentNullException(nameof(Id));
+      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException(nameof(IdEmail));
 
       var command = _con.CreateCommand();
       command.CommandText = _ci_delete;
@@ -282,8 +282,8 @@ where Id = $Id AND IdEmail = $IdEmail;";
     }
     internal static IList<CloudItem> CIFindChildIds(string CI_ParentId, string IdEmail)
     {
-      if (string.IsNullOrEmpty(CI_ParentId)) throw new ArgumentNullException("CI_ParentId");
-      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException("IdEmail");
+      if (string.IsNullOrEmpty(CI_ParentId)) throw new ArgumentNullException(nameof(CI_ParentId));
+      if (string.IsNullOrEmpty(IdEmail)) throw new ArgumentNullException(nameof(IdEmail));
 
       var command = _con.CreateCommand();
       command.CommandText = _ci_findchild;
@@ -382,7 +382,7 @@ where Id = $Id AND IdEmail = $IdEmail;";
     }
     internal static void LIClear(string SRId)
     {
-      if (string.IsNullOrEmpty(SRId)) throw new ArgumentNullException("SRId");
+      if (string.IsNullOrEmpty(SRId)) throw new ArgumentNullException(nameof(SRId));
 
       var command = _con.CreateCommand();
       command.CommandText = _li_clear;

@@ -202,7 +202,7 @@ namespace CSS
 				}
 				case LocalErrorType::Update:
 				{
-					CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->Sqlid);
+					CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
 					if (!ci) flag = true;
 					else flag = Placeholders::Update(srvm, li, ci, false);
 					break;
@@ -214,7 +214,7 @@ namespace CSS
 				}
 				case LocalErrorType::Rename:
 				{
-					CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->Sqlid);
+					CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
 					if (!ci) flag = true;
 					else flag = LocalAction::RenameLocal(srvm, li, ci, false);
 					break;

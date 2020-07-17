@@ -127,7 +127,7 @@ namespace CssCs
         {
           customFileSystemEventHandler(srvm, list[i]);
         }
-        catch(Exception ex)
+        catch(Exception)
         {
 
         }

@@ -169,7 +169,7 @@ namespace CssCs
           if (rule.AccessControlType == AccessControlType.Allow) 
             return true;
       }
-      catch (Exception ex)
+      catch (Exception)
       {
 
       }

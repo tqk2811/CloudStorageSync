@@ -10,7 +10,7 @@ namespace CSS
     {
         if (srvm) 
         {
-            IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->Sqlid);
+            IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->EmailSqlId);
             for (int i = 0; i < childsci->Count; i++)
             {
                 if (!srvm->IsWork)

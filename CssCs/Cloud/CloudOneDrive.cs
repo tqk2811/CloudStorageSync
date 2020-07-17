@@ -101,7 +101,7 @@ namespace CssCs.Cloud
     }
     static Task<AuthenticationResult> GetAuthenticationResult(IAccount account)
     {
-      if (account == null) throw new ArgumentNullException("account");
+      if (account == null) throw new ArgumentNullException(nameof(account));
 
       return publicClientApplication.AcquireTokenSilent(Scopes, account).ExecuteAsync();
     }
@@ -119,8 +119,8 @@ namespace CssCs.Cloud
 
     internal CloudOneDrive(CloudEmailViewModel cevm)
     {
-      if (cevm == null) throw new ArgumentNullException("cevm");
-      if (string.IsNullOrEmpty(cevm.Token)) throw new NullReferenceException("cevm.Token");
+      if (cevm == null) throw new ArgumentNullException(nameof(cevm));
+      if (string.IsNullOrEmpty(cevm.Token)) throw new ArgumentNullException(nameof(cevm.Token));
       this.cevm = cevm;
 
       this.account = GetAccount(cevm.Token).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -143,7 +143,7 @@ namespace CssCs.Cloud
         DateMod = driveItem.LastModifiedDateTime.Value.ToUnixTimeSeconds(),
         ParentsId = new List<string>() { driveItem.ParentReference.Id },
         Size = isfolder ? -1 : driveItem.Size.Value,
-        IdEmail = cevm.Sqlid
+        IdEmail = cevm.EmailSqlId
       };
       if (!isfolder) ci.HashString = driveItem.File.Hashes.Sha1Hash;
       ci.CapabilitiesAndFlag = CloudCapabilitiesAndFlag.All;
@@ -165,7 +165,7 @@ namespace CssCs.Cloud
         foreach (var item in result.DriveItems)
         {
           CloudChangeType cloudChangeType;
-          CloudItem ci_old = CloudItem.Select(item.Id, cevm.Sqlid);
+          CloudItem ci_old = CloudItem.Select(item.Id, cevm.EmailSqlId);
           if (item.Deleted != null)
           {
             cloudChangeType = new CloudChangeType(item.Id, null, null);
@@ -181,8 +181,8 @@ namespace CssCs.Cloud
               (ci_old.Size != item.Size ||
               ci_old.DateMod != item.LastModifiedDateTime.Value.ToUnixTimeSeconds())) cloudChangeType.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
           }
-          cloudChangeType.CEId = cevm.Sqlid;
-          if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(item.Id, cevm.Sqlid);
+          cloudChangeType.CEId = cevm.EmailSqlId;
+          if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(item.Id, cevm.EmailSqlId);
           else
           {
             //if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(item.Id, cevm.Id);
@@ -238,7 +238,7 @@ namespace CssCs.Cloud
     /// <returns>CloudItem</returns>
     public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
     {
-      if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException("FilePath");
+      if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException(nameof(FilePath));
       if (null == ParentIds || ParentIds.Count == 0 || ParentIds.Count > 1) throw new ArgumentException("ParentIds is invalid");
 
       FileInfo fi = new FileInfo(FilePath);
@@ -305,7 +305,7 @@ namespace CssCs.Cloud
               if (end_offset > fs.Length) end_offset = fs.Length - 1;
               long contentlength = end_offset - start_offset + 1;
 
-              HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uploadSessionResource.uploadUrl);
+              HttpWebRequest request = (HttpWebRequest)WebRequest.Create(new Uri(uploadSessionResource.uploadUrl));
               request.Method = "PUT";
               request.AllowWriteStreamBuffering = false;
               request.ContentType = "application/octet-stream";
@@ -347,7 +347,7 @@ namespace CssCs.Cloud
 
     public IList<CloudItem> CloudFolderGetChildFolder(string itemId)
     {
-      if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException("itemid");
+      if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
 
       List<CloudItem> cis = new List<CloudItem>();
       string expand = "children";
@@ -358,8 +358,8 @@ namespace CssCs.Cloud
 
     public void ListAllItemsToDb(SyncRootViewModel srvm, string StartFolderId)
     {
-      if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException("StartFolderId");
-      if(srvm == null) throw new ArgumentNullException("srvm");
+      if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException(nameof(StartFolderId));
+      if(srvm == null) throw new ArgumentNullException(nameof(srvm));
 
       DriveItem di = MyDrive.Items[StartFolderId].Request().GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
       InsertToDb(di);
@@ -399,7 +399,7 @@ namespace CssCs.Cloud
 
     public async Task UpdateMetadata(UpdateCloudItem updateCloudItem)
     {
-      if (null == updateCloudItem) throw new ArgumentNullException("updateCloudItem");
+      if (null == updateCloudItem) throw new ArgumentNullException(nameof(updateCloudItem));
 
       DriveItem di = new DriveItem()
       {
@@ -414,7 +414,7 @@ namespace CssCs.Cloud
 
     public Task TrashItem(string Id)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("Id");
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
 
       return MyDrive.Items[Id].Request().DeleteAsync();
     }
@@ -465,7 +465,7 @@ namespace CssCs.Cloud
 
     public async Task<CloudItem> GetMetadata(string Id)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("Id");
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
 
       Task<DriveItem> task_di;
       if (Id.Equals("root")) task_di = MyDrive.Root.Request().GetAsync();

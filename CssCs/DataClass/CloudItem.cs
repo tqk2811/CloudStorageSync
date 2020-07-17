@@ -25,7 +25,7 @@ namespace CssCs.DataClass
 
   public class CloudItem
   {
-    public static CloudItem Select(string Id, SyncRootViewModel srvm) => SqliteManager.CISelect(Id, srvm.CEVM.Sqlid);
+    public static CloudItem Select(string Id, SyncRootViewModel srvm) => SqliteManager.CISelect(Id, srvm.CEVM.EmailSqlId);
     public static CloudItem Select(string Id,string IdEmail) => SqliteManager.CISelect(Id, IdEmail);
     public static IList<CloudItem> FindChildIds(string CI_ParentId, string IdEmail) => SqliteManager.CIFindChildIds(CI_ParentId, IdEmail);
     public static void Delete(string Id, string IdEmail) => SqliteManager.CIDelete(Id, IdEmail);

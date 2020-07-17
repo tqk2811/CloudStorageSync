@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CssCs.UI
 {
@@ -87,14 +88,19 @@ namespace CssCs.UI
         TreeviewCloudItemViewModel tvcloudItemViewModel = treeViewItem.DataContext as TreeviewCloudItemViewModel;
         foreach (var child in tvcloudItemViewModel.Childs)
           if (!child.LoadedChilds && !child.LoadingVisibility)
-            LoadChildTV(child);
+            _ = LoadChildTV(child);
       }
     }
 
     private void TextBox_GotFocus(object sender, RoutedEventArgs e)
     {
       TextBox textBox = sender as TextBox;
-      textBox.SelectAll();
+      Dispatcher.BeginInvoke(DispatcherPriority.Input,
+          new Action(delegate ()
+          {
+            Keyboard.Focus(textBox);
+            textBox.SelectAll();
+          }));
     }
 
     private void TextBox_LostFocus(object sender, RoutedEventArgs e)
@@ -104,7 +110,7 @@ namespace CssCs.UI
       EdittingEnd(tvcloudItemViewModel);
     }
 
-    private async void tb_name_KeyDown(object sender, KeyEventArgs e)
+    private void tb_name_KeyDown(object sender, KeyEventArgs e)
     {
       if (e.Key == Key.Enter)
       {
@@ -153,7 +159,7 @@ namespace CssCs.UI
               break;
 
             case MenuAction.Delete:
-              CloudItem ci = CloudItem.Select(Result.Id, cevm.Sqlid);
+              CloudItem ci = CloudItem.Select(Result.Id, cevm.EmailSqlId);
               if (ci.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.OwnedByMe))//my file
               {
                 MessageBoxResult result = MessageBox.Show("Are you sure trash that folder?\r\n" + Result.Name, "Confirm Trash", MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -166,7 +172,7 @@ namespace CssCs.UI
               }
               else//file import from other account (only google drive)
               {
-                CloudItem ci_parent = CloudItem.Select(Result.Parent.Id, cevm.Sqlid);
+                CloudItem ci_parent = CloudItem.Select(Result.Parent.Id, cevm.EmailSqlId);
                 if (ci_parent.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.CanRemoveChildren))
                 {
                   MessageBoxResult result = MessageBox.Show("Are you sure to remove that folder?\r\n" + Result.Name, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);

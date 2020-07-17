@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 
 namespace CssCs.UI.ViewModel
 {
@@ -19,7 +20,7 @@ namespace CssCs.UI.ViewModel
     Working = 16,             //00010000
     Error = 128               //10000000
   }
-  public sealed class SyncRootViewModel : INotifyPropertyChanged
+  public class SyncRootViewModel : INotifyPropertyChanged
   {
     #region Static Function
     static List<SyncRootViewModel> SRVMS;
@@ -36,10 +37,10 @@ namespace CssCs.UI.ViewModel
 
     public static List<SyncRootViewModel> FindAllWorking(CloudEmailViewModel cevm = null)
     {
-      if(cevm != null) return SRVMS.FindAll((srvm) => srvm.IsWork && srvm.CEVM.Equals(cevm));
+      if (cevm != null) return SRVMS.FindAll((srvm) => srvm.IsWork && srvm.CEVM.Equals(cevm));
       else return SRVMS.FindAll((srvm) => srvm.IsWork);
     }
-    public static List<SyncRootViewModel> Find(CloudEmailViewModel cevm)
+    public static List<SyncRootViewModel> FindAll(CloudEmailViewModel cevm)
     {
       return SRVMS.FindAll((srvm) => srvm.CEVM.Equals(cevm));
     }
@@ -57,26 +58,26 @@ namespace CssCs.UI.ViewModel
     /// <summary>
     /// for create new
     /// </summary>
-    internal SyncRootViewModel(CloudEmailViewModel cevm, string SrId = null)
+    internal SyncRootViewModel(CloudEmailViewModel cevm) : this(cevm, null, null, null, null, false, false)
     {
-      this.CEVM = cevm;
-      Watcher = new Watcher(this);
-      if (string.IsNullOrEmpty(SrId)) this.SRId = Extensions.RandomString(32);
-      else this.SRId = SrId;
+      SqliteManager.SRVMInsert(this);
+      SRVMS.Add(this);
     }
 
     /// <summary>
     /// load from db
     /// </summary>
-    internal SyncRootViewModel(
-      CloudEmailViewModel cevm, 
-      string SrId, 
-      string CloudFolderName,
-      string CloudFolderId,
-      string LocalPath,
-      bool iswork,
-      bool isListAll) : this(cevm, SrId)
+    internal SyncRootViewModel(CloudEmailViewModel cevm, string SrId, string CloudFolderName,
+                                string CloudFolderId, string LocalPath, bool iswork, bool isListAll)
     {
+      if (null == cevm) throw new ArgumentNullException(nameof(cevm));
+
+      this.CEVM = cevm;
+      Watcher = new Watcher(this);
+
+      if (string.IsNullOrEmpty(SrId)) this.SRId = Extensions.RandomString(32);
+      else this.SRId = SrId;
+
       _CloudFolderName = CloudFolderName;
       this.CloudFolderId = CloudFolderId;
       _LocalPath = LocalPath;
@@ -86,18 +87,41 @@ namespace CssCs.UI.ViewModel
     #endregion
 
     #region Non MVVM Property
-    public CloudEmailViewModel CEVM { get; }
-    public string SRId { get; }
+    public readonly Watcher Watcher;
+    public readonly CloudEmailViewModel CEVM;
+    public readonly string SRId;
     public string CloudFolderId { get; internal set; }
-    public bool IsListedAll { get; set; } = false;
-#endregion
 
-#region MVVM
+    bool _IsListedAll = false;
+    public bool IsListedAll
+    {
+      get { return _IsListedAll; }
+      set { _IsListedAll = value; Update(); }
+    }
+
+    SyncRootStatus _Status = SyncRootStatus.NotWorking;
+    public SyncRootStatus Status
+    {
+      get { return _Status; }
+      set
+      {
+        _Status = value;
+        UpdateStatus();
+      }
+    }
+
+    public long ConnectionKey { get; set; } = 0;
+    public Task TaskRun { get; private set; }
+
+    public bool Deleted { get; private set; } = false;
+    #endregion
+
+    #region MVVM
     string _CloudFolderName = string.Empty;
     public string CloudFolderName
     {
       get { return _CloudFolderName; }
-      set { IsListedAll = false; _CloudFolderName = value; NotifyPropertyChange(); }
+      set { _IsListedAll = false; _CloudFolderName = value; NotifyPropertyChange(); Update(); }
     }
 
     bool _IsWork = false;
@@ -106,9 +130,9 @@ namespace CssCs.UI.ViewModel
       get { return _IsWork; }
       set
       {
-        if(value)
+        if (value)
         {
-          if(string.IsNullOrEmpty(CloudFolderName) || string.IsNullOrEmpty(LocalPath)) return;
+          if (string.IsNullOrEmpty(CloudFolderName) || string.IsNullOrEmpty(LocalPath)) return;
           if (null != TaskRun && !TaskRun.IsCompleted) return;
         }
         else
@@ -118,6 +142,7 @@ namespace CssCs.UI.ViewModel
         }
         _IsWork = value;
         NotifyPropertyChange();
+        Update();
         Run();
       }
     }
@@ -126,7 +151,7 @@ namespace CssCs.UI.ViewModel
     public string LocalPath
     {
       get { return _LocalPath; }
-      set { _LocalPath = value; NotifyPropertyChange(); }
+      set { _LocalPath = value; NotifyPropertyChange(); Update(); }
     }
 
     string _StatusString = "Not Working";
@@ -142,31 +167,45 @@ namespace CssCs.UI.ViewModel
       get { return _Message; }
       set { _Message = value; NotifyPropertyChange(); }
     }
-#region INotifyPropertyChanged
+
+    string _DisplayName = string.Empty;
+    public string DisplayName
+    {
+      get { return _DisplayName; }
+      set { _DisplayName = value; NotifyPropertyChange(); Update(); }
+    }
+
+    bool _IsEditingDisplayName = false;
+    public bool IsEditingDisplayName
+    {
+      get { return _IsEditingDisplayName; }
+      set { _IsEditingDisplayName = value; NotifyPropertyChange(); }
+    }
+    #region INotifyPropertyChanged
     private void NotifyPropertyChange([CallerMemberName] string name = "")
     {
       PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
     public event PropertyChangedEventHandler PropertyChanged;
-#endregion
-#endregion
+    #endregion
+    #endregion
 
-    internal void Insert()
+    void Update()
     {
-      SqliteManager.SRVMInsert(this);
-      SRVMS.Add(this);
+      if(!Deleted) SqliteManager.SRVMUpdate(this);
     }
-    public void Update()
+
+    internal bool Delete()
     {
-      SqliteManager.SRVMUpdate(this);
-    }
-    internal void Delete()
-    {
+      if (IsWork || Deleted) return false;
+
       SqliteManager.SRVMDelete(this);
       SRVMS.Remove(this);
+      Deleted = true;
+      return Deleted;
     }
 
-#region SyncRoot
+    #region SyncRoot
     void UpdateStatus()
     {
       if ((_Status & SyncRootStatus.Error) == SyncRootStatus.Error)
@@ -183,19 +222,6 @@ namespace CssCs.UI.ViewModel
           case SyncRootStatus.Working: StatusString = "Working"; break;
         }
     }
-    SyncRootStatus _Status = SyncRootStatus.NotWorking;
-    public SyncRootStatus Status
-    {
-      get { return _Status; }
-      set
-      {
-        _Status = value;
-        UpdateStatus();
-      }
-    }
-    
-
-    public Task TaskRun { get; private set; }
 
     public void Run()
     {
@@ -221,7 +247,7 @@ namespace CssCs.UI.ViewModel
                 IsListedAll = true;
                 Update();
                 this.Register();
-              }              
+              }
             });
         }
         else Register();
@@ -238,12 +264,6 @@ namespace CssCs.UI.ViewModel
       if (TaskRun != null && !TaskRun.IsCompleted) TaskRun.Wait();
       CPPCLR_Callback.SRUnRegister(this);
     }
-
-    public long ConnectionKey { get; set; } = 0;
-    public Watcher Watcher { get; }
-
-#endregion
-
-
+    #endregion
   }
 }

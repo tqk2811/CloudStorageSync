@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace CssCs.UI
 {
@@ -63,7 +65,7 @@ namespace CssCs.UI
       if (cloudEmailSelected != null)
       {
         this.SRViewModels.Clear();
-        SyncRootViewModel.Find(cloudEmailSelected).ForEach((cevm) => this.SRViewModels.Add(cevm));
+        SyncRootViewModel.FindAll(cloudEmailSelected).ForEach((cevm) => this.SRViewModels.Add(cevm));
       }
     }
 
@@ -87,13 +89,10 @@ namespace CssCs.UI
           }
           else
           {
-            srvms.ForEach((srvm) =>
-            {
-              srvm.Delete();
-              SRViewModels.Remove(srvm);
-            });
+            srvms.ForEach((srvm) => srvm.Delete());
+            SRViewModels.Clear();
 
-            if(await ceSelected.Cloud.LogOut()) ceSelected.Delete();
+            if (await ceSelected.Cloud.LogOut()) ceSelected.Delete();
           }
           
           break;
@@ -139,14 +138,10 @@ namespace CssCs.UI
           if (cloudEmailViewModels[i].Email.Equals(str_email) && cloudEmailViewModels[i].CloudName == menuDataModel.CloudName)//update if equal
           {
             cloudEmailViewModels[i].Token = str_token;
-            cloudEmailViewModels[i].Update();
             await cloudEmailViewModels[i].LoadQuota();
             return;
           }
         CloudEmailViewModel cevm = new CloudEmailViewModel(str_email, menuDataModel.CloudName, str_token);//add new if not equal
-        await cevm.Cloud.WatchChange();
-        cevm.Insert();
-        await cevm.LoadQuota();
       }
       catch (AggregateException ae)
       {
@@ -183,7 +178,6 @@ namespace CssCs.UI
         {
           data.CloudFolderName = folderBrowserCloudDialog.Result.Name;
           data.CloudFolderId = folderBrowserCloudDialog.Result.Id;
-          data.Update();
         }
       }
       catch (Exception ex)
@@ -207,11 +201,43 @@ namespace CssCs.UI
         if (Extensions.CheckFolderPermission(dialog.SelectedPath))
         {
           data.LocalPath = dialog.SelectedPath;
-          data.Update();
         }
         else MessageBox.Show("App do not have permission to access this folder.\r\nPlease try select difference folder.\r\n\r\nFolder selected:" + dialog.SelectedPath, "Error", MessageBoxButton.OK);
       }
       dialog.Dispose();
+    }
+    private void DisplayName_changeClick(object sender, RoutedEventArgs e)
+    {
+      Button button = sender as Button;
+      SyncRootViewModel srvm = button.DataContext as SyncRootViewModel;
+      srvm.IsEditingDisplayName = true;
+    }
+    private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+      TextBox textBox = sender as TextBox;
+      Dispatcher.BeginInvoke(DispatcherPriority.Input,
+          new Action(delegate ()
+          {
+            Keyboard.Focus(textBox);
+            textBox.SelectAll();
+          }));
+    }
+
+    private void TextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+      TextBox textBox = sender as TextBox;
+      SyncRootViewModel srvm = textBox.DataContext as SyncRootViewModel;
+      srvm.IsEditingDisplayName = false;
+    }
+
+    private void tb_DisplayName_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+      if (e.Key == Key.Enter)
+      {
+        TextBox textBox = sender as TextBox;
+        SyncRootViewModel srvm = textBox.DataContext as SyncRootViewModel;
+        srvm.IsEditingDisplayName = false;
+      }
     }
 
     private void CF_MenuItem_Click(object sender, RoutedEventArgs e)
@@ -226,7 +252,6 @@ namespace CssCs.UI
           {
             SyncRootViewModel SRViewModel = new SyncRootViewModel(ceSelected);
             SRViewModels.Add(SRViewModel);
-            SRViewModel.Insert();
           }
           break;
         case MenuAction.Delete:

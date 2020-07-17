@@ -13,7 +13,9 @@ namespace CssCs.DataClass
     Folder = 1,
     LockWaitUpdateFromCloudWatch = 1 << 1,
   }
+#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
   public class LocalItem
+#pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
   {
     private static List<LocalItem> _lis;
     internal static void Load(IList<LocalItem> lis)

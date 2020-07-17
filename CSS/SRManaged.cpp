@@ -83,7 +83,6 @@ namespace CSS
 				break;
 			}
 			}
-			srvm->Update();
 			GC::Collect();
 		}
 	}
@@ -97,7 +96,6 @@ namespace CSS
 		SyncRoot_UnRegister(SRid);
 		srvm->IsListedAll = false;
 		LocalItem::Clear(srvm);
-		srvm->Update();		
 		srvm->Status = SyncRootStatus::NotWorking;
 		LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(SRid), 2);
 	}

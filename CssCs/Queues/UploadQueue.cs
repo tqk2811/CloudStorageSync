@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CssCs.Queues
 {
-  public sealed class UploadQueue : IQueue
+  public sealed class UploadQueue : IQueue, IDisposable
   {
     public UploadQueue(SyncRootViewModel srvm, LocalItem li)
     {
@@ -17,11 +17,11 @@ namespace CssCs.Queues
       source = new CancellationTokenSource();
       token = source.Token;
     }
-
-    ~UploadQueue()
+    public void Dispose()
     {
       source.Dispose();
     }
+
     SyncRootViewModel srvm;
     LocalItem li;
     CancellationTokenSource source;
@@ -68,13 +68,13 @@ namespace CssCs.Queues
             CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because cloud folder hasn't id, path:{0}", fullpath), 1);
             return;
           }
-          Task.Delay(Settings.Setting.TryAgainAfter * 1000).ContinueWith((Task task) => TaskQueues.Add(this));
+          _ = Task.Delay(Settings.Setting.TryAgainAfter * 1000).ContinueWith((Task task) => TaskQueues.Add(this));
           CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload try again because cloud folder hasn't id, path:{0}", fullpath), 1);
           return;
         }
         else
         {
-          CloudItem ci_parent = CloudItem.Select(parent_li.CloudId, srvm.CEVM.Sqlid);
+          CloudItem ci_parent = CloudItem.Select(parent_li.CloudId, srvm.CEVM.EmailSqlId);
           if (!ci_parent.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.CanAddChildren))
           {
             CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because cloud folder hasn't permision for add child, path:{0}", fullpath), 1);
@@ -85,7 +85,7 @@ namespace CssCs.Queues
         bool isNewUpload = string.IsNullOrEmpty(li.CloudId);        
         if(!isNewUpload)
         {
-          CloudItem ci = CloudItem.Select(li.CloudId, srvm.CEVM.Sqlid);
+          CloudItem ci = CloudItem.Select(li.CloudId, srvm.CEVM.EmailSqlId);
           if (srvm.CEVM.Cloud.HashCheck(fullpath, ci))
           {
             CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue: Upload cancel because same hash, path:{0}", fullpath), 1);
@@ -117,7 +117,7 @@ namespace CssCs.Queues
           if (hresult == 0x80070020)//can't open file because other process opening (not share read) -> re-queue
           {
             Task t = Task.Delay(Settings.Setting.TryAgainAfter);
-            t.ContinueWith((Task task) => TaskQueues.Add(this));
+            _ = t.ContinueWith((Task task) => TaskQueues.Add(this));
           }
         }
         CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue.DoWork: Exception, Message:{0}",ae.InnerException.Message));
@@ -126,11 +126,6 @@ namespace CssCs.Queues
       {
         CPPCLR_Callback.OutPutDebugString(string.Format("UploadQueue.DoWork: Exception, path:{0}, Message:{1}, StackTrace:{2}", fullpath, ex.Message, ex.StackTrace), 1);
       }
-    }    
-
-    //public string RunTest(CFViewModel srvm,string fullpath, string fileid)
-    //{
-    //  return CloudItemTransfer.Upload(fullpath, srvm.CEVM, null, fileid).Result;
-    //}
+    }
   }
 }

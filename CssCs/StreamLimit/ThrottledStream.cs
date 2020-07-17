@@ -112,7 +112,7 @@ namespace CssCs.StreamLimit
 
     public ThrottledStream(Stream parent,bool download = true)
     {
-      if (null == parent) throw new ArgumentNullException("parent");
+      if (null == parent) throw new ArgumentNullException(nameof(parent));
       this.parent = parent;
 
       timer = new System.Timers.Timer();

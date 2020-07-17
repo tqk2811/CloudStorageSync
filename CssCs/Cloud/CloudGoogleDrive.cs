@@ -7,6 +7,7 @@ using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -41,12 +42,13 @@ namespace CssCs.Cloud
     readonly DriveService ds;
     internal CloudGoogleDrive(CloudEmailViewModel cevm)
     {
-      if (cevm == null) throw new ArgumentNullException("cevm");
+      if (cevm == null) throw new ArgumentNullException(nameof(cevm));
       if (string.IsNullOrEmpty(cevm.Token)) throw new NullReferenceException("cevm.Token");
       this.cevm = cevm;
       user = Oauth2(cevm.Token).ConfigureAwait(false).GetAwaiter().GetResult();
       ds = GetDriveService(user);
     }
+
 
     internal static async Task<UserCredential> Oauth2(string user = null)
     {
@@ -77,18 +79,9 @@ namespace CssCs.Cloud
 #endif
       }
     }
-    internal static async Task<DriveService> GetDriveService(string user = null)
-    {
-      return new DriveService(new BaseClientService.Initializer()
-      {
-        HttpClientInitializer = await Oauth2(user),
-        ApplicationName = Properties.Resources.ApplicationName,
-        ApiKey = Properties.Resources.GoogleDriveApiKey
-      });
-    }
     internal static DriveService GetDriveService(UserCredential user)
     {
-      if (null == user) throw new ArgumentNullException("user");
+      if (null == user) throw new ArgumentNullException(nameof(user));
 
       return new DriveService(new BaseClientService.Initializer()
       {
@@ -98,7 +91,7 @@ namespace CssCs.Cloud
       });
     }
 
-    internal CloudItem InsertToDb(Google.Apis.Drive.v3.Data.File drivefile)
+    CloudItem InsertToDb(Google.Apis.Drive.v3.Data.File drivefile)
     {
       if (drivefile == null) return null;
 
@@ -106,7 +99,7 @@ namespace CssCs.Cloud
       CloudItem ci = new CloudItem
       {
         Id = drivefile.Id,
-        IdEmail = cevm.Sqlid,
+        IdEmail = cevm.EmailSqlId,
         Name = drivefile.Name,
         DateCreate = drivefile.CreatedTime.Value.GetUnixTimeSeconds(),
         DateMod = drivefile.ModifiedTime.Value.GetUnixTimeSeconds()
@@ -128,15 +121,14 @@ namespace CssCs.Cloud
       return ci;
     }
 
-    private async Task InitWatch()
+    async Task InitWatch()
     {
       var change = await ds.Changes.GetStartPageToken().ExecuteAsync();
       cevm.WatchToken = change.StartPageTokenValue;
-      cevm.Update();
     }
-    private async Task<IList<CloudChangeType>> WatchChange(string WatchToken)
+    async Task<IList<CloudChangeType>> WatchChange(string WatchToken)
     {
-      if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException("WatchToken");
+      if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
 
       List<CloudChangeType> result = new List<CloudChangeType>();
       var change_request = ds.Changes.List(WatchToken);
@@ -152,7 +144,7 @@ namespace CssCs.Cloud
           !change.File.MimeType.Equals(MimeType_Folder) &&//not folder
           change.File.MimeType.IndexOf(MimeType_googleapp) >= 0) continue;//ignore google app
 
-        CloudItem ci_old = CloudItem.Select(change.FileId, cevm.Sqlid);
+        CloudItem ci_old = CloudItem.Select(change.FileId, cevm.EmailSqlId);
         CloudChangeType changetype;
         if (change.Removed == true || change.File.Trashed == true)
         {
@@ -171,22 +163,20 @@ namespace CssCs.Cloud
             (ci_old.Size != change.File.Size ||
             ci_old.DateMod != change.File.ModifiedTime.Value.GetUnixTimeSeconds())) changetype.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
         }
-        changetype.CEId = cevm.Sqlid;
-        if (changetype.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(change.FileId, cevm.Sqlid);
+        changetype.CEId = cevm.EmailSqlId;
+        if (changetype.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(change.FileId, cevm.EmailSqlId);
         else
         {
-          if (changetype.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(change.FileId, cevm.Sqlid);
+          if (changetype.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(change.FileId, cevm.EmailSqlId);
           changetype.CiNew = InsertToDb(change.File);
         }
         result.Add(changetype);
       }
       if (!string.IsNullOrEmpty(change_list.NextPageToken)) result.AddRange(await WatchChange(change_list.NextPageToken));
       cevm.WatchToken = change_list.NewStartPageToken;
-      cevm.Update();
       return result;
     }
-
-    private async Task<Stream> Download_(string uri, long start, long end)
+    async Task<Stream> Download_(string uri, long start, long end)
     {
       var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri);
       requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
@@ -205,8 +195,7 @@ namespace CssCs.Cloud
         else return null;
       }
     }
-
-    private IList<CloudItem> CloudOpenDialogLoadChildFolder(string item_id, string NextPageToken = null)
+    IList<CloudItem> CloudOpenDialogLoadChildFolder(string item_id, string NextPageToken = null)
     {
       List<CloudItem> cis = new List<CloudItem>();
       var list_request = ds.Files.List();
@@ -220,12 +209,6 @@ namespace CssCs.Cloud
       if (list_result.IncompleteSearch == true) cis.AddRange(CloudOpenDialogLoadChildFolder(item_id, list_result.NextPageToken));
       return cis;
     }
-
-
-
-
-
-
 
 
 
@@ -248,8 +231,8 @@ namespace CssCs.Cloud
     }
     public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
     {
-      if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException("FilePath");
-      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException("ParentIds");
+      if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException(nameof(FilePath));
+      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException(nameof(ParentIds));
 
       FileInfo fi = new FileInfo(FilePath);
       if (fi.Attributes.HasFlag(FileAttributes.Directory))
@@ -320,14 +303,14 @@ namespace CssCs.Cloud
 
     public IList<CloudItem> CloudFolderGetChildFolder(string itemId)
     {
-      if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException("itemId");
+      if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
 
       return CloudOpenDialogLoadChildFolder(itemId, null);
     }
     public void ListAllItemsToDb(SyncRootViewModel srvm, string StartFolderId)
     {
-      if (null == srvm) throw new ArgumentNullException("srvm");
-      if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException("StartFolderId");
+      if (null == srvm) throw new ArgumentNullException(nameof(srvm));
+      if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException(nameof(StartFolderId));
 
       List<string> FolderIds = new List<string>() { StartFolderId };
       GetMetadata(StartFolderId).ConfigureAwait(false).GetAwaiter().GetResult();//read root first 
@@ -371,7 +354,7 @@ namespace CssCs.Cloud
     
     public async Task UpdateMetadata(UpdateCloudItem updateCloudItem)
     {
-      if (null == updateCloudItem) throw new ArgumentNullException("updateCloudItem");
+      if (null == updateCloudItem) throw new ArgumentNullException(nameof(updateCloudItem));
 
       Google.Apis.Drive.v3.Data.File drivefile = new Google.Apis.Drive.v3.Data.File()
       {
@@ -387,15 +370,15 @@ namespace CssCs.Cloud
     }
     public async Task TrashItem(string Id)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("Id");
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
 
       await ds.Files.Update(new Google.Apis.Drive.v3.Data.File() { Trashed = true }, Id).ExecuteAsync();
     }
 
     public async Task<CloudItem> CreateFolder(string name, IList<string> ParentIds)
     {
-      if (string.IsNullOrEmpty(name)) throw new ArgumentNullException("name");
-      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException("ParentIds");
+      if (string.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
+      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException(nameof(ParentIds));
 
       Google.Apis.Drive.v3.Data.File file = new Google.Apis.Drive.v3.Data.File
       {
@@ -445,7 +428,7 @@ namespace CssCs.Cloud
 
     public async Task<CloudItem> GetMetadata(string Id)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("Id");
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
 
       var getrequest = ds.Files.Get(Id);
       getrequest.Fields = Fields_DriveFile;

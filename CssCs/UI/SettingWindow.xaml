@@ -4,9 +4,15 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CssCs.UI"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" x:Class="CssCs.UI.SettingWindow"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
+        xmlns:viewmodel="clr-namespace:CssCs.UI.ViewModel"
+        x:Class="CssCs.UI.SettingWindow"
         mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding Properties.Resources._32xHappy_Cloud}"
-        Title="Setting" Height="346" Width="1120" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
+        Title="Setting" Height="346" Width="1163" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
+    <Window.Resources>
+        <viewmodel:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
+        <viewmodel:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
+    </Window.Resources>
     <Grid>
         <TabControl x:Name="tabControl">
             <TabItem Header="Accounts">
@@ -74,7 +80,7 @@
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn x:Name="SR_CloudFolder" Header="Cloud Folder" Width="200">
+                                <GridViewColumn x:Name="SR_CloudFolder" Header="Cloud Folder" Width="150">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -101,7 +107,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn x:Name="SR_LocalFolder" Header="Local Folder" Width="200">
+                                <GridViewColumn x:Name="SR_LocalFolder" Header="Local Folder" Width="150">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -117,6 +123,39 @@
                                                     </TextBlock.ToolTip>
                                                 </TextBlock>
                                                 <Button Grid.Column="1" Content="..." Click="LocalPath_changeClick"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="SR_DisplayName" Header="Display Name" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" >
+                                                    <StackPanel.Style>
+                                                        <Style TargetType="StackPanel">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEditingDisplayName}" Value="true">
+                                                                    <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=tb_DisplayName}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </StackPanel.Style>
+                                                    <TextBlock Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName,Converter={StaticResource FalseToVisibleConverter}}">
+                                                        <TextBlock.ToolTip>
+                                                            <ToolTip>
+                                                                <TextBlock Text="{Binding DisplayName}"/>
+                                                            </ToolTip>
+                                                        </TextBlock.ToolTip>
+                                                    </TextBlock>
+                                                    <TextBox Height="20" x:Name="tb_DisplayName" Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName, Converter={StaticResource TrueToVisibleConverter}}" 
+                                                             HorizontalAlignment="Stretch" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="tb_DisplayName_KeyDown"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="..." Click="DisplayName_changeClick"/>
                                             </Grid>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
