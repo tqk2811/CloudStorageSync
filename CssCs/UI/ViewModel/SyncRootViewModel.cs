@@ -58,7 +58,7 @@ namespace CssCs.UI.ViewModel
     /// <summary>
     /// for create new
     /// </summary>
-    internal SyncRootViewModel(CloudEmailViewModel cevm) : this(cevm, null, null, null, null, false, false)
+    internal SyncRootViewModel(CloudEmailViewModel cevm) : this(cevm, null, null, null, null,null, false, false)
     {
       SqliteManager.SRVMInsert(this);
       SRVMS.Add(this);
@@ -68,7 +68,7 @@ namespace CssCs.UI.ViewModel
     /// load from db
     /// </summary>
     internal SyncRootViewModel(CloudEmailViewModel cevm, string SrId, string CloudFolderName,
-                                string CloudFolderId, string LocalPath, bool iswork, bool isListAll)
+                                string CloudFolderId, string LocalPath,string DisplayName, bool iswork, bool isListAll)
     {
       if (null == cevm) throw new ArgumentNullException(nameof(cevm));
 
@@ -77,7 +77,7 @@ namespace CssCs.UI.ViewModel
 
       if (string.IsNullOrEmpty(SrId)) this.SRId = Extensions.RandomString(32);
       else this.SRId = SrId;
-
+      _DisplayName = DisplayName;
       _CloudFolderName = CloudFolderName;
       this.CloudFolderId = CloudFolderId;
       _LocalPath = LocalPath;

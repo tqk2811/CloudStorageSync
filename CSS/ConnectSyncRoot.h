@@ -48,7 +48,8 @@ namespace CSS
 
 
 
-        static HRESULT AckDelete(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey, _In_ NTSTATUS completionStatus);
+        static HRESULT AckDelete(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey,
+            CF_OPERATION_ACK_DELETE_FLAGS Flags, _In_ NTSTATUS completionStatus);
         //Callback to inform the sync provider that a placeholder under one of its sync roots is about to be deleted.
         static void CALLBACK NOTIFY_DELETE(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters);
         //Callback to inform the sync provider that a placeholder under one of its sync roots has been successfully deleted.
@@ -56,7 +57,8 @@ namespace CSS
 
 
 
-        static HRESULT AckRename(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey, _In_ NTSTATUS completionStatus);
+        static HRESULT AckRename(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey,
+            CF_OPERATION_ACK_RENAME_FLAGS Flags, _In_ NTSTATUS completionStatus);
         //Callback to inform the sync provider that a placeholder under one of its sync roots is about to be renamed or moved.
         static void CALLBACK NOTIFY_RENAME(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters);
         //Callback to inform the sync provider that a placeholder under one of its sync roots has been successfully renamed or moved.
@@ -64,14 +66,14 @@ namespace CSS
 
 
         static HRESULT AckData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey,
-            NTSTATUS CompletionStatus, LARGE_INTEGER Offset, LARGE_INTEGER Length);
+            CF_OPERATION_ACK_DATA_FLAGS Flags, NTSTATUS CompletionStatus, LARGE_INTEGER Offset, LARGE_INTEGER Length);
         //Callback to validate placeholder data.
         static void CALLBACK VALIDATE_DATA(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters);
 
 
 
 
-        static HRESULT RetrieveData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey,
+        static HRESULT RetrieveData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey, CF_OPERATION_RETRIEVE_DATA_FLAGS Flags,
             _Field_size_bytes_(Length.QuadPart) LPVOID Buffer, LARGE_INTEGER Offset, LARGE_INTEGER Length, LARGE_INTEGER ReturnedLength);        
 
         static HRESULT RestartHydration(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey,

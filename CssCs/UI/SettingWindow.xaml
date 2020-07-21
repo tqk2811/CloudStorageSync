@@ -8,7 +8,7 @@
         xmlns:viewmodel="clr-namespace:CssCs.UI.ViewModel"
         x:Class="CssCs.UI.SettingWindow"
         mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding Properties.Resources._32xHappy_Cloud}"
-        Title="Setting" Height="346" Width="1163" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
+        Title="Setting" Height="346" Width="1233" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
     <Window.Resources>
         <viewmodel:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
         <viewmodel:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
@@ -80,7 +80,7 @@
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn x:Name="SR_CloudFolder" Header="Cloud Folder" Width="150">
+                                <GridViewColumn x:Name="SR_CloudFolder" Header="Cloud Folder" Width="180">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -107,7 +107,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn x:Name="SR_LocalFolder" Header="Local Folder" Width="150">
+                                <GridViewColumn x:Name="SR_LocalFolder" Header="Local Folder" Width="180">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -127,34 +127,34 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn x:Name="SR_DisplayName" Header="Display Name" Width="150">
+                                <GridViewColumn x:Name="SR_DisplayName" Header="Display Name" Width="180">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsEditingDisplayName}" Value="true">
+                                                                <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=tb_DisplayName}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Grid.Style>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="20"/>
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0" >
-                                                    <StackPanel.Style>
-                                                        <Style TargetType="StackPanel">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsEditingDisplayName}" Value="true">
-                                                                    <Setter Property="FocusManager.FocusedElement" Value="{Binding ElementName=tb_DisplayName}"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </StackPanel.Style>
-                                                    <TextBlock Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName,Converter={StaticResource FalseToVisibleConverter}}">
-                                                        <TextBlock.ToolTip>
-                                                            <ToolTip>
-                                                                <TextBlock Text="{Binding DisplayName}"/>
-                                                            </ToolTip>
-                                                        </TextBlock.ToolTip>
-                                                    </TextBlock>
-                                                    <TextBox Height="20" x:Name="tb_DisplayName" Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName, Converter={StaticResource TrueToVisibleConverter}}" 
-                                                             HorizontalAlignment="Stretch" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="tb_DisplayName_KeyDown"/>
-                                                </StackPanel>
+                                                <TextBlock Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName,Converter={StaticResource FalseToVisibleConverter}}">
+                                                    <TextBlock.ToolTip>
+                                                        <ToolTip>
+                                                            <TextBlock Text="{Binding DisplayName}"/>
+                                                        </ToolTip>
+                                                    </TextBlock.ToolTip>
+                                                </TextBlock>
+                                                <TextBox Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
+                                                         x:Name="tb_DisplayName" Text="{Binding DisplayName}" Visibility="{Binding IsEditingDisplayName, Converter={StaticResource TrueToVisibleConverter}}" 
+                                                         GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="tb_DisplayName_KeyDown"/>
+                                                
                                                 <Button Grid.Column="1" Content="..." Click="DisplayName_changeClick"/>
                                             </Grid>
                                         </DataTemplate>
@@ -167,7 +167,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn x:Name="SR_Message" Header="Message" Width="205">
+                                <GridViewColumn x:Name="SR_Message" Header="Message" Width="180">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock HorizontalAlignment="Left" VerticalAlignment="Center" Text="{Binding Message}">

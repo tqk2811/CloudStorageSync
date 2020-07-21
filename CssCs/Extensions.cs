@@ -175,5 +175,8 @@ namespace CssCs
       }
       return false;
     }
+
+    [DllImport("User32.dll")]
+    internal static extern void PostQuitMessage(int nExitCode);
   }
 }

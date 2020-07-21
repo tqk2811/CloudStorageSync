@@ -135,7 +135,6 @@ namespace CSS
         di->data->CallbackInfo_RequestKey = callbackInfo->RequestKey;
         di->FullPath = gcnew String(fullClientPath.c_str());
 
-        WriteLog(String::Format("DownloadItem Request:{0}", di->FullPath), 1);
         auto action = gcnew Action<Task<Stream^>^, Object^>(di, &DownloadItem::Download);
         task_stream->ContinueWith(action, di);
         return;

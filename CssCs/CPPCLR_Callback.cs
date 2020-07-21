@@ -16,15 +16,15 @@ namespace CssCs
   public delegate bool _UpdatePlaceholder(SyncRootViewModel srvm, LocalItem li, CloudItem ci);
   public static class CPPCLR_Callback
   {
-    public static void Init(string UWPLocalStatePath)
+    public static bool Init(string UWPLocalStatePath)
     {
       if (string.IsNullOrEmpty(UWPLocalStatePath)) throw new ArgumentNullException(UWPLocalStatePath);
-      if (CPPCLR_Callback.UWPLocalStatePath != null) return;
+      if (CPPCLR_Callback.UWPLocalStatePath != null) return false;
 
       CPPCLR_Callback.UWPLocalStatePath = UWPLocalStatePath;
       CloudOneDrive.Init();
       SqliteManager.Init();
-      SqliteManager.SettingSelect();
+      return SqliteManager.SettingSelect();
     }
     public static string UWPLocalStatePath { get; private set; } = null;
 

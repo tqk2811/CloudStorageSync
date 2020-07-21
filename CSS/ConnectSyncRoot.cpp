@@ -8,17 +8,23 @@ namespace CSS
     CF_CALLBACK_REGISTRATION ConnectSyncRoot::s_CallbackTable[] ={
         { CF_CALLBACK_TYPE_FETCH_DATA,                      ConnectSyncRoot::FETCH_DATA },
         //{ CF_CALLBACK_TYPE_CANCEL_FETCH_DATA,               ConnectSyncRoot::CANCEL_FETCH_DATA },
-        //{ CF_CALLBACK_TYPE_FETCH_PLACEHOLDERS,              ConnectSyncRoot::FETCH_PLACEHOLDERS },
+
+        //{ CF_CALLBACK_TYPE_FETCH_PLACEHOLDERS,              ConnectSyncRoot::FETCH_PLACEHOLDERS },//see StorageProviderPopulationPolicy::Full
         //{ CF_CALLBACK_TYPE_CANCEL_FETCH_PLACEHOLDERS,       ConnectSyncRoot::CANCEL_FETCH_PLACEHOLDERS },
+
         //{ CF_CALLBACK_TYPE_NOTIFY_FILE_OPEN_COMPLETION,     ConnectSyncRoot::NOTIFY_FILE_OPEN_COMPLETION },
         //{ CF_CALLBACK_TYPE_NOTIFY_FILE_CLOSE_COMPLETION,    ConnectSyncRoot::NOTIFY_FILE_CLOSE_COMPLETION },
+
         //{ CF_CALLBACK_TYPE_NOTIFY_DEHYDRATE,                ConnectSyncRoot::NOTIFY_DEHYDRATE },
         //{ CF_CALLBACK_TYPE_NOTIFY_DEHYDRATE_COMPLETION,     ConnectSyncRoot::NOTIFY_DEHYDRATE_COMPLETION },
+
         { CF_CALLBACK_TYPE_NOTIFY_DELETE,                   ConnectSyncRoot::NOTIFY_DELETE },
         { CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,        ConnectSyncRoot::NOTIFY_DELETE_COMPLETION },
+
         { CF_CALLBACK_TYPE_NOTIFY_RENAME,                   ConnectSyncRoot::NOTIFY_RENAME },//when move file or rename
         { CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,        ConnectSyncRoot::NOTIFY_RENAME_COMPLETION },
-        //{ CF_CALLBACK_TYPE_VALIDATE_DATA,                   ConnectSyncRoot::VALIDATE_DATA },
+
+        //{ CF_CALLBACK_TYPE_VALIDATE_DATA,                   ConnectSyncRoot::VALIDATE_DATA },//see StorageProviderHydrationPolicyModifier::ValidationRequired
         CF_CALLBACK_REGISTRATION_END
     };
     LONGLONG ConnectSyncRoot::ConnectSyncRootTransferCallbacks(_In_ LPCWSTR LocalFolder)
@@ -88,6 +94,8 @@ namespace CSS
                 if (ci)
                 {
                     CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
+                    LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Accept request")
+                        .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
                     return;
                 }
                 else reason = L"ci not found";
@@ -218,7 +226,7 @@ namespace CSS
         opInfo.TransferKey = transferKey;
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(CF_OPERATION_PARAMETERS::AckDehydrate);
         opParams.AckDehydrate.CompletionStatus = CompletionStatus;
-        opParams.AckDehydrate.Flags = CF_OPERATION_ACK_DEHYDRATE_FLAG_NONE;
+        opParams.AckDehydrate.Flags = Flags;
         opParams.AckDehydrate.FileIdentity = FileIdentity;
         opParams.AckDehydrate.FileIdentityLength = FileIdentityLength;
         return CfExecute(&opInfo, &opParams);
@@ -238,7 +246,8 @@ namespace CSS
 
 
 
-    HRESULT ConnectSyncRoot::AckDelete(_In_ CF_CONNECTION_KEY connectionKey,_In_ CF_TRANSFER_KEY transferKey,_In_ NTSTATUS completionStatus)
+    HRESULT ConnectSyncRoot::AckDelete(_In_ CF_CONNECTION_KEY connectionKey,_In_ CF_TRANSFER_KEY transferKey,
+        CF_OPERATION_ACK_DELETE_FLAGS Flags, _In_ NTSTATUS completionStatus)
     {
         CF_OPERATION_INFO opInfo = { 0 };
         CF_OPERATION_PARAMETERS opParams = { 0 };
@@ -248,10 +257,10 @@ namespace CSS
         opInfo.TransferKey = transferKey;
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(CF_OPERATION_PARAMETERS::AckDelete);
         opParams.AckDelete.CompletionStatus = completionStatus;
-        opParams.AckDelete.Flags = CF_OPERATION_ACK_DELETE_FLAG_NONE;
+        opParams.AckDelete.Flags = Flags;
         return CfExecute(&opInfo, &opParams);
     }
-    //trigger 2 time?
+    //trigger 2 time when delete a placeholder (not hydrate, and not shift delete)
     //when delete or move file different disk (copy and delete)
     void CALLBACK ConnectSyncRoot::NOTIFY_DELETE(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
     {
@@ -264,57 +273,67 @@ namespace CSS
             else
             {
                 String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
-                SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-                if (srvm)
+                PinStr(fullpath);
+                if (PathFileExists(pin_fullpath))
                 {
-                    CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-                    LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
-                    if (li && ci)
+                    SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
+                    if (srvm)
                     {
-                        LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
-                        CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm) : nullptr;
-                        if (li_parent && ci_parent)
+                        CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
+                        LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
+                        if (li && ci)
                         {
-                            if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
-                                ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))
+                            LocalItem^ li_parent = LocalItem::Find(li->LocalParentId);
+                            CloudItem^ ci_parent = li_parent ? CloudItem::Select(li_parent->CloudId, srvm) : nullptr;
+                            if (li_parent && ci_parent)
                             {
-                                Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
-                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem");
-                                SUCCESS = true;
-                            }
-                            else if (li_parent && !ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
-                                ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
-                            {
-                                UpdateCloudItem^ uci = gcnew UpdateCloudItem();
-                                uci->Id = ci->Id;
-                                uci->ParentIdsRemove = gcnew List<String^>();
-                                uci->ParentIdsRemove->Add(ci_parent->Id);
+                                if (ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                    ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))
+                                {
+                                    Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
+                                    WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem");
+                                    SUCCESS = true;
+                                }
+                                else if (li_parent && !ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
+                                    ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren))
+                                {
+                                    UpdateCloudItem^ uci = gcnew UpdateCloudItem();
+                                    uci->Id = ci->Id;
+                                    uci->ParentIdsRemove = gcnew List<String^>();
+                                    uci->ParentIdsRemove->Add(ci_parent->Id);
 
-                                Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)");
-                                SUCCESS = true;
+                                    Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
+                                    WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)");
+                                    SUCCESS = true;
+                                }
+                                else reason = L"user not has permision on cloud";
+                                //false
                             }
-                            else reason = L"user not have permision on cloud";
-                            //false
+                            else
+                            {
+                                SUCCESS = true;
+                                reason = L"li_parent/ci_parent not found";
+                            }
                         }
                         else
                         {
-                            SUCCESS = true;
-                            reason = L"li_parent/ci_parent not found";
+                            SUCCESS = true;//ignore when li not found (because trigger 2 times)
+                            reason = L"ci/li not found";
                         }
                     }
-                    else
-                    {
-                        SUCCESS = true;//ignore when li not found (because trigger 2 times)
-                        reason = L"ci/li not found";
-                    }
+                    else reason = L"srvm not found";
                 }
-                else reason = L"srvm not found";
+                else
+                {
+                    SUCCESS = true;
+                    reason = L"file not found (trigger 2 times by delete placeholder(not hydrate))";
+                }
             }
         }
         else reason = L"No Internet";
-        AckDelete(callbackInfo->ConnectionKey, callbackInfo->TransferKey, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
-        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE:").append(SUCCESS ? L"STATUS_SUCCESS" : reason)
+        AckDelete(callbackInfo->ConnectionKey, callbackInfo->TransferKey, CF_OPERATION_ACK_DELETE_FLAG_NONE, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_DELETE:").append(SUCCESS ? L"STATUS_SUCCESS" : L"STATUS_UNSUCCESSFUL")
+            .append(L", error:").append(reason)
             .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
     }
     void CALLBACK ConnectSyncRoot::NOTIFY_DELETE_COMPLETION(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
@@ -347,7 +366,8 @@ namespace CSS
 
 
 
-    HRESULT ConnectSyncRoot::AckRename(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey, _In_ NTSTATUS completionStatus)
+    HRESULT ConnectSyncRoot::AckRename(_In_ CF_CONNECTION_KEY connectionKey, _In_ CF_TRANSFER_KEY transferKey,
+        CF_OPERATION_ACK_RENAME_FLAGS Flags, _In_ NTSTATUS completionStatus)
     {
         CF_OPERATION_INFO opInfo = { 0 };
         CF_OPERATION_PARAMETERS opParams = { 0 };
@@ -357,7 +377,7 @@ namespace CSS
         opInfo.TransferKey = transferKey;
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(CF_OPERATION_PARAMETERS::AckRename);
         opParams.AckRename.CompletionStatus = completionStatus;
-        opParams.AckRename.Flags = CF_OPERATION_ACK_RENAME_FLAG_NONE;
+        opParams.AckRename.Flags = Flags;
         return CfExecute(&opInfo, &opParams);
     }
     //when move file in current disk, rename
@@ -462,7 +482,7 @@ namespace CSS
             }
         }
         else reason = L"No Internet";
-        AckRename(callbackInfo->ConnectionKey, callbackInfo->TransferKey, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
+        AckRename(callbackInfo->ConnectionKey, callbackInfo->TransferKey, CF_OPERATION_ACK_RENAME_FLAG_NONE, SUCCESS ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL);
         LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::NOTIFY_RENAME:").append(SUCCESS ? L"STATUS_SUCCESS" : reason)
             .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
     }
@@ -494,7 +514,7 @@ namespace CSS
 
 
     HRESULT ConnectSyncRoot::AckData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey,
-        NTSTATUS CompletionStatus, LARGE_INTEGER Offset, LARGE_INTEGER Length)
+        CF_OPERATION_ACK_DATA_FLAGS Flags, NTSTATUS CompletionStatus, LARGE_INTEGER Offset, LARGE_INTEGER Length)
     {
         CF_OPERATION_INFO opInfo = { 0 };
         CF_OPERATION_PARAMETERS opParams = { 0 };
@@ -503,7 +523,7 @@ namespace CSS
         opInfo.ConnectionKey = connectionKey;
         opInfo.TransferKey = transferKey;
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(CF_OPERATION_PARAMETERS::AckData);
-        opParams.AckData.Flags = CF_OPERATION_ACK_DATA_FLAG_NONE;
+        opParams.AckData.Flags = Flags;
         opParams.AckData.CompletionStatus = CompletionStatus;
         opParams.AckData.Offset = Offset;
         opParams.AckData.Length = Length;
@@ -519,7 +539,7 @@ namespace CSS
 
 
 
-    HRESULT ConnectSyncRoot::RetrieveData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey,
+    HRESULT ConnectSyncRoot::RetrieveData(CF_CONNECTION_KEY connectionKey, CF_TRANSFER_KEY transferKey, CF_OPERATION_RETRIEVE_DATA_FLAGS Flags,
         _Field_size_bytes_(Length.QuadPart) LPVOID Buffer, LARGE_INTEGER Offset, LARGE_INTEGER Length, LARGE_INTEGER ReturnedLength)
     {
         CF_OPERATION_INFO opInfo = { 0 };
@@ -529,7 +549,7 @@ namespace CSS
         opInfo.ConnectionKey = connectionKey;
         opInfo.TransferKey = transferKey;
         opParams.ParamSize = CF_SIZE_OF_OP_PARAM(CF_OPERATION_PARAMETERS::RetrieveData);
-        opParams.RetrieveData.Flags = CF_OPERATION_RETRIEVE_DATA_FLAG_NONE;
+        opParams.RetrieveData.Flags = Flags;
         opParams.RetrieveData.Buffer = Buffer;
         opParams.RetrieveData.Offset = Offset;
         opParams.RetrieveData.Length = Length;

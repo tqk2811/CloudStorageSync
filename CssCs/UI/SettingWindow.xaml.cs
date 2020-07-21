@@ -170,14 +170,15 @@ namespace CssCs.UI
       try
       {
         Button button = sender as Button;
-        SyncRootViewModel data = button.DataContext as SyncRootViewModel;
-        if (data.IsWork) return;
+        SyncRootViewModel srvm = button.DataContext as SyncRootViewModel;
+        if (srvm.IsWork) return;
         FolderBrowserCloudDialog folderBrowserCloudDialog = new FolderBrowserCloudDialog(GetCloudEmailSelected());
         folderBrowserCloudDialog.ShowDialog();
         if (folderBrowserCloudDialog.Result != null)
         {
-          data.CloudFolderName = folderBrowserCloudDialog.Result.Name;
-          data.CloudFolderId = folderBrowserCloudDialog.Result.Id;
+          srvm.CloudFolderName = folderBrowserCloudDialog.Result.Name;
+          srvm.CloudFolderId = folderBrowserCloudDialog.Result.Id;
+          srvm.DisplayName = srvm.CloudFolderName + " - " + srvm.CEVM.Email;
         }
       }
       catch (Exception ex)
@@ -272,12 +273,11 @@ namespace CssCs.UI
     }
     #endregion
 
-    [DllImport("User32.dll")]
-    private static extern void PostQuitMessage(int nExitCode);
+    
     private void bt_exit_Click(object sender, RoutedEventArgs e)
     {
       if(MessageBoxResult.Yes == MessageBox.Show("Are you sure want to quit?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question))
-        PostQuitMessage(0);
+        Extensions.PostQuitMessage(0);
     }
   }
 }

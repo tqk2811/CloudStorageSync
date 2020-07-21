@@ -37,14 +37,14 @@ namespace CssCs.DataClass
       }
     }
 
-    public long SQLId { get; set; } = -1;
-    public string CEId { get; set; }
-    public string Id { get; set; }
-    public string IdNew { get; set; }
+    //public long SQLId { get; set; } = -1;
+    public string CEId { get; internal set; }
+    public string Id { get; internal set; }
+    public string IdNew { get; internal set; }
     public List<string> ParentsRemove { get; } = new List<string>();
     public List<string> ParentsNew { get; } = new List<string>();
     public List<string> ParentsCurrent { get; } = new List<string>();
-    public CloudItem CiNew { get; set; }
+    public CloudItem CiNew { get; internal set; }
     void CheckParent()
     {
       for (int i = 0; i < ParentsRemove.Count; i++)

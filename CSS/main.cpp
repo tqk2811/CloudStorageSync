@@ -8,7 +8,7 @@ gcroot<ManualResetEvent^> resetEvent;
 void MainThread()
 {
     CSS::Bridge::LoadCallback();
-    CssCs::CPPCLR_Callback::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()));
+    if(!CssCs::CPPCLR_Callback::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()))) return;
     CSS::SRManaged::Init();
     CSS::UiManaged::Init();
     resetEvent->Set();

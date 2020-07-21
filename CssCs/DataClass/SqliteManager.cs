@@ -4,6 +4,7 @@ using CssCs.UI.ViewModel;
 using System.IO;
 using System;
 using System.Text;
+using System.Windows;
 
 namespace CssCs.DataClass
 {
@@ -138,20 +139,25 @@ namespace CssCs.DataClass
     #endregion
 
     #region srvm
+    enum srvmBoolFlag : long
+    {
+      None = 0,
+      IsWork = 1 << 0,
+      IsListedAll = 2 << 1
+    }
     const string _srvm_create = @"create table if not exists SyncRoot(
                                     Id CHAR(32) PRIMARY KEY NOT NULL,
                                     IdEmail CHAR(32) NOT NULL,
                                     CloudFolderName TEXT,
                                     CloudFolderId TEXT,
                                     LocalPath TEXT,
-                                    IsWork BOOLEAN DEFAULT 0,
-                                    IsListedAll BOOLEAN DEFAULT 0,
+                                    DisplayName TEXT,
+                                    Flag BIG INT NOT NULL DEFAULT 0,
                                     FOREIGN KEY(IdEmail) REFERENCES Email(Id));";
     const string _srvm_listall = "select * from SyncRoot;";
-    const string _srvm_insert = @"insert into SyncRoot(Id,IdEmail,CloudFolderName,CloudFolderId,LocalPath) 
-values($Id,$IdEmail,$CloudFolderName,$CloudFolderId,$LocalPath);";
+    const string _srvm_insert = @"insert into SyncRoot(Id,IdEmail) values($Id,$IdEmail);";
     const string _srvm_update = @"update SyncRoot set CloudFolderName = $CloudFolderName , CloudFolderId = $CloudFolderId , 
-LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id = $Id;";
+LocalPath = $LocalPath , DisplayName = $DisplayName , Flag = $Flag where Id = $Id;";
     const string _srvm_delete = "delete from SyncRoot where Id = $Id;";
     private static void SRVMListAll()
     {
@@ -167,9 +173,11 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
           string CloudFolderName = reader.IsDBNull(2) ? null : reader.GetString(2);//nullable
           string CloudFolderId = reader.IsDBNull(3) ? null : reader.GetString(3);//nullable
           string LocalPath = reader.IsDBNull(4) ? null : reader.GetString(4);//nullable
-          bool IsWork = reader.GetBoolean(5);
-          bool IsListedAll = reader.GetBoolean(6);
-          srvms.Add(new SyncRootViewModel(CloudEmailViewModel.Find(IdEmail), id, CloudFolderName, CloudFolderId, LocalPath, IsWork, IsListedAll));
+          string DisplayName = reader.IsDBNull(5) ? null : reader.GetString(5);
+          srvmBoolFlag flag = (srvmBoolFlag)reader.GetInt64(6);
+          bool IsWork = flag.HasFlag(srvmBoolFlag.IsWork);
+          bool IsListedAll = flag.HasFlag(srvmBoolFlag.IsListedAll);
+          srvms.Add(new SyncRootViewModel(CloudEmailViewModel.Find(IdEmail), id, CloudFolderName, CloudFolderId, LocalPath, DisplayName, IsWork, IsListedAll));
         }
       }
       SyncRootViewModel.Load(srvms);
@@ -180,9 +188,6 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
       command.CommandText = _srvm_insert;
       command.Parameters.AddWithValue("$Id", srvm.SRId);
       command.Parameters.AddWithValue("$IdEmail", srvm.CEVM.EmailSqlId);
-      command.Parameters.AddWithValue("$CloudFolderName", srvm.CloudFolderName);
-      command.Parameters.AddWithValue("$CloudFolderId", srvm.CloudFolderId);
-      command.Parameters.AddWithValue("$LocalPath", srvm.LocalPath);
       lock (_con) command.ExecuteNonQuery();
     }
     internal static void SRVMUpdate(SyncRootViewModel srvm)
@@ -194,8 +199,11 @@ LocalPath = $LocalPath , IsWork = $IsWork , IsListedAll = $IsListedAll where Id 
       command.Parameters.AddWithValue("$CloudFolderName", srvm.CloudFolderName);
       command.Parameters.AddWithValue("$CloudFolderId", srvm.CloudFolderId);
       command.Parameters.AddWithValue("$LocalPath", srvm.LocalPath);
-      command.Parameters.AddWithValue("$IsWork", srvm.IsWork);
-      command.Parameters.AddWithValue("$IsListedAll", srvm.IsListedAll);
+      command.Parameters.AddWithValue("$DisplayName", srvm.DisplayName);
+      srvmBoolFlag flag = srvmBoolFlag.None;
+      if (srvm.IsWork) flag |= srvmBoolFlag.IsWork;
+      if (srvm.IsListedAll) flag |= srvmBoolFlag.IsListedAll;
+      command.Parameters.AddWithValue("$Flag", (long)flag);
       command.ExecuteNonQuery();
     }
     internal static void SRVMDelete(SyncRootViewModel srvm)
@@ -451,7 +459,8 @@ where Id = $Id AND IdEmail = $IdEmail;";
     #endregion
 
     #region setting
-    enum SettingBoolFlag : int
+    const int DBVer = 1;
+    enum SettingBoolFlag : long
     {
       None = 0,
       SkipNoticeMalware = 1 << 0,
@@ -468,7 +477,8 @@ where Id = $Id AND IdEmail = $IdEmail;";
                                       SpeedUploadLimit integer not null default 0,
                                       SpeedDownloadLimit integer not null default 0,
                                       TimeWatchChangeCloud integer not null default 15,
-                                      SettingBoolFlag integer default 7,
+                                      Flag BIG INT NOT NULL default 7,
+                                      DBVersion integer not null default 1,
 
                                       constraint PK_T1 PRIMARY KEY (Lock),
                                       constraint CK_T1_Locked CHECK (Lock='X'));";
@@ -481,7 +491,7 @@ FilesUploadSameTime = $FilesUploadSameTime,
 SpeedUploadLimit = $SpeedUploadLimit, 
 SpeedDownloadLimit = $SpeedDownloadLimit, 
 TimeWatchChangeCloud = $TimeWatchChangeCloud, 
-SettingBoolFlag = $SettingBoolFlag
+Flag = $Flag
 where Lock = 'X';";
     private static void SettingInsert()
     {
@@ -490,7 +500,7 @@ where Lock = 'X';";
       command.Parameters.AddWithValue("$FileIgnore", Settings.Setting.FileIgnore);
       lock (_con) command.ExecuteNonQuery();
     }
-    internal static void SettingSelect()
+    internal static bool SettingSelect()
     {
       var command = _con.CreateCommand();
       command.CommandText = _setting_select;
@@ -498,6 +508,13 @@ where Lock = 'X';";
       {
         if(reader.Read())
         {
+          int DBVersion = reader.GetInt32(9);
+          if (DBVersion != DBVer)
+          {
+            CPPCLR_Callback.OutPutDebugString("Different DB version, please uninstall and install again.");
+            Extensions.PostQuitMessage(0);
+            return false;
+          }
           Settings.Setting.LoadSetting = true;
           Settings.Setting.FileIgnore = reader.GetString(1);
           Settings.Setting.TryAgainAfter = reader.GetInt32(2);
@@ -506,11 +523,18 @@ where Lock = 'X';";
           Settings.Setting.SpeedUploadLimit = reader.GetInt32(5);
           Settings.Setting.SpeedDownloadLimit = reader.GetInt32(6);
           Settings.Setting.TimeWatchChangeCloud = reader.GetInt32(7);
-          SettingBoolFlag flag = (SettingBoolFlag)reader.GetInt32(8);
+          SettingBoolFlag flag = (SettingBoolFlag)reader.GetInt64(8);
+
           Settings.Setting.SkipNoticeMalware = flag.HasFlag(SettingBoolFlag.SkipNoticeMalware);
           Settings.Setting.UploadPrioritizeFirst = flag.HasFlag(SettingBoolFlag.UploadPrioritizeFirst);
           Settings.Setting.DownloadPrioritizeFirst = flag.HasFlag(SettingBoolFlag.DownloadPrioritizeFirst);
           Settings.Setting.LoadSetting = false;
+          return true;
+        }
+        else
+        {
+          CPPCLR_Callback.OutPutDebugString("Can't read setting.");
+          return false;
         }
       }
     }
@@ -529,10 +553,9 @@ where Lock = 'X';";
       if (Settings.Setting.SkipNoticeMalware) flag |= SettingBoolFlag.SkipNoticeMalware;
       if (Settings.Setting.UploadPrioritizeFirst) flag |= SettingBoolFlag.UploadPrioritizeFirst;
       if (Settings.Setting.DownloadPrioritizeFirst) flag |= SettingBoolFlag.DownloadPrioritizeFirst;
-      command.Parameters.AddWithValue("$SettingBoolFlag", (int)flag);
+      command.Parameters.AddWithValue("$Flag", (long)flag);
       command.ExecuteNonQuery();
     }
     #endregion
-
   }
 }

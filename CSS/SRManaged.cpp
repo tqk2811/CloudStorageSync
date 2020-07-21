@@ -27,9 +27,11 @@ namespace CSS
 		{
 			srvm->ConnectionKey = 0;
 			srvm->Status = SyncRootStatus::RegisteringSyncRoot;
+			if (String::IsNullOrEmpty(srvm->DisplayName)) srvm->DisplayName = srvm->CloudFolderName + gcnew String(L" - ") + srvm->CEVM->Email;
+
 			PinStr2(SRid, srvm->SRId);
 			PinStr2(LocalPath, srvm->LocalPath);
-			PinStr2(displayname, srvm->CloudFolderName + gcnew String(L" - ") + srvm->CEVM->Email);
+			PinStr2(displayname, srvm->DisplayName);
 
 			SyncRootRegistrarInfo srinfo;
 			srinfo.SrId = SRid;
