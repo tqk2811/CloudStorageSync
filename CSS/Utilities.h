@@ -131,11 +131,4 @@ namespace CSS
 			return false;
 		}		
 	}
-
-	inline static void WriteLogTaskIfError(Task^ t, LPCWSTR info)
-	{
-		TaskContinueWriteLogIfError^ check = gcnew TaskContinueWriteLogIfError(gcnew String(info));
-		auto action = gcnew Action<Task^>(check, &TaskContinueWriteLogIfError::Check);
-		t->ContinueWith(action);
-	}
 }

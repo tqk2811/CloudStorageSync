@@ -1,32 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CssCs
 {
-  public class TaskContinueWriteLogIfError
+  internal class TaskContinueWriteLogIfError
   {
-    string info;
-    public TaskContinueWriteLogIfError(string info)
+    string message;
+    public TaskContinueWriteLogIfError(string message)
     {
-      if (string.IsNullOrEmpty(info)) throw new ArgumentNullException(nameof(info));
-      this.info = info;
+      if (string.IsNullOrEmpty(message)) throw new ArgumentNullException(nameof(message));
+      this.message = message;
     }
 
     public void Check(Task t)
     {
-      if (t.Status.HasFlag(TaskStatus.Faulted)) CPPCLR_Callback.OutPutDebugString(info +
+      if (t.Status.HasFlag(TaskStatus.Faulted)) CPPCLR_Callback.OutPutDebugString(message +
                                                       ", TaskStatus:" + TaskStatus.Faulted.ToString() +
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
-      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
 
+      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(message + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
     }
   }
 
-  public class TaskContinueWriteLogIfError<T>
+  internal class TaskContinueWriteLogIfError<T>
   {
     string info;
     public TaskContinueWriteLogIfError(string info)
@@ -42,6 +39,6 @@ namespace CssCs
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
       else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
-    }
+    }    
   }
 }

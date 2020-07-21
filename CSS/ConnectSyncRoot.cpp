@@ -291,7 +291,7 @@ namespace CSS
                                     ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))
                                 {
                                     Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
-                                    WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem");
+                                    CssCs::Extensions::WriteLogIfError(t, gcnew String(L"ConnectSyncRoot::NOTIFY_DELETE Cloud->TrashItem"));
                                     SUCCESS = true;
                                 }
                                 else if (li_parent && !ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::OwnedByMe) &&
@@ -303,7 +303,7 @@ namespace CSS
                                     uci->ParentIdsRemove->Add(ci_parent->Id);
 
                                     Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                                    WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)");
+                                    CssCs::Extensions::WriteLogIfError(t, gcnew String(L"ConnectSyncRoot::NOTIFY_DELETE Cloud->UpdateMetadata(remove parent)"));
                                     SUCCESS = true;
                                 }
                                 else reason = L"user not has permision on cloud";
@@ -439,7 +439,8 @@ namespace CSS
                                         uci->ParentIdsRemove = ParentsIdRemove;
 
                                         Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                                        WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(CanAddChildren,CanRemoveChildren,CanRename)");
+                                        CssCs::Extensions::WriteLogIfError(t,
+                                            gcnew String(L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(CanAddChildren,CanRemoveChildren,CanRename)"));
 
                                         SUCCESS = true;
                                         if (isrename) li->Name = newname;
@@ -453,7 +454,8 @@ namespace CSS
                                 ci->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanTrash))//move out syncroot FETCH_DATA -> and move, cloud delete
                             {
                                 Task^ t = srvm->CEVM->Cloud->TrashItem(ci->Id);
-                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->TrashItem");
+                                CssCs::Extensions::WriteLogIfError(t,
+                                    gcnew String(L"ConnectSyncRoot::NOTIFY_RENAME Cloud->TrashItem"));
 
                                 li->Delete(true);
                                 SUCCESS = true;
@@ -467,7 +469,8 @@ namespace CSS
                                 uci->ParentIdsRemove->Add(ci_parent->Id);
 
                                 Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
-                                WriteLogTaskIfError(t, L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(!OwnedByMe,CanRemoveChildren)");
+                                CssCs::Extensions::WriteLogIfError(t,
+                                    gcnew String(L"ConnectSyncRoot::NOTIFY_RENAME Cloud->UpdateMetadata(!OwnedByMe,CanRemoveChildren)"));
 
                                 li->Delete(true);
                                 SUCCESS = true;

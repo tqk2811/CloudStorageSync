@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 
@@ -159,7 +160,6 @@ namespace CssCs
       return Settings.Setting.HasInternet;
     }
 
-
     public static bool CheckFolderPermission(string directoryPath)
     {
       try
@@ -178,5 +178,17 @@ namespace CssCs
 
     [DllImport("User32.dll")]
     internal static extern void PostQuitMessage(int nExitCode);
+
+
+    public static void WriteLogIfError(this Task t, string message)
+    {
+      TaskContinueWriteLogIfError log = new TaskContinueWriteLogIfError(message);
+      t.ContinueWith(new Action<Task>(log.Check));
+    }
+    public static void WriteLogIfError<T>(this Task<T> t, string message)
+    {
+      TaskContinueWriteLogIfError<T> log = new TaskContinueWriteLogIfError<T>(message);
+      t.ContinueWith(new Action<Task<T>>(log.Check));
+    }
   }
 }
