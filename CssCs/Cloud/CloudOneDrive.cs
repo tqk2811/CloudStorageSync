@@ -151,52 +151,51 @@ namespace CssCs.Cloud
       return ci;
     }
 
-    private async Task<IList<CloudChangeType>> WatchChange(string UrlWatch)
+    private async Task<CloudChangeTypeCollection> WatchChange(string UrlWatch)
     {
-      List<CloudChangeType> list = new List<CloudChangeType>();
+      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
 
       var auth_result = await GetAuthenticationResult(account);
       HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, UrlWatch);
       requestMessage.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", auth_result.AccessToken);
       HttpResponseMessage responseMessage = await httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
-      if (responseMessage.IsSuccessStatusCode)
-      {
-        TrackChangesResult result = JsonConvert.DeserializeObject<TrackChangesResult>(await responseMessage.Content.ReadAsStringAsync());
-        foreach (var item in result.DriveItems)
-        {
-          CloudChangeType cloudChangeType;
-          CloudItem ci_old = CloudItem.Select(item.Id, cevm.EmailSqlId);
-          if (item.Deleted != null)
-          {
-            cloudChangeType = new CloudChangeType(item.Id, null, null);
-            cloudChangeType.Flag |= CloudChangeFlag.IsDeleted;
-          }
-          else
-          {
-            cloudChangeType = new CloudChangeType(item.Id, ci_old?.ParentsId, new List<string>() { item.ParentReference.Id });
-            if (ci_old != null && !item.Name.Equals(ci_old.Name)) cloudChangeType.Flag |= CloudChangeFlag.IsRename;
-            //if (!item.Id.Equals(item.Id)) cloudChangeType.Flag |= CloudChangeFlag.IsChangedId;
-            //cloudChangeType.IdNew = cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId) ? item.Id : null;
-            if (ci_old != null &&
-              (ci_old.Size != item.Size ||
-              ci_old.DateMod != item.LastModifiedDateTime.Value.ToUnixTimeSeconds())) cloudChangeType.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
-          }
-          cloudChangeType.CEId = cevm.EmailSqlId;
-          if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(item.Id, cevm.EmailSqlId);
-          else
-          {
-            //if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(item.Id, cevm.Id);
-            cloudChangeType.CiNew = InsertToDb(item);
-          }
-          list.Add(cloudChangeType);
-        }
 
-        if (!string.IsNullOrEmpty(result.deltaLink)) cevm.WatchToken = result.deltaLink;
-        else if (!string.IsNullOrEmpty(result.nextLink)) list.AddRange(await WatchChange(result.nextLink));
-        else throw new Exception("Can't find deltaLink/nextLink");
-        return list;
+      if (!responseMessage.IsSuccessStatusCode) 
+        throw new HttpException((int)responseMessage.StatusCode, await responseMessage.Content.ReadAsStringAsync());
+
+      TrackChangesResult trackChangesResult = JsonConvert.DeserializeObject<TrackChangesResult>(await responseMessage.Content.ReadAsStringAsync());
+      foreach (var item in trackChangesResult.DriveItems)
+      {
+        CloudChangeType cloudChangeType;
+        CloudItem ci_old = CloudItem.Select(item.Id, cevm.EmailSqlId);
+        if (item.Deleted != null)
+        {
+          cloudChangeType = new CloudChangeType(item.Id, null, null);
+          cloudChangeType.Flag |= CloudChangeFlag.IsDeleted;
+        }
+        else
+        {
+          cloudChangeType = new CloudChangeType(item.Id, ci_old?.ParentsId, new List<string>() { item.ParentReference.Id });
+          if (ci_old != null && !item.Name.Equals(ci_old.Name)) cloudChangeType.Flag |= CloudChangeFlag.IsRename;
+          //if (!item.Id.Equals(item.Id)) cloudChangeType.Flag |= CloudChangeFlag.IsChangedId;
+          //cloudChangeType.IdNew = cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId) ? item.Id : null;
+          if (ci_old != null &&
+            (ci_old.Size != item.Size ||
+            ci_old.DateMod != item.LastModifiedDateTime.Value.ToUnixTimeSeconds())) cloudChangeType.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
+        }
+        cloudChangeType.CEId = cevm.EmailSqlId;
+        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(item.Id, cevm.EmailSqlId);
+        else
+        {
+          //if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(item.Id, cevm.Id);
+          cloudChangeType.CiNew = InsertToDb(item);
+        }
+        result.Add(cloudChangeType);
       }
-      else throw new HttpException((int)responseMessage.StatusCode, await responseMessage.Content.ReadAsStringAsync());
+      if (!string.IsNullOrEmpty(trackChangesResult.deltaLink)) result.NewWatchToken = trackChangesResult.deltaLink;
+      else if (!string.IsNullOrEmpty(trackChangesResult.nextLink)) result.AddRange(await WatchChange(trackChangesResult.nextLink));
+      else throw new Exception("Can't find deltaLink/nextLink");
+      return result;
     }
 
     string GetLink(IDriveItemDeltaCollectionPage delta, string linkname)
@@ -333,14 +332,14 @@ namespace CssCs.Cloud
       }
     }
 
-    public async Task<IList<CloudChangeType>> WatchChange()
+    public async Task<CloudChangeTypeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(cevm.WatchToken))
       {
         var queryOptions = new List<QueryOption>() { new QueryOption("token", "latest") };
         IDriveItemDeltaCollectionPage delta = await MyDrive.Root.Delta().Request(queryOptions).GetAsync();
         cevm.WatchToken = GetLink(delta, "@odata.deltaLink");
-        return new List<CloudChangeType>();
+        return new CloudChangeTypeCollection();
       }
       else return await WatchChange(cevm.WatchToken);
     }

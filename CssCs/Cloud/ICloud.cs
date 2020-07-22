@@ -58,7 +58,7 @@ namespace CssCs.Cloud
 
     Task<CloudItem> CreateFolder(string name, IList<string> ParentIds);
 
-    Task<IList<CloudChangeType>> WatchChange();
+    Task<CloudChangeTypeCollection> WatchChange();
 
     void ListAllItemsToDb(SyncRootViewModel srvm, string StartFolderId);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -61,6 +62,17 @@ namespace CssCs.DataClass
           }
         }
       }
+    }
+  }
+
+  public class CloudChangeTypeCollection: Collection<CloudChangeType>
+  {
+    public string NewWatchToken { get; internal set; }
+
+    internal void AddRange(IEnumerable<CloudChangeType> collection)
+    {
+      if (null == collection) throw new ArgumentNullException(nameof(collection));
+      foreach (var item in collection) this.Add(item);
     }
   }
 }

@@ -42,7 +42,7 @@ namespace CSS
 				List<Task^>^ taskwait = gcnew List<Task^>();
 				for (int i = 0; i < CloudEmailViewModel::CEVMS->Count; i++)
 				{
-					auto action = gcnew Action<Task<IList<CloudChangeType^>^>^, Object^>(trackchanges, &CSS::TrackChanges::WatchChangeResult);
+					auto action = gcnew Action<Task<CloudChangeTypeCollection^>^, Object^>(trackchanges, &CSS::TrackChanges::WatchChangeResult);
 					if (firsttime) CloudEmailViewModel::CEVMS[i]->LoadQuota();
 					taskwait->Add(CloudEmailViewModel::CEVMS[i]->Cloud->WatchChange()->ContinueWith(action, CloudEmailViewModel::CEVMS[i]));
 				}
@@ -61,7 +61,7 @@ namespace CSS
 		resetevent->Set();
 	}
 
-	void TrackChanges::WatchChangeResult(Task<IList<CloudChangeType^>^>^ t, Object^ obj)
+	void TrackChanges::WatchChangeResult(Task<CloudChangeTypeCollection^>^ t, Object^ obj)
 	{
 		//update change
 		if (t->Status.HasFlag(TaskStatus::Faulted))
@@ -73,15 +73,17 @@ namespace CSS
 		}else if(t->Status.HasFlag(TaskStatus::Canceled)) return;
 
 		CloudEmailViewModel^ cevm = (CloudEmailViewModel^)obj;
-		IList<CloudChangeType^>^ changes = t->Result;
+		CloudChangeTypeCollection^ changes = t->Result;
 		List<SyncRootViewModel^>^ workingCF_inEmail = SyncRootViewModel::FindAllWorking(cevm);
 		for (int i = 0; i < changes->Count; i++)
 		{
 			for (int j = 0; j < workingCF_inEmail->Count; j++)
 			{
-				if(workingCF_inEmail[j]->Status == SyncRootStatus::Working) UpdateChange(changes[i], workingCF_inEmail[j]);
+				if(workingCF_inEmail[j]->Status == SyncRootStatus::Working) 
+					UpdateChange(changes[i], workingCF_inEmail[j]);
 			}
 		}
+		cevm->WatchToken = changes->NewWatchToken;
 	}
 
 	void TrackChanges::UpdateChange(CloudChangeType^ change, SyncRootViewModel^ srvm)

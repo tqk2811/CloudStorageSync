@@ -126,11 +126,11 @@ namespace CssCs.Cloud
       var change = await ds.Changes.GetStartPageToken().ExecuteAsync();
       cevm.WatchToken = change.StartPageTokenValue;
     }
-    async Task<IList<CloudChangeType>> WatchChange(string WatchToken)
+    async Task<CloudChangeTypeCollection> WatchChange(string WatchToken)
     {
       if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
 
-      List<CloudChangeType> result = new List<CloudChangeType>();
+      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
       var change_request = ds.Changes.List(WatchToken);
       change_request.Fields = Fields_WatchChange;
       change_request.PageSize = 1000;
@@ -173,7 +173,8 @@ namespace CssCs.Cloud
         result.Add(changetype);
       }
       if (!string.IsNullOrEmpty(change_list.NextPageToken)) result.AddRange(await WatchChange(change_list.NextPageToken));
-      cevm.WatchToken = change_list.NewStartPageToken;
+
+      result.NewWatchToken = change_list.NewStartPageToken;
       return result;
     }
     async Task<Stream> Download_(string uri, long start, long end)
@@ -293,12 +294,11 @@ namespace CssCs.Cloud
     }
 
 
-    public async Task<IList<CloudChangeType>> WatchChange()
+    public async Task<CloudChangeTypeCollection> WatchChange()
     {
-      List<CloudChangeType> result = new List<CloudChangeType>();
       if (string.IsNullOrEmpty(cevm.WatchToken)) await InitWatch();
-      else result.AddRange(await WatchChange(cevm.WatchToken));
-      return result;
+      else return await WatchChange(cevm.WatchToken);
+      return new CloudChangeTypeCollection();
     }
 
     public IList<CloudItem> CloudFolderGetChildFolder(string itemId)
