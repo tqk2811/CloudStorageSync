@@ -238,7 +238,7 @@ namespace CssCs.Cloud
       FileInfo fi = new FileInfo(FilePath);
       if (fi.Attributes.HasFlag(FileAttributes.Directory))
       {
-        CPPCLR_Callback.OutPutDebugString("CloudGDrive.Upload: Creating Folder in cloud,path:" + FilePath, 1);
+        CppInterop.OutPutDebugString("CloudGDrive.Upload: Creating Folder in cloud,path:" + FilePath, 1);
         return await CreateFolder(fi.Name, ParentIds);
       }
       else//file

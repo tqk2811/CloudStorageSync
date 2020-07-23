@@ -82,7 +82,7 @@ namespace CssCs.Cloud
     internal static void Init()
     {
       if (publicClientApplication != null) return;
-      TokenCacheHelper.CacheFilePath = CPPCLR_Callback.UWPLocalStatePath + "\\msalcache.bin3";
+      TokenCacheHelper.CacheFilePath = CppInterop.UWPLocalStatePath + "\\msalcache.bin3";
 
       publicClientApplication = PublicClientApplicationBuilder.Create(Properties.Resources.OneDriveClientId)
                 .WithRedirectUri(oauth_nativeclient)

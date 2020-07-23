@@ -43,7 +43,7 @@ namespace CssCs.DataClass
     internal static void Init()
     {
       if (_con != null) return;
-      string filepath = CPPCLR_Callback.UWPLocalStatePath + "\\data.sqlite3";
+      string filepath = CppInterop.UWPLocalStatePath + "\\data.sqlite3";
       string _strConnect = string.Format("Data Source={0};Version=3;", filepath);
       bool flag = false;
       if (!File.Exists(filepath))
@@ -511,7 +511,7 @@ where Lock = 'X';";
           int DBVersion = reader.GetInt32(9);
           if (DBVersion != DBVer)
           {
-            CPPCLR_Callback.OutPutDebugString("Different DB version, please uninstall and install again.");
+            CppInterop.OutPutDebugString("Different DB version, please uninstall and install again.");
             Extensions.PostQuitMessage(0);
             return false;
           }
@@ -533,7 +533,7 @@ where Lock = 'X';";
         }
         else
         {
-          CPPCLR_Callback.OutPutDebugString("Can't read setting.");
+          CppInterop.OutPutDebugString("Can't read setting.");
           return false;
         }
       }

@@ -152,7 +152,7 @@ namespace CSS
 					if (li)//file revert li was del
 					{
 						UploadQueue^ uq = gcnew UploadQueue(srvm, li);
-						TaskQueues::Reset(uq);
+						TaskQueues::UploadQueues->Reset(uq);
 					}
 				}
 				break;
@@ -196,7 +196,7 @@ namespace CSS
 
 				UploadQueue^ uq = gcnew UploadQueue(srvm, li_new);
 				if (finfo->Attributes.HasFlag(FileAttributes::Directory)) uq->IsPrioritize = true;
-				TaskQueues::Add(uq);
+				TaskQueues::UploadQueues->Add(uq);
 			}
 			break;
 		}
@@ -208,7 +208,7 @@ namespace CSS
 			if (li && String::IsNullOrEmpty(li->CloudId))
 			{
 				//request cancel upload
-				TaskQueues::Cancel(gcnew UploadQueue(srvm, li));
+				TaskQueues::UploadQueues->Cancel(gcnew UploadQueue(srvm, li));
 				li->Delete(true);
 			}
 			break;

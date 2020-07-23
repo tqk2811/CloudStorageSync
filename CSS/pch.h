@@ -39,8 +39,8 @@ namespace CSS
 //no include
 #include "Utilities.h"
 #include "ShellCall.h"
-#include "Bridge.h"
 #include "Placeholders.h"
+#include "UploadQueue.h"
 #include "UiManaged.h"
 #include "ConnectSyncRoot.h"
 #include "LocalAction.h"

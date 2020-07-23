@@ -129,6 +129,23 @@ namespace CSS
 			if (info2) log.append(L" ").append(info2);
 			LogWriter::WriteLogError(log, hr);
 			return false;
-		}		
+		}
+	}
+
+	inline static bool PathExists(String^ fullpath)
+	{
+		return Directory::Exists(fullpath) || File::Exists(fullpath);
+	}
+
+	inline static bool PathExists(LPCWSTR fullpath)
+	{
+		DWORD file_attri = GetFileAttributes(fullpath);
+		return INVALID_FILE_ATTRIBUTES != file_attri;
+	}
+
+	inline static void WriteLog(System::String^ text, int loglevel = 10)
+	{
+		PinStr(text);
+		CssWinrt::LogWriter::WriteLog(pin_text, loglevel);
 	}
 }

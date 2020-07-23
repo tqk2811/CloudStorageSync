@@ -18,7 +18,6 @@ namespace CSS
 	{
 		auto listSR = SyncRootViewModel::FindAllWorking(nullptr);
 		for (int i = 0; i < listSR->Count; i++) listSR[i]->Watcher->Stop();
-		TaskQueues::ShutDown();
 	}
 
 	void SRManaged::Register(SyncRootViewModel^ srvm)

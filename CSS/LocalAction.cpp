@@ -165,7 +165,7 @@ namespace CSS
 					}
 					UploadQueue^ uq = gcnew UploadQueue(srvm, li);
 					if (isfolder) uq->IsPrioritize = true;
-					TaskQueues::Add(uq);
+					TaskQueues::UploadQueues->Add(uq);
 				}
 				if (isfolder) FindNonPlaceholderAndUpload(srvm, itempath.c_str());
 			} while (FindNextFile(handle, &find));
