@@ -49,17 +49,17 @@ namespace CSS
                 else
                 {
                     CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_newpath);
-                    if (state == CF_PLACEHOLDER_STATE_INVALID ||
-                        !(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
+                    if (state == CF_PLACEHOLDER_STATE_INVALID) continue;
+                    if (!(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
                     {
-                        //not placeholder or invalid
+                        //not placeholder
                         if (isfolder) break;//-> convert
                         else
                         {
                             if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Checking hash file: {0}", filename);
                             if (srvm->CEVM->Cloud->HashCheck(newpath, ci)) break;//same hash -> convert
                             else continue;//diff hash
-                        }                       
+                        }
                     }
                 }
                 
