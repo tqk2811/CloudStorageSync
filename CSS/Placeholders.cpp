@@ -32,9 +32,10 @@ namespace CSS
 
         return filename;
     }
-    String^ FindNewFileName(String^ ParentDirectory, String^ filename, String^ extension, bool isfolder)
+    String^ FindNewFileName(SyncRootViewModel^ srvm, String^ ParentDirectory, String^ filename, String^ extension, CloudItem^ ci)
     {
         int i = 0;
+        bool isfolder = ci->Size == -1;
         do
         {
             i++;
@@ -44,25 +45,34 @@ namespace CSS
             if (INVALID_FILE_ATTRIBUTES == dw) break;//file not found
             else
             {
-                if (((dw & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) != isfolder) continue;
-                //check if not placeholder
-                CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_newpath);
-                if (state == CF_PLACEHOLDER_STATE_INVALID ||
-                    !(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
+                if (((dw & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) != isfolder) continue;//file != folder -> continue
+                else
                 {
-                    //not placeholder or invalid
-                    break;
+                    CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_newpath);
+                    if (state == CF_PLACEHOLDER_STATE_INVALID ||
+                        !(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
+                    {
+                        //not placeholder or invalid
+                        if (isfolder) break;//-> convert
+                        else
+                        {
+                            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Checking hash file: {0}", filename);
+                            if (srvm->CEVM->Cloud->HashCheck(newpath, ci)) break;//same hash -> convert
+                            else continue;//diff hash
+                        }                       
+                    }
                 }
+                
             }
         } while (true);
         return String::Format(L"{0} ({1}){2}", filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
     }
-    String^ FindNewNameItem(String^ parentFullPath, String^ Name, bool isfolder)
+    String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci)
     {
-        Name = Name->Trim();
-        String^ extension = GetFileExtension(Name, isfolder);
+        String^ Name = ci->Name->Trim();
+        String^ extension = GetFileExtension(Name, ci->Size == -1);
         Name = FixFileName(Name, extension);
-        return FindNewFileName(parentFullPath, Name, extension, isfolder);
+        return FindNewFileName(srvm, parentFullPath, Name, extension, ci);
     }
 
 
@@ -172,7 +182,7 @@ namespace CSS
 
         if (rename_cloud)
         {
-            clouditem->Name = FindNewNameItem(fullPathItemParent, clouditem->Name, cloud_isfolder);
+            clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem);
             fullPathItem = fullPathItemParent + L"\\" + clouditem->Name;            
             relativeItem = fullPathItem->Substring(srvm->LocalPath->Length + 1);
 
