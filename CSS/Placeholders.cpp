@@ -202,7 +202,7 @@ namespace CSS
             }
             else
             {
-                if (PathFileExists(pin_fullPathItem)) WriteLog(String::Format(L"Placeholders::Revert can't OpenFile path:{0}", fullPathItem), 0);
+                if (PathExists(pin_fullPathItem)) WriteLog(String::Format(L"Placeholders::Revert can't OpenFile path:{0}", fullPathItem), 0);
                 else
                 {
                     WriteLog(String::Format(L"Placeholders::Revert Path File doesn't Exists path:{0}", fullPathItem), 0);
@@ -270,7 +270,7 @@ namespace CSS
             }
             else//file can't open
             {
-                if (PathFileExists(pin_fullPathItem)) tryagain = true;//file found -> try again
+                if (PathExists(pin_fullPathItem)) tryagain = true;//file found -> try again
                 else li->Delete(true);//file not found, delete local item.
             }
         }
@@ -316,7 +316,7 @@ namespace CSS
             }
             else//file can't open
             {
-                if (PathFileExists(pin_fullPathItem)) tryagain = true;//file found -> try again
+                if (PathExists(pin_fullPathItem)) tryagain = true;//file found -> try again
                 else li->Delete(true);//file not found, delete local item.
             }
         }

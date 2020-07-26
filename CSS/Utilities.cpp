@@ -28,7 +28,7 @@ namespace CSS
 
 		return filename;
 	}
-	String^ FindNewFileName(String^ ParentDirectory, String^ filename, String^ extension)
+	String^ FindNewFileName(String^ ParentDirectory, String^ filename, String^ extension, bool isfolder)
 	{
 		int i = 0;
 		do
@@ -36,14 +36,17 @@ namespace CSS
 			i++;
 			String^ newpath = String::Format(L"{0}\\{1} ({2}){3}", ParentDirectory, filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
 			PinStr(newpath);
-			if (!PathFileExists(pin_newpath)) break;//file not found
+			DWORD dw = GetFileAttributes(pin_newpath);
+			if (INVALID_FILE_ATTRIBUTES == dw) break;//file not found
 			else
 			{
+				if (((dw & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) != isfolder) continue;
 				//check if not placeholder
 				CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_newpath);
-				if (state != CF_PLACEHOLDER_STATE_INVALID && //not invalid
-					!(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)//not placeholder
+				if (state == CF_PLACEHOLDER_STATE_INVALID ||
+					!(state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
 				{
+					//not placeholder or invalid
 					break;
 				}
 			}
@@ -55,6 +58,6 @@ namespace CSS
 		Name = Name->Trim();
 		String^ extension = GetFileExtension(Name, isfolder);
 		Name = FixFileName(Name, extension);
-		return FindNewFileName(parentFullPath, Name, extension);
+		return FindNewFileName(parentFullPath, Name, extension, isfolder);
 	}
 }

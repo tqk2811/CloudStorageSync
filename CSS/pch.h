@@ -7,7 +7,7 @@
 #include <gcroot.h>
 #include <msclr\marshal.h>//PtrToStringChars
 //#include <msclr\marshal_cppstd.h>
-#include <shlwapi.h>//file/folder PathFileExists,...
+#include <shlwapi.h>//file/folder,...
 #include "resource.h"
 
 #using <CssCs.dll>

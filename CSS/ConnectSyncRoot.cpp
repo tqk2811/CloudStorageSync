@@ -274,7 +274,7 @@ namespace CSS
             {
                 String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
                 PinStr(fullpath);
-                if (PathFileExists(pin_fullpath))
+                if (PathExists(pin_fullpath))
                 {
                     SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
                     if (srvm)
@@ -353,7 +353,7 @@ namespace CSS
             LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
             if (li)
             {
-                if (PathFileExists(pin_fullpath)) LocalAction::DeleteLocal(srvm, li);
+                if (PathExists(pin_fullpath)) LocalAction::DeleteLocal(srvm, li);
                 li->Delete(true);
                 success = true;
             }

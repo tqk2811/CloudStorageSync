@@ -50,7 +50,7 @@ namespace CSS
 			String^ fullPathItem = li->GetFullPath();
 			PinStr(fullPathItem);
 
-			if (PathFileExists(pin_fullPathItem))
+			if (PathExists(pin_fullPathItem))
 			{
 				if (!MoveToRecycleBin(std::wstring(pin_fullPathItem)))
 				{
@@ -188,7 +188,7 @@ namespace CSS
 		{
 			String^ fullpath = li->GetFullPath();
 			PinStr(fullpath);
-			if (!PathFileExists(pin_fullpath))
+			if (!PathExists(pin_fullpath))
 			{
 				flag = true;//file does not exist
 				li->Delete(true);
