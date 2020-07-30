@@ -109,7 +109,7 @@ namespace CSS
 		return false;
 	}
 
-	String^ FindNewNameItem(String^ parentFullPath, String^ Name, bool isfolder);
+	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci);
 
 	inline static bool CheckHr(HRESULT hr,LPCWSTR info, LPCWSTR info2 = nullptr,bool WriteLogSucceeded = false)
 	{

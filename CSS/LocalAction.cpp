@@ -105,7 +105,7 @@ namespace CSS
 		DWORD file_attri = GetFileAttributes(pin_itemnewFullPath);
 		if (file_attri != INVALID_FILE_ATTRIBUTES)
 		{
-			li->Name = FindNewNameItem(parentFullPath, ci->Name, ci->Size == -1);
+			li->Name = FindNewNameItem(srvm, parentFullPath, ci);
 			itemnewFullPath = parentFullPath + L"\\" + li->Name;
 			PinStr3(pin_itemnewFullPath, itemnewFullPath);
 		}
