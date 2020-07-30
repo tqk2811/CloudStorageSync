@@ -12,9 +12,9 @@ namespace CssCs.Queues
 
 
 
-    static List<IQueue> Queues = new List<IQueue>();
-    static List<IQueue> Runnings = new List<IQueue>();
-    static int _MaxRun = 1;
+    List<IQueue> Queues = new List<IQueue>();
+    List<IQueue> Runnings = new List<IQueue>();
+    int _MaxRun = 1;
     public int MaxRun
     {
       get { return _MaxRun; }
