@@ -1,25 +1,17 @@
-﻿using CssCs.UI.ViewModel;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CssCs.Queues
 {
-  public interface IQueue
+  public class TaskQueues
   {
-    bool IsPrioritize { get; } 
-    Task DoWork();
-    bool Check(IQueue queue);
-    void Cancel();
-  }  
-  public static class TaskQueues
-  {
-    static List<IQueue> Queues = new List<IQueue>();
-    static List<IQueue> Runnings = new List<IQueue>();
+    public static TaskQueues UploadQueues { get; } = new TaskQueues();
 
-    static int _MaxRun = 1;
-    public static int MaxRun
+
+    List<IQueue> Queues = new List<IQueue>();
+    List<IQueue> Runnings = new List<IQueue>();
+    int _MaxRun = 1;
+    public int MaxRun
     {
       get { return _MaxRun; }
       set
@@ -28,16 +20,16 @@ namespace CssCs.Queues
         _MaxRun = value; 
         if(flag) RunNewQueue();
       }
-    }    
+    }
 
-    static void ContinueTaskResult(Task Result,object queue_obj)
+    void ContinueTaskResult(Task Result,object queue_obj)
     {
       IQueue queue = queue_obj as IQueue;
       lock (Runnings) Runnings.Remove(queue);
       RunNewQueue();
     }
 
-    static void RunNewQueue()
+    void RunNewQueue()
     {
       if (Runnings.Count >= MaxRun || Queues.Count == 0) return;
       lock(Queues)
@@ -51,7 +43,7 @@ namespace CssCs.Queues
     }
 
 
-    public static void Add(IQueue queue)
+    public void Add(IQueue queue)
     {
       if (queue.IsPrioritize) queue.DoWork();
       else
@@ -61,19 +53,19 @@ namespace CssCs.Queues
       }
     }
 
-    public static void Cancel(IQueue queue)
+    public void Cancel(IQueue queue)
     {
       lock (Queues) Queues.RemoveAll(o => o.Check(queue));
       lock (Runnings) Runnings.ForEach(o => { if (o.Check(queue)) o.Cancel(); });
     }
 
-    public static void Reset(IQueue queue)
+    public void Reset(IQueue queue)
     {
       Cancel(queue);
       Add(queue);
     }
 
-    public static void ShutDown()
+    internal void ShutDown()
     {
       MaxRun = 0;
       lock (Runnings) Runnings.ForEach(o => o.Cancel());

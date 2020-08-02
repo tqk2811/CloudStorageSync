@@ -28,7 +28,7 @@ namespace CssCs.UI
       this.DataContext = this;
       InitializeComponent();
       this.cevm = cevm;
-      CPPCLR_Callback.OutPutDebugString("CssCs:FolderBrowserCloudDialog email:" + cevm.Email + ", cloudName:" + cevm.CloudName.ToString());
+      CppInterop.OutPutDebugString("CssCs:FolderBrowserCloudDialog email:" + cevm.Email + ", cloudName:" + cevm.CloudName.ToString());
     }
 
     public ObservableCollection<TreeviewCloudItemViewModel> treeview_CloudItemViewModels { get; } = new ObservableCollection<TreeviewCloudItemViewModel>();

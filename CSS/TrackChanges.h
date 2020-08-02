@@ -15,8 +15,8 @@ namespace CSS
 	public:
 		void LocalOnChanged(SyncRootViewModel^ srvm, CustomFileSystemEventArgs^ e);		
 	private:
-		void WatchChangeResult(Task<CloudChangeTypeCollection^>^ t, Object^ obj);
-		void UpdateChange(CloudChangeType^ change, SyncRootViewModel^ srvm);
+		void WatchChangeResult(Task<CloudChangeCollection^>^ t, Object^ obj);
+		void UpdateChange(CloudChange^ change, SyncRootViewModel^ srvm);
 	};
 	extern gcroot<TrackChanges^> trackchanges;
 }

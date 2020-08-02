@@ -20,9 +20,24 @@ namespace CssCs.UI.ViewModel
     Working = 16,             //00010000
     Error = 128               //10000000
   }
+
+  public delegate void SrRegister(SyncRootViewModel srvm);
+
+  public delegate void SrUnRegister(SyncRootViewModel srvm);
+
   public class SyncRootViewModel : INotifyPropertyChanged
   {
     #region Static Function
+    static SrRegister _srRegister;
+    static SrUnRegister _srUnRegister;
+    internal static void Init(SrRegister srRegister, SrUnRegister srUnRegister)
+    {
+      if (srRegister == null) throw new ArgumentNullException(nameof(srRegister));
+      if (srUnRegister == null) throw new ArgumentNullException(nameof(srUnRegister));
+      _srRegister = srRegister;
+      _srUnRegister = srUnRegister;
+    }
+
     static List<SyncRootViewModel> SRVMS;
     internal static void Load(IList<SyncRootViewModel> srvms)
     {
@@ -112,6 +127,7 @@ namespace CssCs.UI.ViewModel
 
     public long ConnectionKey { get; set; } = 0;
     public Task TaskRun { get; private set; }
+    public LocalItemRoot Root { get; private set; }
 
     public bool Deleted { get; private set; } = false;
     #endregion
@@ -257,12 +273,13 @@ namespace CssCs.UI.ViewModel
 
     void Register()
     {
-      TaskRun = Task.Factory.StartNew(() => CPPCLR_Callback.SRRegister(this));
+      this.Root = new LocalItemRoot(this, this.CloudFolderId);
+      TaskRun = Task.Factory.StartNew(() => _srRegister(this));
     }
     void Unregister()
     {
       if (TaskRun != null && !TaskRun.IsCompleted) TaskRun.Wait();
-      CPPCLR_Callback.SRUnRegister(this);
+      _srUnRegister(this);
     }
     #endregion
   }

@@ -50,7 +50,7 @@ namespace CSS
 			String^ fullPathItem = li->GetFullPath();
 			PinStr(fullPathItem);
 
-			if (PathFileExists(pin_fullPathItem))
+			if (PathExists(pin_fullPathItem))
 			{
 				if (!MoveToRecycleBin(std::wstring(pin_fullPathItem)))
 				{
@@ -165,7 +165,7 @@ namespace CSS
 					}
 					UploadQueue^ uq = gcnew UploadQueue(srvm, li);
 					if (isfolder) uq->IsPrioritize = true;
-					TaskQueues::Add(uq);
+					TaskQueues::UploadQueues->Add(uq);
 				}
 				if (isfolder) FindNonPlaceholderAndUpload(srvm, itempath.c_str());
 			} while (FindNextFile(handle, &find));
@@ -188,7 +188,7 @@ namespace CSS
 		{
 			String^ fullpath = li->GetFullPath();
 			PinStr(fullpath);
-			if (!PathFileExists(pin_fullpath))
+			if (!PathExists(pin_fullpath))
 			{
 				flag = true;//file does not exist
 				li->Delete(true);

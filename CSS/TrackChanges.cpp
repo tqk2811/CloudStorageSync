@@ -42,7 +42,7 @@ namespace CSS
 				List<Task^>^ taskwait = gcnew List<Task^>();
 				for (int i = 0; i < CloudEmailViewModel::CEVMS->Count; i++)
 				{
-					auto action = gcnew Action<Task<CloudChangeTypeCollection^>^, Object^>(trackchanges, &CSS::TrackChanges::WatchChangeResult);
+					auto action = gcnew Action<Task<CloudChangeCollection^>^, Object^>(trackchanges, &CSS::TrackChanges::WatchChangeResult);
 					if (firsttime) CloudEmailViewModel::CEVMS[i]->LoadQuota();
 					taskwait->Add(CloudEmailViewModel::CEVMS[i]->Cloud->WatchChange()->ContinueWith(action, CloudEmailViewModel::CEVMS[i]));
 				}
@@ -61,7 +61,7 @@ namespace CSS
 		resetevent->Set();
 	}
 
-	void TrackChanges::WatchChangeResult(Task<CloudChangeTypeCollection^>^ t, Object^ obj)
+	void TrackChanges::WatchChangeResult(Task<CloudChangeCollection^>^ t, Object^ obj)
 	{
 		//update change
 		if (t->Status.HasFlag(TaskStatus::Faulted))
@@ -73,7 +73,7 @@ namespace CSS
 		}else if(t->Status.HasFlag(TaskStatus::Canceled)) return;
 
 		CloudEmailViewModel^ cevm = (CloudEmailViewModel^)obj;
-		CloudChangeTypeCollection^ changes = t->Result;
+		CloudChangeCollection^ changes = t->Result;
 		List<SyncRootViewModel^>^ workingCF_inEmail = SyncRootViewModel::FindAllWorking(cevm);
 		for (int i = 0; i < changes->Count; i++)
 		{
@@ -86,7 +86,7 @@ namespace CSS
 		cevm->WatchToken = changes->NewWatchToken;
 	}
 
-	void TrackChanges::UpdateChange(CloudChangeType^ change, SyncRootViewModel^ srvm)
+	void TrackChanges::UpdateChange(CloudChange^ change, SyncRootViewModel^ srvm)
 	{
 		String^ log = String::Format("CSS::TrackChanges::UpdateChange for CloudItemId:{0} in SRId:{1}", change->Id, srvm->SRId);
 		WriteLog(log, 2);
@@ -152,7 +152,7 @@ namespace CSS
 					if (li)//file revert li was del
 					{
 						UploadQueue^ uq = gcnew UploadQueue(srvm, li);
-						TaskQueues::Reset(uq);
+						TaskQueues::UploadQueues->Reset(uq);
 					}
 				}
 				break;
@@ -196,7 +196,7 @@ namespace CSS
 
 				UploadQueue^ uq = gcnew UploadQueue(srvm, li_new);
 				if (finfo->Attributes.HasFlag(FileAttributes::Directory)) uq->IsPrioritize = true;
-				TaskQueues::Add(uq);
+				TaskQueues::UploadQueues->Add(uq);
 			}
 			break;
 		}
@@ -208,7 +208,7 @@ namespace CSS
 			if (li && String::IsNullOrEmpty(li->CloudId))
 			{
 				//request cancel upload
-				TaskQueues::Cancel(gcnew UploadQueue(srvm, li));
+				TaskQueues::UploadQueues->Cancel(gcnew UploadQueue(srvm, li));
 				li->Delete(true);
 			}
 			break;

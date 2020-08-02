@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ThumbnailProvider.h"
-
+#include <ShlObj_core.h>//BHID_ThumbnailHandler
+#include <pathcch.h>//PathAllocCombine
 // IInitializeWithItem
 namespace CssWinrt
 {

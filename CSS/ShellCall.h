@@ -3,7 +3,7 @@ namespace CSS
 {
 	class ShellCall
 	{
-	public:
+	
 		// Tell the Shell so File Explorer can display the progress bar in its view
 		static void TransferProgressBar(_In_ PCWSTR fullPath,
 			_In_ const CF_CONNECTION_KEY ConnectionKey,

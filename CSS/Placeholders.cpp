@@ -6,11 +6,30 @@
 #include <propkey.h>
 namespace CSS
 {
-    void Placeholders::CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId,String^ RelativeOfParent)
+    bool GetFileInformation(LPCWSTR fullpath, BY_HANDLE_FILE_INFORMATION& info)
     {
-        if (srvm) 
+        HANDLE hfile = CreateFile(fullpath, 0, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+        bool result{ false };
+        if (INVALID_HANDLE_VALUE != hfile) result = GetFileInformationByHandle(hfile, &info);
+        CloseHandle(hfile);
+        return result;
+    }
+    static bool TwoItemIsHardLink(LPCWSTR fullpath0, LPCWSTR fullpath1)
+    {
+        BY_HANDLE_FILE_INFORMATION info0{};
+        BY_HANDLE_FILE_INFORMATION info1{};
+        if (GetFileInformation(fullpath0, info0) && GetFileInformation(fullpath1, info1) &&
+            info0.dwVolumeSerialNumber == info1.dwVolumeSerialNumber &&
+            info0.nFileIndexLow == info1.nFileIndexLow && info0.nFileIndexHigh == info1.nFileIndexHigh) return true;
+        return false;
+    }
+
+
+    void Placeholders::CreateAll(SyncRootViewModel^ srvm, LocalItem^ li, String^ RelativeOfParent)
+    {
+        if (srvm && li)
         {
-            IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->EmailSqlId);
+            IList<CloudItem^>^ childsci = CloudItem::FindChildIds(li->CloudId, srvm->CEVM->EmailSqlId);
             for (int i = 0; i < childsci->Count; i++)
             {
                 if (!srvm->IsWork)
@@ -19,74 +38,87 @@ namespace CSS
                     srvm->Message = gcnew String("Cancelling");
                     return;
                 }
-                LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
-                if (localitem)
+
+                LocalItem^ itemCreated = CreateItem(srvm, li, RelativeOfParent, childsci[i]);
+                if (itemCreated)
                 {
-                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
-                    if (localitem->LocalId > 0 && childsci[i]->Size == -1)
+                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Item Created: {0}", itemCreated->Name);
+                    if (childsci[i]->Size == -1)
                     {
                         String^ itemRelative = RelativeOfParent;
-                        if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
-                        else itemRelative = itemRelative + L"\\" + localitem->Name;
-                        CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
+                        if (String::IsNullOrEmpty(itemRelative)) itemRelative = itemCreated->Name;
+                        else itemRelative = itemRelative + L"\\" + itemCreated->Name;
+                        CreateAll(srvm, itemCreated, itemRelative);
                     }
                 }
             }
         }
     }
 
-    LocalItem^ Placeholders::CreateItem(SyncRootViewModel^ srvm,LONGLONG LI_ParentId, String^ Relative, CloudItem^ clouditem)
+    LocalItem^ Placeholders::CreateItem(SyncRootViewModel^ srvm, LocalItem^ li_parent, String^ parentRelative, CloudItem^ clouditem)
     {
-        if (!srvm || !clouditem) return nullptr;
-
+        if (!clouditem || !li_parent) return nullptr;
         bool cloud_isfolder = clouditem->Size == -1;
+        clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, !cloud_isfolder);
+        LocalItem^ localitem = li_parent->Childs->Find(clouditem->Id, clouditem->Name);//for upload/create local -> send to cloud -> watch back
+        if (localitem)
+        {
+            //unlock?
+            return localitem;
+        }
+
+        if (!srvm || !parentRelative) return nullptr;
         bool convert_to_placeholder(false);
         bool create_placeholder(false);
         bool rename_cloud(false);
         bool file_exist(false);
         bool create_hardlink(false);
-
-        clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, clouditem->Size != -1);
-        LocalItem^ localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
+        localitem = srvm->Root->FindFromCloudId(clouditem->Id);
+        String^ fileRefPath = String::Empty;
+        if(localitem) fileRefPath = localitem->GetFullPath()->ToString();
 
         String^ fullPathItemParent = srvm->LocalPath;
         String^ relativeItem;
-        if (String::IsNullOrEmpty(Relative)) relativeItem = clouditem->Name;
+        if (String::IsNullOrEmpty(parentRelative)) relativeItem = clouditem->Name;
         else
         {
-            fullPathItemParent = fullPathItemParent + L"\\" + Relative;
-            relativeItem = Relative + L"\\" + clouditem->Name;
+            fullPathItemParent = fullPathItemParent + L"\\" + parentRelative;
+            relativeItem = parentRelative + L"\\" + clouditem->Name;
         }
         String^ fullPathItem = srvm->LocalPath + L"\\" + relativeItem;
 
         PinStr(fullPathItem);
         PinStr(relativeItem);
         PinStr2(pin_LocalPath, srvm->LocalPath);
+        PinStr(fileRefPath);
 
         DWORD attribs = GetFileAttributes(pin_fullPathItem);
         file_exist = INVALID_FILE_ATTRIBUTES != attribs;
 
-        if (!file_exist) create_placeholder = true;
-        else
+        if (!file_exist)//file not exist
         {
-            /*CF_PLACEHOLDER_STATE state = GetPlaceholderState(pin_fullPathItem);
-            if (state != CF_PLACEHOLDER_STATE_INVALID && (state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
+            if (localitem) create_hardlink = true;
+            else create_placeholder = true;
+        }
+        else//if file_exist
+        {
+            bool localIsFolder = attribs & FILE_ATTRIBUTE_DIRECTORY;
+            if (localitem)//create hardlink
             {
-                if (localitem && !String::IsNullOrEmpty(localitem->CloudId) && localitem->CloudId->Equals(clouditem->Id))
-                {*/
-            if (localitem && !String::IsNullOrEmpty(localitem->CloudId))
-            {
-                if (!localitem->CloudId->Equals(clouditem->Id))
+                if (TwoItemIsHardLink(pin_fullPathItem, pin_fileRefPath))
                 {
-                    //diff id
+                    LocalItem^ li = gcnew LocalItem(srvm, clouditem->Id);
+                    li_parent->Childs->Add(li);
+                    return li;
+                }
+                else
+                {
                     rename_cloud = true;
-                    create_placeholder = true;
+                    create_hardlink = true;
                 }
             }
             else
             {
-                //item is not placeholder
-                bool localIsFolder = attribs & FILE_ATTRIBUTE_DIRECTORY;
                 if (localIsFolder && cloud_isfolder) convert_to_placeholder = true;//same folder
                 else if (!localIsFolder && !cloud_isfolder)//same file
                 {
@@ -102,7 +134,7 @@ namespace CSS
                         create_placeholder = true;
                     }
                 }
-                else//file != folder
+                else //file != folder
                 {
                     rename_cloud = true;
                     create_placeholder = true;
@@ -112,7 +144,7 @@ namespace CSS
 
         if (rename_cloud)
         {
-            clouditem->Name = FindNewNameItem(fullPathItemParent, clouditem->Name, cloud_isfolder);
+            clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem, !create_hardlink);//if create_hardlink -> file_exist = false
             fullPathItem = fullPathItemParent + L"\\" + clouditem->Name;            
             relativeItem = fullPathItem->Substring(srvm->LocalPath->Length + 1);
 
@@ -123,38 +155,38 @@ namespace CSS
             file_exist = INVALID_FILE_ATTRIBUTES != attribs;
             if (file_exist)
             {
-                localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
+                //localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
                 convert_to_placeholder = true;
             }
         }
 
-        if (localitem)
+        LocalItem^ item = nullptr;
+        if (create_hardlink)
         {
-            if (localitem->Flag.HasFlag(LocalItemFlag::LockWaitUpdateFromCloudWatch)) localitem->RemoveFlagWithLock(LocalItemFlag::LockWaitUpdateFromCloudWatch);
-            localitem->Update();
-        }
-        else
-        {
-            localitem = gcnew LocalItem();
-            localitem->CloudId = clouditem->Id;
-            localitem->Name = clouditem->Name;
-            if (clouditem->Size == -1) localitem->Flag = LocalItemFlag::Folder;
-            localitem->SRId = srvm->SRId;
-            localitem->LocalParentId = LI_ParentId;
-            localitem->Insert();
+            if (CreateHardLink(pin_fullPathItem, pin_fileRefPath, NULL))
+            {
+                item = gcnew LocalItem(srvm, clouditem->Id);
+                li_parent->Childs->Add(item);
+                return item;
+            }
         }
 
+        if (convert_to_placeholder)
+        {
+            Convert(srvm, pin_fullPathItem, clouditem->Id);
+            item = gcnew LocalItem(srvm, clouditem->Id);
+            li_parent->Childs->Add(item);
+            return item;
+        }
 
-        if (file_exist)
+        if (create_placeholder) 
         {
-            if(convert_to_placeholder) Convert(srvm, localitem, clouditem->Id);
+            Create(pin_LocalPath, pin_relativeItem, clouditem);
+            item = gcnew LocalItem(srvm, clouditem->Id);
+            li_parent->Childs->Add(item);
+            return item;
         }
-        else
-        {
-            if (create_placeholder) Create(pin_LocalPath, pin_relativeItem, clouditem);
-            else if (create_hardlink) CreateHardLink(pin_fullPathItem, L"", NULL);
-        }
-        return localitem;
+        return item;
     }
 
     bool Placeholders::Create(LPCWSTR syncRootPath, LPCWSTR relativePathItem, CloudItem^ clouditem)
@@ -186,33 +218,26 @@ namespace CSS
         else return false;
     }
 
-    bool Placeholders::Revert(SyncRootViewModel^ srvm, LocalItem^ li)
+    bool Placeholders::Revert(SyncRootViewModel^ srvm, LPCWSTR fullPathItem)
     {
-        bool result{ false };        
-        if (li)
+        bool result{ false };
+        HANDLE hfile = CreateFile(fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+        if (INVALID_HANDLE_VALUE != hfile)
         {
-            String^ fullPathItem = li->GetFullPath();
-            PinStr(fullPathItem);
-            HANDLE hfile = CreateFile(pin_fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
-            if (INVALID_HANDLE_VALUE != hfile)
-            {
-                HRESULT hr = CfRevertPlaceholder(hfile, CF_REVERT_FLAG_NONE, nullptr);
-                if (CheckHr(hr, L"Placeholders::Revert CfRevertPlaceholder", pin_fullPathItem), true) result = true;
-                CloseHandle(hfile);
-            }
-            else
-            {
-                if (PathFileExists(pin_fullPathItem)) WriteLog(String::Format(L"Placeholders::Revert can't OpenFile path:{0}", fullPathItem), 0);
-                else
-                {
-                    WriteLog(String::Format(L"Placeholders::Revert Path File doesn't Exists path:{0}", fullPathItem), 0);
-                    li->Delete(true);
-                }
-            }
+            HRESULT hr = CfRevertPlaceholder(hfile, CF_REVERT_FLAG_NONE, nullptr);
+            if (CheckHr(hr, L"Placeholders::Revert CfRevertPlaceholder", fullPathItem), true) result = true;
+            CloseHandle(hfile);
         }
         else
         {
-            LogWriter::WriteLog(L"Placeholders::Revert LocalItem is null", 0);
+            if (PathExists(fullPathItem))
+            {
+                WriteLog(String::Format(L"Placeholders::Revert can't OpenFile path:{0}", gcnew String(fullPathItem)), 0);
+            }
+            else
+            {
+                WriteLog(String::Format(L"Placeholders::Revert Path File doesn't Exists path:{0}", gcnew String(fullPathItem)), 0);
+            }
         }
         return result;
     }
@@ -226,60 +251,41 @@ namespace CSS
     //    If dehydration is requested, the placeholder must be in sync or the call with be failed with HRESULT(ERROR_CLOUD_FILE_NOT_IN_SYNC).
     //    The caller must have WRITE_DATA or WRITE_DAC access to the placeholder to be updated.
     //        Otherwise the operation will be failed with HRESULT(ERROR_CLOUD_FILE_ACCESS_DENIED).
-    bool Placeholders::Update(SyncRootViewModel^ srvm, LocalItem^ li, CloudItem^ clouditem, bool InsertErrorDb)
+    bool Placeholders::Update(SyncRootViewModel^ srvm, LPCWSTR fullPathItem, CloudItem^ clouditem)
     {
         bool result{ false };
         bool tryagain{ false };
-        if (li)
+        HANDLE hfile = CreateFile(fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        if (INVALID_HANDLE_VALUE != hfile)
         {
-            String^ fullPathItem = li->GetFullPath();
-            PinStr(fullPathItem);
-            HANDLE hfile = CreateFile(pin_fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-            if (INVALID_HANDLE_VALUE != hfile)
-            {
-                CF_FS_METADATA metadata{ 0 };
-                metadata.BasicInfo.CreationTime.QuadPart = CssCs::Extensions::GetFileTime(clouditem->DateCreate);
-                metadata.BasicInfo.ChangeTime.QuadPart = CssCs::Extensions::GetFileTime(clouditem->DateMod);
-                metadata.BasicInfo.LastAccessTime.QuadPart = metadata.BasicInfo.ChangeTime.QuadPart;
-                metadata.BasicInfo.LastWriteTime.QuadPart = metadata.BasicInfo.ChangeTime.QuadPart;
-                metadata.BasicInfo.FileAttributes = clouditem->Size == -1 ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
-                metadata.FileSize.QuadPart = clouditem->Size == -1 ? 0 : clouditem->Size;
-                CF_FILE_RANGE filerange{ 0 };
-                filerange.Length.QuadPart = MAXLONGLONG;
-                filerange.StartingOffset.QuadPart = 0;
-                DWORD dehydrateRangeCount(0);
-                USN usn{ 0 };
-                char FileIdentity[LengthFileIdentity]{ 0 };
-                FillFileIdentity(FileIdentity, clouditem->Id);
+            CF_FS_METADATA metadata{ 0 };
+            metadata.BasicInfo.CreationTime.QuadPart = CssCs::Extensions::GetFileTime(clouditem->DateCreate);
+            metadata.BasicInfo.ChangeTime.QuadPart = CssCs::Extensions::GetFileTime(clouditem->DateMod);
+            metadata.BasicInfo.LastAccessTime.QuadPart = metadata.BasicInfo.ChangeTime.QuadPart;
+            metadata.BasicInfo.LastWriteTime.QuadPart = metadata.BasicInfo.ChangeTime.QuadPart;
+            metadata.BasicInfo.FileAttributes = clouditem->Size == -1 ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
+            metadata.FileSize.QuadPart = clouditem->Size == -1 ? 0 : clouditem->Size;
+            CF_FILE_RANGE filerange{ 0 };
+            filerange.Length.QuadPart = MAXLONGLONG;
+            filerange.StartingOffset.QuadPart = 0;
+            DWORD dehydrateRangeCount(0);
+            USN usn{ 0 };
+            char FileIdentity[LengthFileIdentity]{ 0 };
+            FillFileIdentity(FileIdentity, clouditem->Id);
 
-                HRESULT hr = CfUpdatePlaceholder(
-                    hfile,
-                    &metadata,
-                    FileIdentity,
-                    LengthFileIdentity,
-                    &filerange,
-                    dehydrateRangeCount,
-                    metadata.BasicInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY ? CF_UPDATE_FLAG_MARK_IN_SYNC | CF_UPDATE_FLAG_DISABLE_ON_DEMAND_POPULATION : CF_UPDATE_FLAG_MARK_IN_SYNC,
-                    &usn,
-                    nullptr);
-
-                if (CheckHr(hr, L"Placeholders::Update CfUpdatePlaceholder", pin_fullPathItem,true)) result = true;
-                else if (HR_FileOpenningByOtherProcess == hr || HR_InUse == hr) tryagain = true;
-
-                CloseHandle(hfile);
-            }
-            else//file can't open
-            {
-                if (PathFileExists(pin_fullPathItem)) tryagain = true;//file found -> try again
-                else li->Delete(true);//file not found, delete local item.
-            }
+            HRESULT hr = CfUpdatePlaceholder(
+                hfile,
+                &metadata,
+                FileIdentity,
+                LengthFileIdentity,
+                &filerange,
+                dehydrateRangeCount,
+                metadata.BasicInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY ? (CF_UPDATE_FLAG_MARK_IN_SYNC | CF_UPDATE_FLAG_DISABLE_ON_DEMAND_POPULATION) : CF_UPDATE_FLAG_MARK_IN_SYNC,
+                &usn,
+                nullptr);
+            if (CheckHr(hr, L"Placeholders::Update CfUpdatePlaceholder", fullPathItem, true)) result = true;
+            CloseHandle(hfile);
         }
-        else
-        {
-            WriteLog(String::Format(L"Placeholders::Update LocalItem is null,CloudItem:{0}", clouditem), 0);
-        }
-
-        if(InsertErrorDb && tryagain) LocalError::Insert(li->LocalId, srvm->SRId, LocalErrorType::Update, clouditem->Id);
         return result;
     }
 
@@ -292,113 +298,78 @@ namespace CSS
     //  If dehydration is requested, the placeholder must be in sync or the call with be failed with HRESULT(ERROR_CLOUD_FILE_NOT_IN_SYNC).
     //  The caller must have WRITE_DATA or WRITE_DAC access to the file or directory to be converted.
     //     Otherwise the operation will be failed with HRESULT(ERROR_CLOUD_FILE_ACCESS_DENIED).
-    bool Placeholders::Convert(SyncRootViewModel^ srvm, LocalItem^ li, String^ fileIdentity, bool InsertErrorDb)
+    bool Placeholders::Convert(SyncRootViewModel^ srvm, LPCWSTR fullPathItem, String^ fileIdentity)
     {
         bool result{ false };
         bool tryagain{ false };
-        if (li)
+        HANDLE hfile = CreateFile(fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        if (INVALID_HANDLE_VALUE != hfile)
         {
-            String^ fullPathItem = li->GetFullPath();
-            PinStr(fullPathItem);
-            HANDLE hfile = CreateFile(pin_fullPathItem, WRITE_DAC, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-            if (INVALID_HANDLE_VALUE != hfile)
+            USN usn{ 0 };
+            char FileIdentity[LengthFileIdentity]{ 0 };
+            FillFileIdentity(FileIdentity, fileIdentity);
+            //doc recommend oplock
+            HRESULT hr = CfConvertToPlaceholder(hfile, FileIdentity, LengthFileIdentity, CF_CONVERT_FLAG_MARK_IN_SYNC, &usn, nullptr);
+
+            if (CheckHr(hr, L"Placeholders::Convert CfConvertToPlaceholder", fullPathItem, true)) result = true;
+            CloseHandle(hfile);
+        }
+        return result;
+    }
+
+    bool Placeholders::Hydrate(SyncRootViewModel^ srvm, LPCWSTR fullPathItem)
+    {
+        bool result{ false };
+        HRESULT hr{ 0 };
+        DWORD attrib = GetFileAttributes(fullPathItem);
+        if ((attrib != INVALID_FILE_ATTRIBUTES) &&
+            !(attrib & FILE_ATTRIBUTE_DIRECTORY) && //skip if folder
+            (attrib & FILE_ATTRIBUTE_PINNED))
+        {
+            HANDLE hfile = CreateFile(fullPathItem, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr);
+            if (hfile == INVALID_HANDLE_VALUE)
             {
-                USN usn{ 0 };
-                char FileIdentity[LengthFileIdentity]{ 0 };
-                FillFileIdentity(FileIdentity, fileIdentity);
-                //doc recommend oplock
-                HRESULT hr = CfConvertToPlaceholder(hfile, FileIdentity, LengthFileIdentity, CF_CONVERT_FLAG_MARK_IN_SYNC, &usn, nullptr);
-
-                if (CheckHr(hr, L"Placeholders::Convert CfConvertToPlaceholder", pin_fullPathItem,true)) result = true;
-                else if (HR_FileOpenningByOtherProcess == hr || HR_InUse == hr) tryagain = true;
-
+                LogWriter::WriteLogError(std::wstring(L"Placeholders::Hydrate CreateFile error:").append(fullPathItem).c_str(), (int)GetLastError());
+                return result;
+            }
+            else
+            {
+                LARGE_INTEGER offset = { 0 };
+                LARGE_INTEGER length;
+                length.QuadPart = MAXLONGLONG;
+                HRESULT hr;
+                hr = CfHydratePlaceholder(hfile, offset, length, CF_HYDRATE_FLAG_NONE, NULL);
+                if (CheckHr(hr, L"Placeholders::Hydrate CfHydratePlaceholder", fullPathItem), true) result = true;
                 CloseHandle(hfile);
             }
-            else//file can't open
-            {
-                if (PathFileExists(pin_fullPathItem)) tryagain = true;//file found -> try again
-                else li->Delete(true);//file not found, delete local item.
-            }
-        }
-        else
-        {
-            WriteLog(String::Format(L"Placeholders::Convert LocalItem is null,fileIdentity:{0}", fileIdentity), 0);
-        }
-        if (InsertErrorDb && tryagain) LocalError::Insert(li->LocalId, srvm->SRId, LocalErrorType::Convert, fileIdentity);
-        return result;
-    }
-
-    bool Placeholders::Hydrate(SyncRootViewModel^ srvm, LocalItem^ li, bool InsertErrorDb)
-    {
-        bool result{ false };
-        HRESULT hr{ 0 };
-        if (li)
-        {
-            String^ fullPathItem = li->GetFullPath();
-            PinStr(fullPathItem);
-            DWORD attrib = GetFileAttributes(pin_fullPathItem);
-            if ((attrib != INVALID_FILE_ATTRIBUTES) && 
-                !(attrib & FILE_ATTRIBUTE_DIRECTORY) && //skip if folder
-                (attrib & FILE_ATTRIBUTE_PINNED))
-            {
-                HANDLE hfile = CreateFile(pin_fullPathItem, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr);
-                if (hfile == INVALID_HANDLE_VALUE)
-                {
-                    LogWriter::WriteLogError(std::wstring(L"Placeholders::Hydrate CreateFile error:").append(pin_fullPathItem).c_str(), (int)GetLastError());
-                    return result;
-                }
-                else
-                {
-                    LARGE_INTEGER offset = { 0 };
-                    LARGE_INTEGER length;
-                    length.QuadPart = MAXLONGLONG;
-                    HRESULT hr;
-                    hr = CfHydratePlaceholder(hfile, offset, length, CF_HYDRATE_FLAG_NONE, NULL);
-                    if (CheckHr(hr, L"Placeholders::Hydrate CfHydratePlaceholder", pin_fullPathItem), true) result = true;
-                    CloseHandle(hfile);
-                }
-            }
-        }
-        else
-        {
-            LogWriter::WriteLog(L"Placeholders::Hydrate LocalItem is null", 0);
         }
         return result;
     }
 
-    bool Placeholders::Dehydrate(SyncRootViewModel^ srvm, LocalItem^ li, bool InsertErrorDb)
+    bool Placeholders::Dehydrate(SyncRootViewModel^ srvm, LPCWSTR fullPathItem)
     {
         bool result{ false };
         HRESULT hr{ 0 };
-        if (li)
+        DWORD attrib = GetFileAttributes(fullPathItem);
+        if ((attrib != INVALID_FILE_ATTRIBUTES) &&
+            !(attrib & FILE_ATTRIBUTE_DIRECTORY) &&
+            (attrib & FILE_ATTRIBUTE_UNPINNED))
         {
-            String^ fullPathItem = li->GetFullPath();
-            PinStr(fullPathItem);
-            DWORD attrib = GetFileAttributes(pin_fullPathItem);
-            if ((attrib != INVALID_FILE_ATTRIBUTES) && 
-                !(attrib & FILE_ATTRIBUTE_DIRECTORY) && 
-                (attrib & FILE_ATTRIBUTE_UNPINNED))
+            HANDLE hfile = CreateFile(fullPathItem, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr);
+            if (hfile == INVALID_HANDLE_VALUE)
             {
-                HANDLE hfile = CreateFile(pin_fullPathItem, 0, FILE_READ_DATA, nullptr, OPEN_EXISTING, 0, nullptr);
-                if (hfile == INVALID_HANDLE_VALUE)
-                {
-                    LogWriter::WriteLogError(std::wstring(L"Placeholders::Dehydrate CreateFile error:").append(pin_fullPathItem).c_str(), (int)GetLastError());
-                }
-                else
-                {
-                    LARGE_INTEGER offset = { 0 };
-                    LARGE_INTEGER length;
-                    length.QuadPart = MAXLONGLONG;
-                    HRESULT hr;
-                    hr = CfDehydratePlaceholder(hfile, offset, length, CF_DEHYDRATE_FLAG_BACKGROUND, NULL);
-                    if (CheckHr(hr, L"Placeholders::Dehydrate CfDehydratePlaceholder", pin_fullPathItem,true)) result = true;
-                    CloseHandle(hfile);
-                }
+                LogWriter::WriteLogError(std::wstring(L"Placeholders::Dehydrate CreateFile error:").append(fullPathItem).c_str(), (int)GetLastError());
             }
-        }
-        else
-        {
-            LogWriter::WriteLog(L"Placeholders::Dehydrate LocalItem is null", 0);
+            else
+            {
+                LARGE_INTEGER offset = { 0 };
+                LARGE_INTEGER length;
+                length.QuadPart = MAXLONGLONG;
+                HRESULT hr;
+                hr = CfDehydratePlaceholder(hfile, offset, length, CF_DEHYDRATE_FLAG_NONE, NULL);
+                if (CheckHr(hr, L"Placeholders::Dehydrate CfDehydratePlaceholder", fullPathItem, true)) result = true;
+                CloseHandle(hfile);
+            }
         }
         return result;
     }
@@ -427,18 +398,18 @@ namespace CSS
     //    return result;
     //}
 
-    //bool Placeholders::GetPlaceholderStandarInfo(LPCWSTR fullPathItem, MY_CF_PLACEHOLDER_STANDARD_INFO* info)
-    //{
-    //    HANDLE hfile = CreateFile(fullPathItem, 0, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-    //    if (INVALID_HANDLE_VALUE != hfile)
-    //    {
-    //        DWORD returnlength{ 0 };
-    //        HRESULT hr = CfGetPlaceholderInfo(hfile, CF_PLACEHOLDER_INFO_STANDARD, info, sizeof(MY_CF_PLACEHOLDER_STANDARD_INFO), &returnlength);
-    //        CloseHandle(hfile);
-    //        if(CheckHr(hr, L"Placeholders::GetPlaceholderStandarInfo SRGetPlaceholderInfo", fullPathItem)) return true;
-    //    }
-    //    return false;
-    //}
+    bool Placeholders::GetPlaceholderStandarInfo(LPCWSTR fullPathItem, MY_CF_PLACEHOLDER_STANDARD_INFO* info)
+    {
+        HANDLE hfile = CreateFile(fullPathItem, 0, FILE_READ_DATA, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        if (INVALID_HANDLE_VALUE != hfile)
+        {
+            DWORD returnlength{ 0 };
+            HRESULT hr = CfGetPlaceholderInfo(hfile, CF_PLACEHOLDER_INFO_STANDARD, info, sizeof(MY_CF_PLACEHOLDER_STANDARD_INFO), &returnlength);
+            CloseHandle(hfile);
+            if(CheckHr(hr, L"Placeholders::GetPlaceholderStandarInfo SRGetPlaceholderInfo", fullPathItem)) return true;
+        }
+        return false;
+    }
 
     //only work after connectsyncroot
     CF_PLACEHOLDER_STATE Placeholders::GetPlaceholderState(LPCWSTR fullPathItem)

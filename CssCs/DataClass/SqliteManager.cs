@@ -35,7 +35,6 @@ namespace CssCs.DataClass
       _cevm_create,
       _srvm_create,
       _ci_create,
-      _li_create,
       _le_create,
       _setting_create
     };
@@ -43,7 +42,7 @@ namespace CssCs.DataClass
     internal static void Init()
     {
       if (_con != null) return;
-      string filepath = CPPCLR_Callback.UWPLocalStatePath + "\\data.sqlite3";
+      string filepath = CppInterop.UWPLocalStatePath + "\\data.sqlite3";
       string _strConnect = string.Format("Data Source={0};Version=3;", filepath);
       bool flag = false;
       if (!File.Exists(filepath))
@@ -64,7 +63,6 @@ namespace CssCs.DataClass
       }
       CEVMListAll();
       SRVMListAll();
-      LIListAll();
     }
     internal static void Close()
     {
@@ -319,94 +317,14 @@ where Id = $Id AND IdEmail = $IdEmail;";
     }
     #endregion
 
-    #region localitem
-    const string _li_create = @"create table if not exists LocalItem(
-                                    Name NVARCHAR(255) NOT NULL,
-                                    SRId CHAR(32) NOT NULL,
-                                    CloudId CHAR(128),
-                                    LocalParentId BIG INT NOT NULL DEFAULT 0,
-                                    Flag BIG INT NOT NULL DEFAULT 0,
-                                    UNIQUE(Name,LocalParentId),
-                                    FOREIGN KEY(SRId) REFERENCES SyncRoot(Id));";
-    const string _li_listall = "select rowid,* from LocalItem;";
-    const string _li_insert = "insert into LocalItem(Name,SRId,CloudId,LocalParentId,Flag) VALUES ($Name,$SRId,$CloudId,$LocalParentId,$Flag);";
-    const string _li_update = "update LocalItem set Name = $Name, CloudId = $CloudId, SRId = $SRId,LocalParentId = $LocalParentId,Flag = $Flag WHERE rowid = $rowid;";
-    const string _li_delete = "delete from LocalItem where rowid = $rowid;";
-    const string _li_clear = "delete from LocalItem where SRId = $SRId;";
-    private static void LIListAll()
-    {
-      List<LocalItem> lis = new List<LocalItem>();
-      var command = _con.CreateCommand();
-      command.CommandText = _li_listall;
-      using (var reader = command.ExecuteReader())
-      {
-        while (reader.Read())
-        {
-          LocalItem li = new LocalItem(true);
-          li.LocalId = reader.GetInt64(0);
-          li.Name = reader.GetString(1);
-          li.SRId = reader.GetString(2);
-          li.CloudId = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);//nullable
-          li.LocalParentId = reader.GetInt64(4);
-          li.Flag = (LocalItemFlag)reader.GetInt64(5);
-          lis.Add(li);
-        }
-      }
-      LocalItem.Load(lis);
-    }
-    internal static void LIInsert(LocalItem li)
-    {
-      var command = _con.CreateCommand();
-      command.CommandText = _li_insert;
-      command.Parameters.AddWithValue("$Name", li.Name);
-      command.Parameters.AddWithValue("$SRId", li.SRId);
-      command.Parameters.AddWithValue("$CloudId", li.CloudId);
-      command.Parameters.AddWithValue("$LocalParentId", li.LocalParentId);
-      command.Parameters.AddWithValue("$Flag", (long)li.Flag);
-      lock (_con)
-      {
-        command.ExecuteNonQuery();
-        li.LocalId = _con.LastInsertRowId;
-      }
-    }
-    internal static void LIUpdate(LocalItem li)
-    {
-      var command = _con.CreateCommand();
-      command.CommandText = _li_update;
-      command.Parameters.AddWithValue("$Name", li.Name);
-      command.Parameters.AddWithValue("$SRId", li.SRId);
-      command.Parameters.AddWithValue("$CloudId", li.CloudId);
-      command.Parameters.AddWithValue("$LocalParentId", li.LocalParentId);
-      command.Parameters.AddWithValue("$Flag", (long)li.Flag);
-      command.Parameters.AddWithValue("$rowid", li.LocalId);
-      command.ExecuteNonQuery();
-    }
-    internal static void LIDelete(LocalItem li)
-    {
-      var command = _con.CreateCommand();
-      command.CommandText = _li_delete;
-      command.Parameters.AddWithValue("$rowid", li.LocalId);
-      command.ExecuteNonQuery();
-    }
-    internal static void LIClear(string SRId)
-    {
-      if (string.IsNullOrEmpty(SRId)) throw new ArgumentNullException(nameof(SRId));
-
-      var command = _con.CreateCommand();
-      command.CommandText = _li_clear;
-      command.Parameters.AddWithValue("$SRId", SRId);
-      command.ExecuteNonQuery();
-    }
-    #endregion
-
     #region localerror
     const string _le_create = @"create table if not exists LocalError(
-                                    LIId BIG INT NOT NULL DEFAULT 0,
+                                    ItemFullPath TEXT NOT NULL,
                                     SRId CHAR(32) NOT NULL,
                                     Type INT NOT NULL DEFAULT 0,
                                     CIId CHAR(128));";
     const string _le_listall = "SELECT rowid,* FROM LocalError;";
-    const string _le_insert = "insert into LocalError(LIId,SRId,Type,CIId) values($LIId,$SRId,$Type,$CIId);";
+    const string _le_insert = "insert into LocalError(ItemFullPath,SRId,Type,CIId) values($ItemFullPath,$SRId,$Type,$CIId);";
     const string _le_delete = "delete from LocalError where rowid = $rowid;";
     const string _le_clear = "delete from LocalError where SRId = $SRId;";
     internal static IList<LocalError> LEListAll()
@@ -420,25 +338,27 @@ where Id = $Id AND IdEmail = $IdEmail;";
         {
           LocalError le = new LocalError();
           le.SQLId = reader.GetInt64(0);
-          le.LI_Id = reader.GetInt64(1);
+          le.ItemFullPath = reader.GetString(1);
           le.SRId = reader.GetString(2);
           le.Type = (LocalErrorType)reader.GetInt32(3);
-          le.CIId = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);//nullable
+          le.CiId = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);//nullable
           les.Add(le);
         }
       }
       return les;
     }
-    internal static void LEInsert(long LiId,string SrId, LocalErrorType type,string CiId)
+    internal static void LEInsert(string ItemFullPath, string SrId, LocalErrorType type,string CiId)
     {
-      if (LiId < 0 || string.IsNullOrEmpty(SrId)) return;
+      if (string.IsNullOrEmpty(ItemFullPath)) throw new ArgumentNullException(nameof(ItemFullPath));
+       if(string.IsNullOrEmpty(SrId)) throw new ArgumentNullException(nameof(ItemFullPath));
 
       var command = _con.CreateCommand();
       command.CommandText = _le_insert;
-      command.Parameters.AddWithValue("$LIId", LiId);
+      command.Parameters.AddWithValue("$ItemFullPath", ItemFullPath);
       command.Parameters.AddWithValue("$SRId", SrId);
       command.Parameters.AddWithValue("$Type", (int)type);
       command.Parameters.AddWithValue("$CIId", CiId);
+
       lock (_con) command.ExecuteNonQuery();
     }
     internal static void LEDelete(long LeId)
@@ -511,7 +431,7 @@ where Lock = 'X';";
           int DBVersion = reader.GetInt32(9);
           if (DBVersion != DBVer)
           {
-            CPPCLR_Callback.OutPutDebugString("Different DB version, please uninstall and install again.");
+            CppInterop.OutPutDebugString("Different DB version, please uninstall and install again.");
             Extensions.PostQuitMessage(0);
             return false;
           }
@@ -533,7 +453,7 @@ where Lock = 'X';";
         }
         else
         {
-          CPPCLR_Callback.OutPutDebugString("Can't read setting.");
+          CppInterop.OutPutDebugString("Can't read setting.");
           return false;
         }
       }

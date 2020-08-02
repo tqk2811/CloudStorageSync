@@ -16,10 +16,10 @@ namespace CssCs.DataClass
     IsRename = 1 << 3,
     IsNewItem = 1 << 4
   }
-  public class CloudChangeType
+  public class CloudChange
   {
-    public CloudChangeType() { }
-    internal CloudChangeType(string Id, IList<string> parent_old, IList<string> parent_new)
+    public CloudChange() { }
+    internal CloudChange(string Id, IList<string> parent_old, IList<string> parent_new)
     {
       this.Id = Id;
       if (parent_old != null) ParentsRemove.AddRange(parent_old);
@@ -65,11 +65,11 @@ namespace CssCs.DataClass
     }
   }
 
-  public class CloudChangeTypeCollection: Collection<CloudChangeType>
+  public class CloudChangeCollection: Collection<CloudChange>
   {
     public string NewWatchToken { get; internal set; }
 
-    internal void AddRange(IEnumerable<CloudChangeType> collection)
+    internal void AddRange(IEnumerable<CloudChange> collection)
     {
       if (null == collection) throw new ArgumentNullException(nameof(collection));
       foreach (var item in collection) this.Add(item);

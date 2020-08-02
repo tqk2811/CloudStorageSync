@@ -18,7 +18,6 @@ namespace CSS
 	{
 		auto listSR = SyncRootViewModel::FindAllWorking(nullptr);
 		for (int i = 0; i < listSR->Count; i++) listSR[i]->Watcher->Stop();
-		TaskQueues::ShutDown();
 	}
 
 	void SRManaged::Register(SyncRootViewModel^ srvm)
@@ -97,7 +96,6 @@ namespace CSS
 		srvm->ConnectionKey = 0;
 		SyncRoot_UnRegister(SRid);
 		srvm->IsListedAll = false;
-		LocalItem::Clear(srvm);
 		srvm->Status = SyncRootStatus::NotWorking;
 		LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(SRid), 2);
 	}

@@ -72,7 +72,7 @@ namespace CssCs
 
     private void Watcher_Error(object sender, ErrorEventArgs e)
     {
-      CPPCLR_Callback.OutPutDebugString("Watcher_Error:" + e.GetException().Message);
+      CppInterop.OutPutDebugString("Watcher_Error:" + e.GetException().Message);
     }
 
     private void Watcher_attribute_event(object sender, FileSystemEventArgs e)

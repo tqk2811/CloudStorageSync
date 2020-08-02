@@ -95,7 +95,7 @@ namespace CssCs
       {
         _filesUploadSameTime = value; 
         NotifyPropertyChange();
-        TaskQueues.MaxRun = value;
+        TaskQueues.UploadQueues.MaxRun = value;
       }
     }
 

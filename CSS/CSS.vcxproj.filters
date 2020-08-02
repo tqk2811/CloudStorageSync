@@ -54,9 +54,6 @@
     <ClCompile Include="Placeholders.cpp">
       <Filter>src\cfapi</Filter>
     </ClCompile>
-    <ClCompile Include="Bridge.cpp">
-      <Filter>src\Common</Filter>
-    </ClCompile>
     <ClCompile Include="TrackChanges.cpp">
       <Filter>src\TrackChanges</Filter>
     </ClCompile>
@@ -95,9 +92,6 @@
     <ClInclude Include="Placeholders.h">
       <Filter>src\cfapi</Filter>
     </ClInclude>
-    <ClInclude Include="Bridge.h">
-      <Filter>src\Common</Filter>
-    </ClInclude>
     <ClInclude Include="TrackChanges.h">
       <Filter>src\TrackChanges</Filter>
     </ClInclude>
@@ -114,6 +108,9 @@
       <Filter>src\UI</Filter>
     </ClInclude>
     <ClInclude Include="SRManaged.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="UploadQueue.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

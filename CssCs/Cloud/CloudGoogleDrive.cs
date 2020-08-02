@@ -126,11 +126,11 @@ namespace CssCs.Cloud
       var change = await ds.Changes.GetStartPageToken().ExecuteAsync();
       cevm.WatchToken = change.StartPageTokenValue;
     }
-    async Task<CloudChangeTypeCollection> WatchChange(string WatchToken)
+    async Task<CloudChangeCollection> WatchChange(string WatchToken)
     {
       if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
 
-      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
+      CloudChangeCollection result = new CloudChangeCollection();
       var change_request = ds.Changes.List(WatchToken);
       change_request.Fields = Fields_WatchChange;
       change_request.PageSize = 1000;
@@ -145,15 +145,15 @@ namespace CssCs.Cloud
           change.File.MimeType.IndexOf(MimeType_googleapp) >= 0) continue;//ignore google app
 
         CloudItem ci_old = CloudItem.Select(change.FileId, cevm.EmailSqlId);
-        CloudChangeType changetype;
+        CloudChange changetype;
         if (change.Removed == true || change.File.Trashed == true)
         {
-          changetype = new CloudChangeType(change.FileId, ci_old?.ParentsId, null);//delete
+          changetype = new CloudChange(change.FileId, ci_old?.ParentsId, null);//delete
           changetype.Flag |= CloudChangeFlag.IsDeleted;
         }
         else
         {
-          changetype = new CloudChangeType(change.FileId, ci_old?.ParentsId, change.File.Parents);
+          changetype = new CloudChange(change.FileId, ci_old?.ParentsId, change.File.Parents);
 
           if (null != ci_old && !change.File.Name.Equals(ci_old.Name)) changetype.Flag |= CloudChangeFlag.IsRename;
           if (!change.FileId.Equals(change.File.Id)) changetype.Flag |= CloudChangeFlag.IsChangedId;
@@ -238,7 +238,7 @@ namespace CssCs.Cloud
       FileInfo fi = new FileInfo(FilePath);
       if (fi.Attributes.HasFlag(FileAttributes.Directory))
       {
-        CPPCLR_Callback.OutPutDebugString("CloudGDrive.Upload: Creating Folder in cloud,path:" + FilePath, 1);
+        CppInterop.OutPutDebugString("CloudGDrive.Upload: Creating Folder in cloud,path:" + FilePath, 1);
         return await CreateFolder(fi.Name, ParentIds);
       }
       else//file
@@ -294,11 +294,11 @@ namespace CssCs.Cloud
     }
 
 
-    public async Task<CloudChangeTypeCollection> WatchChange()
+    public async Task<CloudChangeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(cevm.WatchToken)) await InitWatch();
       else return await WatchChange(cevm.WatchToken);
-      return new CloudChangeTypeCollection();
+      return new CloudChangeCollection();
     }
 
     public IList<CloudItem> CloudFolderGetChildFolder(string itemId)

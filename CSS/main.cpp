@@ -2,13 +2,17 @@
 using namespace System;
 using namespace System::Threading;
 using namespace System::Threading::Tasks;
+using namespace CssCs::UI::ViewModel;
+
 MSG g_msg{ 0 };
 gcroot<Mutex^> mutex;
 gcroot<ManualResetEvent^> resetEvent;
 void MainThread()
 {
-    CSS::Bridge::LoadCallback();
-    if(!CssCs::CPPCLR_Callback::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()))) return;
+    CssCs::CppInterop::OutPutDebugString = gcnew CssCs::_OutPutDebugString(CSS::WriteLog);
+    if (!CssCs::CppInterop::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()),
+        gcnew SrRegister(CSS::SRManaged::Register),
+        gcnew SrUnRegister(CSS::SRManaged::UnRegister))) return;
     CSS::SRManaged::Init();
     CSS::UiManaged::Init();
     resetEvent->Set();
@@ -43,7 +47,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         CSS::TrackChanges::InitTimer();
         thr->Join();
         CSS::TrackChanges::UnInitTimer();
-        CssCs::CPPCLR_Callback::ShutDown();
+        CssCs::CppInterop::ShutDown();
         CssWinrt::LogWriter::ShutDown();
         mutex->ReleaseMutex();
         return (int)g_msg.wParam;

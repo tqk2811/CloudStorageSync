@@ -109,8 +109,6 @@ namespace CSS
 		return false;
 	}
 
-	String^ FindNewNameItem(String^ parentFullPath, String^ Name, bool isfolder);
-
 	inline static bool CheckHr(HRESULT hr,LPCWSTR info, LPCWSTR info2 = nullptr,bool WriteLogSucceeded = false)
 	{
 		std::wstring log(info);		
@@ -130,5 +128,23 @@ namespace CSS
 			LogWriter::WriteLogError(log, hr);
 			return false;
 		}		
+	}
+
+	inline static bool PathExists(String^ fullpath)
+	{
+		return Directory::Exists(fullpath) || File::Exists(fullpath);
+	}
+
+	inline static bool PathExists(LPCWSTR fullpath)
+	{
+		DWORD file_attri = GetFileAttributes(fullpath);
+		return INVALID_FILE_ATTRIBUTES != file_attri;
+	}
+	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci, bool ConvertToPh);
+
+	inline static void WriteLog(System::String^ text, int loglevel = 10)
+	{
+		PinStr(text);
+		CssWinrt::LogWriter::WriteLog(pin_text, loglevel);
 	}
 }

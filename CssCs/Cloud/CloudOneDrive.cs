@@ -82,7 +82,7 @@ namespace CssCs.Cloud
     internal static void Init()
     {
       if (publicClientApplication != null) return;
-      TokenCacheHelper.CacheFilePath = CPPCLR_Callback.UWPLocalStatePath + "\\msalcache.bin3";
+      TokenCacheHelper.CacheFilePath = CppInterop.UWPLocalStatePath + "\\msalcache.bin3";
 
       publicClientApplication = PublicClientApplicationBuilder.Create(Properties.Resources.OneDriveClientId)
                 .WithRedirectUri(oauth_nativeclient)
@@ -151,9 +151,9 @@ namespace CssCs.Cloud
       return ci;
     }
 
-    private async Task<CloudChangeTypeCollection> WatchChange(string UrlWatch)
+    private async Task<CloudChangeCollection> WatchChange(string UrlWatch)
     {
-      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
+      CloudChangeCollection result = new CloudChangeCollection();
 
       var auth_result = await GetAuthenticationResult(account);
       HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, UrlWatch);
@@ -166,16 +166,16 @@ namespace CssCs.Cloud
       TrackChangesResult trackChangesResult = JsonConvert.DeserializeObject<TrackChangesResult>(await responseMessage.Content.ReadAsStringAsync());
       foreach (var item in trackChangesResult.DriveItems)
       {
-        CloudChangeType cloudChangeType;
+        CloudChange cloudChangeType;
         CloudItem ci_old = CloudItem.Select(item.Id, cevm.EmailSqlId);
         if (item.Deleted != null)
         {
-          cloudChangeType = new CloudChangeType(item.Id, null, null);
+          cloudChangeType = new CloudChange(item.Id, null, null);
           cloudChangeType.Flag |= CloudChangeFlag.IsDeleted;
         }
         else
         {
-          cloudChangeType = new CloudChangeType(item.Id, ci_old?.ParentsId, new List<string>() { item.ParentReference.Id });
+          cloudChangeType = new CloudChange(item.Id, ci_old?.ParentsId, new List<string>() { item.ParentReference.Id });
           if (ci_old != null && !item.Name.Equals(ci_old.Name)) cloudChangeType.Flag |= CloudChangeFlag.IsRename;
           //if (!item.Id.Equals(item.Id)) cloudChangeType.Flag |= CloudChangeFlag.IsChangedId;
           //cloudChangeType.IdNew = cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId) ? item.Id : null;
@@ -332,14 +332,14 @@ namespace CssCs.Cloud
       }
     }
 
-    public async Task<CloudChangeTypeCollection> WatchChange()
+    public async Task<CloudChangeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(cevm.WatchToken))
       {
         var queryOptions = new List<QueryOption>() { new QueryOption("token", "latest") };
         IDriveItemDeltaCollectionPage delta = await MyDrive.Root.Delta().Request(queryOptions).GetAsync();
         cevm.WatchToken = GetLink(delta, "@odata.deltaLink");
-        return new CloudChangeTypeCollection();
+        return new CloudChangeCollection();
       }
       else return await WatchChange(cevm.WatchToken);
     }

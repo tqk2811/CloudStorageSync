@@ -14,12 +14,12 @@ namespace CssCs
 
     public void Check(Task t)
     {
-      if (t.Status.HasFlag(TaskStatus.Faulted)) CPPCLR_Callback.OutPutDebugString(message +
+      if (t.Status.HasFlag(TaskStatus.Faulted)) CppInterop.OutPutDebugString(message +
                                                       ", TaskStatus:" + TaskStatus.Faulted.ToString() +
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
 
-      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(message + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
+      else if (t.Status.HasFlag(TaskStatus.Canceled)) CppInterop.OutPutDebugString(message + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
     }
   }
 
@@ -34,11 +34,11 @@ namespace CssCs
 
     public void Check(Task<T> t)
     {
-      if (t.Status.HasFlag(TaskStatus.Faulted)) CPPCLR_Callback.OutPutDebugString(info +
+      if (t.Status.HasFlag(TaskStatus.Faulted)) CppInterop.OutPutDebugString(info +
                                                       ", TaskStatus:" + TaskStatus.Faulted.ToString() +
                                                       ", Exception Message:" + t.Exception.InnerException.Message +
                                                       ", Exception StackTrace" + t.Exception.InnerException.StackTrace, 0);
-      else if (t.Status.HasFlag(TaskStatus.Canceled)) CPPCLR_Callback.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
+      else if (t.Status.HasFlag(TaskStatus.Canceled)) CppInterop.OutPutDebugString(info + ", TaskStatus:" + TaskStatus.Canceled.ToString(), 1);
     }    
   }
 }

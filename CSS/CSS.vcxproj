@@ -169,7 +169,6 @@
     <ClCompile Include="TrackChanges.cpp" />
     <ClCompile Include="SRManaged.cpp" />
     <ClCompile Include="ConnectSyncRoot.cpp" />
-    <ClCompile Include="Bridge.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Placeholders.cpp" />
@@ -184,12 +183,12 @@
     <ClInclude Include="TrackChanges.h" />
     <ClInclude Include="SRManaged.h" />
     <ClInclude Include="ConnectSyncRoot.h" />
-    <ClInclude Include="Bridge.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Placeholders.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TrayIcon.h" />
     <ClInclude Include="UiManaged.h" />
+    <ClInclude Include="UploadQueue.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>

@@ -1,198 +1,254 @@
 ﻿using CssCs.UI.ViewModel;
+using Microsoft.Graph;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace CssCs.DataClass
 {
-  public enum LocalItemFlag : long
+  public class LocalItemRoot : LocalItem
   {
-    None = 0,
-    Folder = 1,
-    LockWaitUpdateFromCloudWatch = 1 << 1,
-  }
-#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
-  public class LocalItem
-#pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
-  {
-    private static List<LocalItem> _lis;
-    internal static void Load(IList<LocalItem> lis)
+    public LocalItemRoot(SyncRootViewModel srvm, string CloudId) : base(srvm, CloudId)
     {
-      if (_lis == null && lis != null) _lis = new List<LocalItem>(lis);
-      else throw new Exception("Input do not null and call this function only one times.");
+      base.hashtable = new Hashtable();
+      base.IsRoot = true;
     }
-    public static LocalItem Find(long LocalId)
-    {
-      lock (_lis) return _lis.Find((li) => li.LocalId == LocalId);
-    }
-    public static LocalItem Find(SyncRootViewModel srvm, long LocalParentId, string Name)
-    {
-      lock (_lis) return _lis.Find((li) =>  li.LocalParentId == LocalParentId && 
-                                            li.Name.Equals(Name) &&
-                                            li.SRId.Equals(srvm.SRId));
-    }
-    public static LocalItem Find(SyncRootViewModel srvm, string CloudId, long LocalParentId)
-    {
-      lock (_lis) return _lis.Find((li) =>  li.LocalParentId == LocalParentId &&
-                                            CloudId.Equals(li.CloudId) &&
-                                            srvm.SRId.Equals(li.SRId));
-    }
-    /// <summary>
-    /// Find all items in syncroot has CloudId
-    /// </summary>
-    /// <param name="srvm"></param>
-    /// <param name="CloudId"></param>
-    /// <returns></returns>
-    public static IList<LocalItem> FindAll(SyncRootViewModel srvm, string CloudId)
-    {
-      if (srvm == null || string.IsNullOrEmpty(CloudId)) return null;
-      lock (_lis) return _lis.FindAll((li) => li.SRId.Equals(srvm.SRId) &&
-                                              !string.IsNullOrEmpty(li.CloudId) &&
-                                              CloudId.Equals(li.CloudId));
-    }
-    /// <summary>
-    /// Find all items in syncroot has CloudIds
-    /// </summary>
-    /// <param name="srvm"></param>
-    /// <param name="CloudIds"></param>
-    /// <returns></returns>
-    public static IList<LocalItem> FindAll(SyncRootViewModel srvm, IList<string> CloudIds)
-    {
-      List<LocalItem> lis = new List<LocalItem>();
-      CloudIds.ToList().ForEach((cloudid) => lis.AddRange(FindAll(srvm, cloudid)));
-      return lis;
-    }
-    /// <summary>
-    /// Find all items has LocalParentId
-    /// </summary>
-    /// <param name="srvm"></param>
-    /// <param name="LocalParentId"></param>
-    /// <returns></returns>
-    public static IList<LocalItem> FindAll(SyncRootViewModel srvm, long LocalParentId)
-    {
-      lock (_lis) return _lis.FindAll((li) => li.LocalParentId == LocalParentId && li.SRId.Equals(srvm.SRId));
-    }
-    public static LocalItem FindFromPath(SyncRootViewModel srvm, string FullPath, int Back = 0)
-    {
-      if (srvm == null || string.IsNullOrEmpty(FullPath)) return null;
-      if (FullPath.Length < srvm.LocalPath.Length || !FullPath.Substring(0, srvm.LocalPath.Length).Equals(srvm.LocalPath)) return null;
-      LocalItem result = Find(srvm, srvm.CloudFolderId, 0);//root
-      if (FullPath.Length == srvm.LocalPath.Length) return result;
 
-      string relative = FullPath.Substring(srvm.LocalPath.Length + 1);
-      string[] names = relative.Split('\\');
+    public LocalItem FindFromCloudId(string CloudId)
+    {
+      if (!string.IsNullOrEmpty(CloudId) && hashtable.ContainsKey(CloudId)) return (LocalItem)hashtable[CloudId];
+      return null;
+    }
 
-      for (int i = 0; i < names.Length - Back; i++)
+    public LocalItem FindFromFullPath(string fullPath)
+    {
+      if (string.IsNullOrEmpty(fullPath)) return null;
+      if (fullPath.Equals(srvm.LocalPath, StringComparison.OrdinalIgnoreCase)) return FindFromCloudId(srvm.CloudFolderId);
+      if (fullPath.Length > srvm.LocalPath.Length && fullPath.Substring(0, srvm.LocalPath.Length).Equals(srvm.LocalPath, StringComparison.OrdinalIgnoreCase))
       {
-        result = Find(srvm, result.LocalId, names[i]);
-        if (result == null) return null;
+        return FindFromRelativePath(fullPath.Substring(srvm.LocalPath.Length));
+      }
+      else return null;
+    }
+
+    public LocalItem FindFromRelativePath(string relativePath)
+    {
+      string[] names = relativePath.Split('\\');
+      LocalItem result = this;
+      foreach(string name in names)
+      {
+        result = result.Childs.ToList().Find(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (null == result) return null;
       }
       return result;
     }
-    public static void Clear(SyncRootViewModel srvm)
+  }
+
+
+  public class LocalItem
+  {
+    public LocalItem(SyncRootViewModel srvm,string CloudId)
     {
-      SqliteManager.LIClear(srvm.SRId);
-      lock (_lis) _lis.RemoveAll((li) => li.SRId.Equals(srvm.SRId));
+      if (null == srvm) throw new ArgumentNullException(nameof(srvm));
+      if (string.IsNullOrEmpty(CloudId)) throw new ArgumentNullException(nameof(CloudId));
+      this.CloudId = CloudId;
+      this.srvm = srvm;
+      if (srvm.Root.hashtable.ContainsKey(CloudId))
+      {
+        LocalItem reftarget = (LocalItem)srvm.Root.hashtable[CloudId];
+        reftarget.ReferenceFrom.Add(this);
+      }
+      else
+      {
+        srvm.Root.hashtable.Add(CloudId, this);
+        _Childs = new LocalItemChildCollection(this);
+      }
+      ReferenceFrom = new LocalItemReferenceCollection(this);
     }
-
-
-
-
-
-    public LocalItem() { }
-    internal LocalItem(bool Inserted = true)
+    string _CloudId;
+    public string CloudId
     {
-      this.Inserted = Inserted;
+      get { return _CloudId; }
+      set
+      {
+        if (string.IsNullOrEmpty(value)) throw new ArgumentNullException(nameof(value));
+        this._CloudId = value;
+      }
     }
-    public long LocalId { get; set; } = -1;
-    public long LocalParentId { get; set; } = -1;
     public string Name { get; set; }
-    string _SRId;
-    public string SRId
+
+    public LocalItem ReferenceTo { get; private set; }//only set from LocalItemReferenceCollection
+    public LocalItemReferenceCollection ReferenceFrom { get; }
+
+    public LocalItem Parent { get; private set; }//only set from LocalItemChildCollection
+    LocalItemChildCollection _Childs;
+    public LocalItemChildCollection Childs => _Childs ?? (ReferenceTo == null ? null : Childs);
+
+    protected Hashtable hashtable;//only for root
+    protected bool IsRoot = false;
+    protected SyncRootViewModel srvm;
+
+    public StringBuilder GetFullPath()
     {
-      get { return _SRId; }
-      set { _SRId = value; SRVM = SyncRootViewModel.Find(value); }
+      return GetRelativePath().Insert(0, srvm.LocalPath);
     }
-    public string CloudId { get; set; }
-    public LocalItemFlag Flag { get; set; } = LocalItemFlag.None;
-    public SyncRootViewModel SRVM { get; private set; } = null;
 
-
-
-    object lock_obj = new object();
-
-    internal bool Inserted { get; private set; } = false;
-    internal bool Deleted { get; private set; } = false;
-
-    public void AddFlagWithLock(LocalItemFlag FlagAdd)
-    {
-      lock (lock_obj) Flag &= FlagAdd;
-    }
-    public void RemoveFlagWithLock(LocalItemFlag FlagRemove)
-    {
-      lock (lock_obj) Flag ^= FlagRemove;
-    }
     public StringBuilder GetRelativePath()
     {
-      if (LocalParentId > 0)
+      if (this.IsRoot) return new StringBuilder();//for root only
+      else
       {
-        LocalItem parent = Find(LocalParentId);
-        if (parent != null)
+        if(null != this.Parent)
         {
-          StringBuilder sb = parent.GetRelativePath();
-          if (sb != null)
-          {
-            if (sb.Length == 0) return sb.Append(Name);
-            else return sb.Append("\\").Append(Name);
-          }
+          if (this.Parent.IsRoot) return new StringBuilder(this.Name);
+          StringBuilder stringBuilder = this.Parent.GetRelativePath();
+          if(null != stringBuilder) return stringBuilder.Append("\\").Append(this.Name);
         }
         return null;
       }
-      else if (LocalParentId == 0) return new StringBuilder();
-      else return null;
-    }
-    public string GetFullPath()
-    {
-      StringBuilder sb = GetRelativePath();
-      if (sb == null) return null;
-      if (sb.Length == 0) return SRVM.LocalPath;
-      else return sb.Insert(0, "\\").Insert(0, SRVM.LocalPath).ToString();
-    }
-    public override bool Equals(object obj)
-    {
-      if (obj == null) return false;
-      if (obj.GetType().Equals(typeof(LocalItem)) && LocalId == ((LocalItem)obj).LocalId) return true;
-      return base.Equals(obj);
     }
 
-    public void Insert()
-    {
-      if (Inserted) return;
-      SqliteManager.LIInsert(this);
-      lock (_lis) _lis.Add(this);
-      Inserted = true;
-    }
 
-    public void Update()
+    public sealed class LocalItemChildCollection : Collection<LocalItem>
     {
-      if(Inserted && !Deleted) SqliteManager.LIUpdate(this);
-    }
-
-    public void Delete(bool Childs = true)
-    {
-      if (Deleted) return;
-      if(Childs)
+      LocalItem parent;
+      internal LocalItemChildCollection(LocalItem parent)
       {
-        IList<LocalItem> lis_child = FindAll(SRVM, LocalId);
-        for (int i = 0; i < lis_child.Count; i++) lis_child[i].Delete();
+        this.parent = parent;
       }
-      SqliteManager.LIDelete(this);
-      lock (_lis) _lis.Remove(this);
-      Deleted = true;
+
+      protected override void InsertItem(int index, LocalItem item)
+      {
+        if (null != item.Parent) throw new Exception("Item has parent.");
+        if (!parent.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
+
+        item.Parent = this.parent;
+        base.InsertItem(index, item);
+      }
+
+      protected override void RemoveItem(int index)
+      {
+        RemoveParentAndRefItem(this[index]);
+        base.RemoveItem(index);
+      }
+      protected override void SetItem(int index, LocalItem item)
+      {
+        if (null != item.Parent) throw new Exception("Item has parent.");
+        if (!parent.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
+
+        this[index].Parent = null;
+        item.Parent = this.parent;
+        base.SetItem(index, item);
+      }
+
+      void RemoveParentAndRefItem(LocalItem item)
+      {
+        item.Parent = null;
+        if(null == item.ReferenceTo)//if not 2nd
+        {
+          item.srvm.Root.hashtable.Remove(item.CloudId);//remove hash
+          if (item.ReferenceFrom.Count > 0)//change base ref (link to hash)
+          {
+            LocalItem newRefTo = item.ReferenceFrom[0];
+            item.srvm.Root.hashtable.Add(newRefTo.CloudId, newRefTo);//add hash
+            while (1 < item.ReferenceFrom.Count)
+            {
+              LocalItem refFrom = item.ReferenceFrom[1];
+              item.ReferenceFrom.RemoveAt(1);
+              newRefTo.ReferenceFrom.Add(refFrom);
+            }
+          }
+        }        
+      }
+
+      protected override void ClearItems()
+      {
+        foreach (var item in this) RemoveParentAndRefItem(item);
+        base.ClearItems();
+      }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="Name"></param>
+      /// <returns>LocalItem</returns>
+      /// <exception cref="ArgumentNullException"/>
+      public LocalItem FindFromName(string Name)
+      {
+        if (string.IsNullOrEmpty(Name)) throw new ArgumentNullException(nameof(Name));
+        return this.ToList().Find(item => Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase));
+      }
+
+      /// <summary>
+      /// 
+      /// </summary>
+      /// <param name="Id"></param>
+      /// <returns>LocalItem</returns>
+      /// <exception cref="ArgumentNullException"/>
+      public LocalItem FindFromId(string Id)
+      {
+        if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
+        return this.ToList().Find(item => Id.Equals(item.CloudId, StringComparison.OrdinalIgnoreCase));
+      }
+
+      /// <summary>
+      /// If find result by Id null, then find with Name.
+      /// </summary>
+      /// <param name="Id"></param>
+      /// <param name="Name"></param>
+      /// <returns>LocalItem</returns>
+      /// <exception cref="ArgumentNullException"/>
+      public LocalItem Find(string Id, string Name)
+      {
+        LocalItem li = FindFromId(Id);
+        if (null == li) li = FindFromName(Name);
+        return li;
+      }
     }
 
+    public sealed class LocalItemReferenceCollection : Collection<LocalItem>
+    {
+      LocalItem refTo;
+      internal LocalItemReferenceCollection(LocalItem refTo)
+      {
+        this.refTo = refTo;
+      }
+      protected override void InsertItem(int index, LocalItem item)
+      {
+        if (null != item.ReferenceTo) throw new Exception("item had ReferenceTo other");
+        if (!refTo.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
+        if (!refTo.CloudId.Equals(item.CloudId)) throw new Exception("CloudId not equal");
 
+        item.ReferenceTo = this.refTo;
+        base.InsertItem(index, item);
+      }
+
+      protected override void RemoveItem(int index)
+      {
+        this[index].ReferenceTo = null;
+        base.RemoveItem(index);
+      }
+
+      protected override void ClearItems()
+      {
+        foreach (var item in this) item.ReferenceTo = null;
+        base.ClearItems();
+      }
+
+      protected override void SetItem(int index, LocalItem item)
+      {
+        if (null != item.ReferenceTo) throw new Exception("item had ReferenceTo other");
+        if (!refTo.CloudId.Equals(item.CloudId)) throw new Exception("CloudId not equal");
+        if (!refTo.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
+
+        this[index].ReferenceTo = null;
+        base.SetItem(index, item);
+      }
+    }
   }
 }

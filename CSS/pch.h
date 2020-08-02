@@ -7,7 +7,7 @@
 #include <gcroot.h>
 #include <msclr\marshal.h>//PtrToStringChars
 //#include <msclr\marshal_cppstd.h>
-#include <shlwapi.h>//file/folder PathFileExists,...
+#include <shlwapi.h>//file/folder PathExists,...
 #include "resource.h"
 
 #using <CssCs.dll>
@@ -29,18 +29,20 @@ namespace CSS
 	using namespace CssCs::Cloud;
 	using namespace System;
 	using namespace System::Collections::Generic;
+	using namespace System::Collections::ObjectModel;
 	using namespace System::IO;
 	using namespace System::Threading;
 	using namespace System::Threading::Tasks;
 	using namespace System::Text;
 	using namespace System::Text::RegularExpressions;
+	typedef enum class PlaceholderResult;
 }
 
 //no include
 #include "Utilities.h"
 #include "ShellCall.h"
-#include "Bridge.h"
 #include "Placeholders.h"
+#include "UploadQueue.h"
 #include "UiManaged.h"
 #include "ConnectSyncRoot.h"
 #include "LocalAction.h"

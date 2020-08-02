@@ -131,7 +131,7 @@ namespace CssCs.StreamLimit
       {
 #if DEBUG
         tranfered += processed;
-        CPPCLR_Callback.OutPutDebugString(string.Format("Speed processed:{0}, tranfered:{1}", 
+        CppInterop.OutPutDebugString(string.Format("Speed processed:{0}, tranfered:{1}", 
           UnitConventer.ConvertSize(processed,2,UnitConventer.unit_speed),
           UnitConventer.ConvertSize(tranfered, 2, UnitConventer.unit_size)));
 #endif
