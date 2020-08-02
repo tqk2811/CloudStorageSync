@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ThumbnailProvider.h"
-
-// IInitializeWithItem
+#include <ShlObj_core.h>//BHID_ThumbnailHandler
+#include <pathcch.h>//PathAllocCombine
 namespace CssWinrt
 {
     IFACEMETHODIMP ThumbnailProvider::Initialize(_In_ IShellItem* item, _In_ DWORD mode)

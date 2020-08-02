@@ -21,7 +21,9 @@ namespace CssWinrt
 		_loglevel = loglevel;
 		auto log_path = GetLocalStateUWPFolder();
 		log_path.append(L"\\Log");
-		if (!PathFileExists(log_path.c_str())) CreateDirectory(log_path.c_str(), NULL);
+
+		bool dirExists = GetFileAttributes(log_path.c_str()) != INVALID_FILE_ATTRIBUTES;
+		if (!dirExists) CreateDirectory(log_path.c_str(), NULL);
 
 		time_t rawtime;
 		struct tm* timeinfo;
@@ -29,15 +31,17 @@ namespace CssWinrt
 		time(&rawtime);
 		timeinfo = localtime(&rawtime);
 		wcsftime(buffer, sizeof(buffer), L"%Y-%m-%d.log", timeinfo);//strftime(buffer, sizeof(buffer), "%d-%m-%Y %H:%M:%S", timeinfo);
-		log_path.append(L"\\").append(buffer);// %H:%M:%S
 
-		if (!PathFileExists(log_path.c_str())) CloseHandle(CreateFile(	log_path.c_str(),
-																		GENERIC_ALL,
-																		FILE_SHARE_READ | FILE_SHARE_DELETE,
-																		NULL,
-																		CREATE_NEW,
-																		FILE_ATTRIBUTE_NORMAL,
-																		NULL));
+		log_path.append(L"\\").append(buffer);// %H:%M:%S
+		bool fileExists = GetFileAttributes(log_path.c_str()) != INVALID_FILE_ATTRIBUTES;
+		if (!fileExists) CloseHandle(CreateFile(	log_path.c_str(),
+													GENERIC_ALL,
+													FILE_SHARE_READ | FILE_SHARE_DELETE,
+													NULL,
+													CREATE_NEW,
+													FILE_ATTRIBUTE_NORMAL,
+													NULL));
+
 		log_file.open(log_path, std::fstream::in | std::fstream::out | std::fstream::ate);
 		log_file << "\nApp start\n";
 	}

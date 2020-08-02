@@ -11,18 +11,7 @@ namespace CssWinrt
             _In_ PCWSTR prop_value, 
             _In_ PCWSTR prop_IconResource);
 
-        static winrt::com_array<wchar_t> ConvertSidToStringSid(_In_ PSID sid)
-        {
-            winrt::com_array<wchar_t> string;
-            if (::ConvertSidToStringSid(sid, winrt::put_abi(string)))
-            {
-                return string;
-            }
-            else
-            {
-                throw std::bad_alloc();
-            }
-        };
+        static winrt::com_array<wchar_t> MyConvertSidToStringSid(_In_ PSID sid);
 
         //inline static CF_OPERATION_INFO ToOperationInfo(_In_ CF_CALLBACK_INFO const* info, _In_ CF_OPERATION_TYPE operationType)
         //{

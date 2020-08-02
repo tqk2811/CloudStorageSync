@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Utilities.h"
+#include <sddl.h>//ConvertSidToStringSid
 namespace CssWinrt
 {
     void Utilities::ApplyCustomStateToPlaceholderFile(
@@ -33,4 +34,17 @@ namespace CssWinrt
                 winrt::to_hresult());
         }
     }
+
+    winrt::com_array<wchar_t> Utilities::MyConvertSidToStringSid(_In_ PSID sid)
+    {
+        winrt::com_array<wchar_t> string;
+        if (::ConvertSidToStringSid(sid, winrt::put_abi(string)))
+        {
+            return string;
+        }
+        else
+        {
+            throw std::bad_alloc();
+        }
+    };
 }

@@ -1,7 +1,8 @@
 #include "pch.h"
-#include "ShellServices.h"
-
 #include "ClassFactory.h"
+#include <ppltasks.h>//concurrency::task
+
+#include "ShellServices.h"
 
 #include "ThumbnailProvider.h"
 #include "CustomStateProvider.h"

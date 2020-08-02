@@ -123,7 +123,7 @@ namespace CssWinrt
     std::wstring SyncRootRegistrar::GetSyncRootId(LPCWSTR CFid)
     {
         std::unique_ptr<TOKEN_USER> tokenInfo(GetTokenInformation());
-        auto sidString = Utilities::ConvertSidToStringSid(tokenInfo->User.Sid);
+        auto sidString = Utilities::MyConvertSidToStringSid(tokenInfo->User.Sid);
         std::wstring syncRootID(STORAGE_PROVIDER_ID);
         syncRootID.append(L"!");
         syncRootID.append(sidString.data());
