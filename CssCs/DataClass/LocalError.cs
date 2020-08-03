@@ -11,16 +11,16 @@ namespace CssCs.DataClass
   };
   public class LocalError
   {
-    public long SQLId { get; set; } = -1;
+    public long SqlId { get; set; } = -1;
     public string ItemFullPath { get; set; }
-    public string SRId { get; set; }
+    public string SrId { get; set; }
     public string CiId { get; set; }
     public LocalErrorType Type { get; set; }
 
     public static IList<LocalError> ListAll() => SqliteManager.LEListAll();
-    public void Insert() => SqliteManager.LEInsert(ItemFullPath, SRId, Type, CiId);
+    public void Insert() => SqliteManager.LEInsert(ItemFullPath, SrId, Type, CiId);
     public static void Insert(string ItemFullPath, string SrId, LocalErrorType type, string CiId) => SqliteManager.LEInsert(ItemFullPath, SrId, type, CiId);
-    public void Delete() => SqliteManager.LEDelete(SQLId);
+    public void Delete() => SqliteManager.LEDelete(SqlId);
     public static void Clear(string SrId) => SqliteManager.LEClear(SrId);
   }
 }
