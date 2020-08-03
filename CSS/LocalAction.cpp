@@ -25,8 +25,9 @@ namespace CSS
 			//					file UNPINNED -> will delete when move to RecycleBin
 			//folder scan file and revert inside, and delete folder
 			if (li_delete->Flag.HasFlag(LocalItemFlag::Folder)) return Delete_RevertFolder(srvm, li_delete);//revert all file inside and this folder
-			else return RevertFilePlaceholdersAndMoveRecyleBin(srvm, li_delete,true);
+			else return RevertFilePlaceholdersAndMoveRecyleBin(srvm, li_delete, true);
 		}
+		else return false;
 	}
 	bool LocalAction::Delete_RevertFolder(SyncRootViewModel^ srvm, LocalItem^ li_folder_delete)
 	{
@@ -181,8 +182,8 @@ namespace CSS
 	{
 		if (!le) return;
 		bool flag{ false };
-		SyncRootViewModel^ srvm = SyncRootViewModel::Find(le->SRId);
-		LocalItem^ li = LocalItem::Find(le->LI_Id);
+		SyncRootViewModel^ srvm = SyncRootViewModel::Find(le->SrId);
+		LocalItem^ li = LocalItem::Find(le->LiId);
 		if (!srvm || !li) flag = true;//srvm/li not found -> clear
 		else
 		{

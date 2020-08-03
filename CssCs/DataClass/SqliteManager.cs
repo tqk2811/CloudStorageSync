@@ -419,9 +419,9 @@ where Id = $Id AND IdEmail = $IdEmail;";
         while (reader.Read())
         {
           LocalError le = new LocalError();
-          le.SQLId = reader.GetInt64(0);
-          le.LI_Id = reader.GetInt64(1);
-          le.SRId = reader.GetString(2);
+          le.SqlId = reader.GetInt64(0);
+          le.LiId = reader.GetInt64(1);
+          le.SrId = reader.GetString(2);
           le.Type = (LocalErrorType)reader.GetInt32(3);
           le.CIId = reader.IsDBNull(4) ? string.Empty : reader.GetString(4);//nullable
           les.Add(le);
