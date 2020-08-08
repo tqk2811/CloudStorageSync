@@ -1,4 +1,4 @@
-﻿using CssCs.UI.ViewModel;
+﻿using CssCsData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,42 +28,44 @@ namespace CssCs
     public WatcherChangeTypes ChangeType { get; }
     public ChangeInfo ChangeInfo { get; set; }
   }
-  public delegate void CustomFileSystemEventHandler(SyncRootViewModel srvm, CustomFileSystemEventArgs e);
+  public delegate void CustomFileSystemEventHandler(CustomFileSystemEventArgs e);
 
 
 
   public class Watcher : IDisposable
   {
     CustomFileSystemEventHandler customFileSystemEventHandler;
-    FileSystemWatcher watcher_lastwrite;
-    FileSystemWatcher watcher_attribute;
-
-    SyncRootViewModel srvm;
-
-    ManualResetEvent resetEvent = new ManualResetEvent(false);
+    readonly FileSystemWatcher watcher_lastwrite;
+    readonly FileSystemWatcher watcher_attribute;
+    readonly SyncRootViewModelBase srvm;
+    readonly ManualResetEvent resetEvent = new ManualResetEvent(false);
 
     System.Timers.Timer aTimer;
     Queue<CustomFileSystemEventArgs> FileSystemEventArgsQueue { get; } = new Queue<CustomFileSystemEventArgs>();
 
-    internal Watcher(SyncRootViewModel srvm)
+    internal Watcher(SyncRootViewModelBase srvm)
     {
       this.srvm = srvm;
-      watcher_attribute = new FileSystemWatcher();
-      watcher_attribute.NotifyFilter = NotifyFilters.Attributes | NotifyFilters.CreationTime |
-        NotifyFilters.FileName | NotifyFilters.DirectoryName;//attribute & main
-      watcher_attribute.Filter = "*";
-      watcher_attribute.IncludeSubdirectories = true;
-      watcher_attribute.InternalBufferSize = 16 * 1024;
+      watcher_attribute = new FileSystemWatcher
+      {
+        NotifyFilter = NotifyFilters.Attributes | NotifyFilters.CreationTime |
+        NotifyFilters.FileName | NotifyFilters.DirectoryName,//attribute & main
+        Filter = "*",
+        IncludeSubdirectories = true,
+        InternalBufferSize = 16 * 1024
+      };
       watcher_attribute.Changed += Watcher_attribute_event;
       watcher_attribute.Created += Watcher_attribute_event;
       watcher_attribute.Deleted += Watcher_attribute_event;
       watcher_attribute.Error += Watcher_Error;
 
-      watcher_lastwrite = new FileSystemWatcher();
-      watcher_lastwrite.NotifyFilter = NotifyFilters.LastWrite /*| NotifyFilters.FileName | NotifyFilters.DirectoryName*/;//LastWrite
-      watcher_lastwrite.Filter = "*";
-      watcher_lastwrite.IncludeSubdirectories = true;
-      watcher_lastwrite.InternalBufferSize = 16 * 1024;
+      watcher_lastwrite = new FileSystemWatcher
+      {
+        NotifyFilter = NotifyFilters.LastWrite /*| NotifyFilters.FileName | NotifyFilters.DirectoryName*/,//LastWrite
+        Filter = "*",
+        IncludeSubdirectories = true,
+        InternalBufferSize = 16 * 1024
+      };
       watcher_lastwrite.Changed += Watcher_lastwrite_Changed;
       watcher_lastwrite.Error += Watcher_Error;
     }
@@ -77,23 +79,23 @@ namespace CssCs
 
     private void Watcher_attribute_event(object sender, FileSystemEventArgs e)
     {
-      if(customFileSystemEventHandler != null)
-      {
-        customFileSystemEventHandler(srvm, new CustomFileSystemEventArgs(e, e.ChangeType == WatcherChangeTypes.Changed ? ChangeInfo.Attribute : ChangeInfo.None));
-      }
+      customFileSystemEventHandler?.Invoke(new CustomFileSystemEventArgs(e, e.ChangeType == WatcherChangeTypes.Changed ? ChangeInfo.Attribute : ChangeInfo.None));
     }
     private void Watcher_lastwrite_Changed(object sender, FileSystemEventArgs e)
     {
-      if (customFileSystemEventHandler != null)
-      {
-        customFileSystemEventHandler(srvm, new CustomFileSystemEventArgs(e, ChangeInfo.LastWrite));
-      }
+      customFileSystemEventHandler?.Invoke(new CustomFileSystemEventArgs(e, ChangeInfo.LastWrite));
     }
 
     public void Dispose()
     {
-      aTimer.Dispose();
-      resetEvent.Dispose();
+      Dispose(true);
+      GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+      aTimer.Close();
+      resetEvent.Close();
       watcher_attribute.Dispose();
       watcher_lastwrite.Dispose();
     }
@@ -125,9 +127,9 @@ namespace CssCs
       {
         try
         {
-          customFileSystemEventHandler(srvm, list[i]);
+          customFileSystemEventHandler(list[i]);
         }
-        catch(Exception)
+        catch (Exception)
         {
 
         }

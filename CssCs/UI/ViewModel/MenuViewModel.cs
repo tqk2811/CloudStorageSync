@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using CssCsData;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
@@ -26,7 +27,7 @@ namespace CssCs.UI.ViewModel
       this.Action = MenuAction.Add;
       this.CloudName = cloudName;
       this.Text = cloudName.ToString();
-      this.Img = img.ToWindowsControlsImage_PNG();
+      this.Img = img.ToWindowsControlsImagePng();
     }
 
     private bool _IsEnabled = true;

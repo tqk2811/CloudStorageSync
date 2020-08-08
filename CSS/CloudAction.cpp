@@ -50,7 +50,7 @@ namespace CSS
                 if (t->IsFaulted)
                 {
                     AggregateException^ ae = (AggregateException^)t->Exception;
-                    WriteLog(String::Format("DownloadItem: Faulted, Exception Message:{0} ,StackTrace:{1}", 
+                    WriteLog(String::Format(CultureInfo::InvariantCulture, "DownloadItem: Faulted, Exception Message:{0} ,StackTrace:{1}", 
                         ae->InnerException->Message, 
                         ae->InnerException->StackTrace), 0);
                 }

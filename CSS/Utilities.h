@@ -105,11 +105,11 @@ namespace CSS
 
 	inline static bool FindId(List<String^>^ Ids, String^ IdFind)
 	{
-		for (int i = 0; i < Ids->Count; i++) if (Ids[i]->Equals(IdFind)) return true;
+		for (int i = 0; i < Ids->Count; i++) if (Ids[i]->Equals(IdFind, StringComparison::OrdinalIgnoreCase)) return true;
 		return false;
 	}
 
-	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci);
+	String^ FindNewNameItem(SyncRootViewModelBase^ srvm, String^ parentFullPath, CloudItem^ ci);
 
 	inline static bool CheckHr(HRESULT hr,LPCWSTR info, LPCWSTR info2 = nullptr,bool WriteLogSucceeded = false)
 	{

@@ -4,14 +4,12 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CssCs.UI"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" 
-        xmlns:viewmodel="clr-namespace:CssCs.UI.ViewModel"
         x:Class="CssCs.UI.SettingWindow"
         mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding Properties.Resources._32xHappy_Cloud}"
         Title="Setting" Height="346" Width="1233" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
     <Window.Resources>
-        <viewmodel:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
-        <viewmodel:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
+        <local:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
+        <local:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
     </Window.Resources>
     <Grid>
         <TabControl x:Name="tabControl">
@@ -25,7 +23,7 @@
                         <RowDefinition Height="247"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>-->
-                    <ListView x:Name="LV_listemail" Grid.Column="0" ItemsSource="{Binding cloudEmailViewModels}" SelectionMode="Single" 
+                    <ListView x:Name="LV_listemail" Grid.Column="0" ItemsSource="{Binding AccountViewModels}" SelectionMode="Single" 
                               SelectionChanged="LV_listemail_SelectionChanged">
                         <ListView.View>
                             <GridView>
@@ -53,7 +51,7 @@
                             </GridView>
                         </ListView.View>
                         <ListView.ContextMenu>
-                            <ContextMenu ItemsSource="{Binding cloudEmailMenuViewModels}">
+                            <ContextMenu ItemsSource="{Binding AccountMenuViewModels}">
                                 <ContextMenu.ItemContainerStyle>
                                     <Style TargetType="{x:Type MenuItem}">
                                         <Setter Property="Header" Value="{Binding Text}"/>
@@ -76,7 +74,7 @@
                         </ListView.ItemContainerStyle>
                     </ListView>
 
-                    <ListView x:Name="LV_SR" Grid.Column="1" ItemsSource="{Binding SRViewModels}" SelectionMode="Single" 
+                    <ListView x:Name="LV_SR" Grid.Column="1" ItemsSource="{Binding SyncRootViewModels}" SelectionMode="Single" 
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
                         <ListView.View>
                             <GridView>
@@ -183,7 +181,7 @@
                             </GridView>
                         </ListView.View>
                         <ListView.ContextMenu>
-                            <ContextMenu ItemsSource="{Binding SRMenuViewModels}">
+                            <ContextMenu ItemsSource="{Binding SyncRootMenuViewModels}">
                                 <ContextMenu.ItemContainerStyle>
                                     <Style TargetType="{x:Type MenuItem}">
                                         <Setter Property="Header" Value="{Binding Text}"/>

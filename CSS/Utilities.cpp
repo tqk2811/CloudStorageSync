@@ -28,14 +28,14 @@ namespace CSS
 
         return filename;
     }
-    String^ FindNewFileName(SyncRootViewModel^ srvm, String^ ParentDirectory, String^ filename, String^ extension, CloudItem^ ci)
+    String^ FindNewFileName(SyncRootViewModelBase^ srvm, String^ ParentDirectory, String^ filename, String^ extension, CloudItem^ ci)
     {
         int i = 0;
         bool isfolder = ci->Size == -1;
         do
         {
             i++;
-            String^ newpath = String::Format(L"{0}\\{1} ({2}){3}", ParentDirectory, filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
+            String^ newpath = String::Format(CultureInfo::InvariantCulture, L"{0}\\{1} ({2}){3}", ParentDirectory, filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
             PinStr(newpath);
             DWORD dw = GetFileAttributes(pin_newpath);
             if (INVALID_FILE_ATTRIBUTES == dw) break;//file not found
@@ -52,7 +52,7 @@ namespace CSS
                         if (isfolder) break;//-> convert
                         else
                         {
-                            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Checking hash file: {0}", filename);
+                            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", filename);
                             if (srvm->CEVM->Cloud->HashCheck(newpath, ci)) break;//same hash -> convert
                             else continue;//diff hash
                         }
@@ -61,7 +61,7 @@ namespace CSS
 
             }
         } while (true);
-        return String::Format(L"{0} ({1}){2}", filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
+        return String::Format(CultureInfo::InvariantCulture, L"{0} ({1}){2}", filename, i, String::IsNullOrEmpty(extension) ? String::Empty : extension);
     }
     String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci)
     {

@@ -124,26 +124,11 @@
   <data name="Dropbox256x256" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Dropbox256x256.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="DropboxApiKey" xml:space="preserve">
-    <value>sdxv9bvu37pjd5r</value>
-  </data>
-  <data name="DropboxApiSecret" xml:space="preserve">
-    <value>xsfy8way52uuf1j</value>
-  </data>
   <data name="file_files_document_1_19_512" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\file_files_document_1-19-512.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="folder_closed64x64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\folder_closed64x64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="GoogleDriveApiKey" xml:space="preserve">
-    <value>AIzaSyCZUicaxZb7DENX-NMpuDc59S0udi3G9WU</value>
-  </data>
-  <data name="GoogleOauth2_ClientID" xml:space="preserve">
-    <value>962171380504-jia11p348837sd22iji10nbul76vc7em.apps.googleusercontent.com</value>
-  </data>
-  <data name="GoogleOauth2_Clientsecret" xml:space="preserve">
-    <value>ZXqAy1VXh2mc-YOxx3fU4QsP</value>
   </data>
   <data name="Google_Drive_Icon256x256" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Google-Drive-Icon256x256.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -154,14 +139,8 @@
   <data name="Mediafire" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Mediafire.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="MegaApiAppKey" xml:space="preserve">
-    <value>K1t33QJC</value>
-  </data>
   <data name="MegaSync" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\MegaSync.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="OneDriveClientId" xml:space="preserve">
-    <value>c8eb5627-8b82-43d3-9617-6b8c91d09de9</value>
   </data>
   <data name="onedrive_logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\onedrive logo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

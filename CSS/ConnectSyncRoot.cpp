@@ -299,7 +299,6 @@ namespace CSS
                                 {
                                     UpdateCloudItem^ uci = gcnew UpdateCloudItem();
                                     uci->Id = ci->Id;
-                                    uci->ParentIdsRemove = gcnew List<String^>();
                                     uci->ParentIdsRemove->Add(ci_parent->Id);
 
                                     Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
@@ -392,7 +391,7 @@ namespace CSS
             if (IsThisProcess(callbackInfo->ProcessInfo)) SUCCESS = true;
             else
             {
-                //(fullpath_new->Length > srvm->LocalPath->Length) && fullpath_new->Substring(0, srvm->LocalPath->Length)->Equals(srvm->LocalPath);
+                //(fullpath_new->Length > srvm->LocalPath->Length) && fullpath_new->Substring(0, srvm->LocalPath->Length)->Equals(srvm->LocalPath,StringComparison::OrdinalIgnoreCase);
                 bool newpathIsInSyncroot = callbackParameters->Rename.Flags & CF_CALLBACK_RENAME_FLAG_TARGET_IN_SCOPE;
                 String^ fullpath = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackInfo->NormalizedPath);
                 String^ fullpath_new = gcnew String(callbackInfo->VolumeDosName) + gcnew String(callbackParameters->Rename.TargetPath);
@@ -426,7 +425,7 @@ namespace CSS
                                         isChangeParent = true;
                                     }
                                     String^ newname = fullpath_new->Substring(li_parentnew->GetFullPath()->Length + 1);
-                                    isrename = !newname->Equals(li->Name);
+                                    isrename = !newname->Equals(li->Name, StringComparison::OrdinalIgnoreCase);
 
                                     if ((isChangeParent && (ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanRemoveChildren) &&
                                         ci_parentnew->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanAddChildren)))
@@ -435,8 +434,8 @@ namespace CSS
                                         UpdateCloudItem^ uci = gcnew UpdateCloudItem();
                                         uci->Id = ci->Id;
                                         uci->NewName = isrename ? newname : nullptr;
-                                        uci->ParentIdsAdd = ParentsIdAdd;
-                                        uci->ParentIdsRemove = ParentsIdRemove;
+                                        uci->ParentIdsAdd->AddRange(ParentsIdAdd);
+                                        uci->ParentIdsRemove->AddRange(ParentsIdRemove);
 
                                         Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
                                         CssCs::Extensions::WriteLogIfError(t,
@@ -465,7 +464,6 @@ namespace CSS
                             {
                                 UpdateCloudItem^ uci = gcnew UpdateCloudItem();
                                 uci->Id = ci->Id;
-                                uci->ParentIdsRemove = gcnew List<String^>();
                                 uci->ParentIdsRemove->Add(ci_parent->Id);
 
                                 Task^ t = srvm->CEVM->Cloud->UpdateMetadata(uci);
@@ -504,7 +502,8 @@ namespace CSS
             LocalItem^ li = LocalItem::FindFromPath(srvm, fullpath, 0);
             if (ci && li)
             {
-                bool newpathIsInSyncroot = (fullpath->Length > srvm->LocalPath->Length) && fullpath->Substring(0, srvm->LocalPath->Length)->Equals(srvm->LocalPath);
+                bool newpathIsInSyncroot = (fullpath->Length > srvm->LocalPath->Length) && fullpath->Substring(0, srvm->LocalPath->Length)
+                    ->Equals(srvm->LocalPath, StringComparison::OrdinalIgnoreCase);
                 if (newpathIsInSyncroot) Placeholders::Update(srvm, li, ci);//remove insync state (spin icon)
             }
             else reason = L"ci/li not found";

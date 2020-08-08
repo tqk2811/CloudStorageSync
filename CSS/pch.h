@@ -11,6 +11,8 @@
 #include "resource.h"
 
 #using <CssCs.dll>
+#using <CssCsCloud.dll>
+#using <CssCsData.dll>
 #include <CssWinrt/pch.h>
 #define FILE_SHARE_ALL FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE
 #define LengthFileIdentity 128
@@ -22,18 +24,26 @@ namespace CSS
 {
 	using namespace CssWinrt;
 	using namespace CssCs;
-	using namespace CssCs::DataClass;
+	using namespace CssCs::Queues;
 	using namespace CssCs::UI;
 	using namespace CssCs::UI::ViewModel;
-	using namespace CssCs::Queues;
-	using namespace CssCs::Cloud;
+	using namespace CssCsData;
+	using namespace CssCsData::Cloud;
+	using namespace CssCsCloud;
+	using namespace CssCsCloud::Cloud;
+	using namespace CssCsCloud::CustomStream;
+
 	using namespace System;
+	using namespace System::Runtime::CompilerServices;
 	using namespace System::Collections::Generic;
 	using namespace System::IO;
 	using namespace System::Threading;
 	using namespace System::Threading::Tasks;
 	using namespace System::Text;
 	using namespace System::Text::RegularExpressions;
+	using namespace System::Globalization;
+	using namespace System::ComponentModel;
+	typedef ref class SyncRootViewModel;
 }
 
 //no include
@@ -42,10 +52,10 @@ namespace CSS
 #include "Placeholders.h"
 #include "UploadQueue.h"
 #include "UiManaged.h"
-#include "ConnectSyncRoot.h"
+#include "SyncRootViewModel.h"
 #include "LocalAction.h"
 #include "TrackChanges.h"
 #include "SRManaged.h"
 #include "CloudAction.h"
-
+#include "ConnectSyncRoot.h"//typedef
 //include

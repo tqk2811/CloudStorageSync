@@ -1,5 +1,5 @@
 ﻿using CssCs.UI.ViewModel;
-using Newtonsoft.Json;
+using CssCsData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,8 +18,10 @@ namespace CssCs
   public static class Extensions
   {
     #region image
-    public static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this System.Drawing.Bitmap src, System.Drawing.Imaging.ImageFormat imageFormat)
+    internal static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this System.Drawing.Bitmap src, System.Drawing.Imaging.ImageFormat imageFormat)
     {
+      if (null == src) throw new ArgumentNullException(nameof(src));
+
       using (MemoryStream ms = new MemoryStream())
       {
         src.Save(ms, imageFormat);
@@ -32,8 +34,10 @@ namespace CssCs
         return image;
       }
     }
-    public static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this System.Drawing.Bitmap bitmap)
+    internal static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this System.Drawing.Bitmap bitmap)
     {
+      if (null == bitmap) throw new ArgumentNullException(nameof(bitmap));
+
       using (MemoryStream stream = new MemoryStream())
       {
         bitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
@@ -48,22 +52,25 @@ namespace CssCs
       }
     }
 
-    public static System.Windows.Controls.Image ToWindowsControlsImage_PNG(this System.Drawing.Bitmap src, double Width = 16, double Height = 16)
+    internal static System.Windows.Controls.Image ToWindowsControlsImagePng(this System.Drawing.Bitmap src, double Width = 16, double Height = 16)
     {
-      System.Windows.Controls.Image image = new System.Windows.Controls.Image();
-      image.Width = Width;
-      image.Height = Height;
-      image.Stretch = System.Windows.Media.Stretch.Uniform;
-      image.Source = src.ToBitmapImage(System.Drawing.Imaging.ImageFormat.Png);
-      return image;
+      if (null == src) throw new ArgumentNullException(nameof(src));
+      return new System.Windows.Controls.Image
+      {
+        Width = Width,
+        Height = Height,
+        Stretch = System.Windows.Media.Stretch.Uniform,
+        Source = src.ToBitmapImage(System.Drawing.Imaging.ImageFormat.Png)
+      };
     }
 
-    public static System.Windows.Controls.Image ToImage(this System.Drawing.Icon ico, double Width = 16, double Height = 16)
+    internal static System.Windows.Controls.Image ToImage(this System.Drawing.Icon ico, double Width = 16, double Height = 16)
     {
-      return ico.ToBitmap().ToWindowsControlsImage_PNG(Width, Height);
+      if (null == ico) throw new ArgumentNullException(nameof(ico));
+      return ico.ToBitmap().ToWindowsControlsImagePng(Width, Height);
     }
 
-    public static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this CloudName cloudName)
+    internal static System.Windows.Media.Imaging.BitmapImage ToBitmapImage(this CloudName cloudName)
     {
       System.Drawing.Bitmap bitmap;
       switch (cloudName)
@@ -81,9 +88,10 @@ namespace CssCs
 
     [DllImport("gdi32.dll", EntryPoint = "DeleteObject")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool DeleteObject([In] IntPtr hObject);
-    public static System.Windows.Media.ImageSource ToImageSource(this System.Drawing.Bitmap src)
+    internal static extern bool DeleteObject([In] IntPtr hObject);
+    internal static System.Windows.Media.ImageSource ToImageSource(this System.Drawing.Bitmap src)
     {
+      if (null == src) throw new ArgumentNullException(nameof(src));
       var handle = src.GetHbitmap();
       try
       {
@@ -93,21 +101,16 @@ namespace CssCs
     }
     #endregion
 
-    public static JsonSerializerSettings jsonSerializerSettings { get; } = new JsonSerializerSettings
-    {
-      NullValueHandling = NullValueHandling.Ignore
-    };
-
-    private static Random random = new Random();
+    private static readonly Random random = new Random();
     private const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     public static string RandomString(int length)
     {
       return new string(Enumerable.Repeat(chars, length).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 
-    public static string ParentsCommaSeparatedList(this IList<string> ids)
+    internal static string ParentsCommaSeparatedList(this IList<string> ids)
     {
-      if (ids == null) return null;
+      if (ids == null || ids.Count == 0) return string.Empty;
       StringBuilder stringBuilder = new StringBuilder();
       if (ids.Count > 0) stringBuilder.Append(ids[0]);
       for (int i = 1; i < ids.Count; i++)
@@ -150,17 +153,16 @@ namespace CssCs
     //https://docs.microsoft.com/en-us/windows/win32/sysinfo/file-times
     public static long GetFileTime(long UnixTimeSeconds) => DateTimeOffset.FromUnixTimeSeconds(UnixTimeSeconds).ToFileTime();
 
+    static readonly System.Net.NetworkInformation.Ping pingSender = new System.Net.NetworkInformation.Ping();
     public static bool Ping()
     {
-      System.Net.NetworkInformation.Ping pingSender = new System.Net.NetworkInformation.Ping();
       System.Net.NetworkInformation.PingReply reply = pingSender.Send(IPAddress.Parse("8.8.8.8"));
-      if (reply.Status == System.Net.NetworkInformation.IPStatus.Success) Settings.Setting.HasInternet = true;
-      else Settings.Setting.HasInternet = false;
-
-      return Settings.Setting.HasInternet;
+      if (reply.Status == System.Net.NetworkInformation.IPStatus.Success) CppInterop.HasInternet = true;
+      else CppInterop.HasInternet = false;
+      return CppInterop.HasInternet;
     }
 
-    public static bool CheckFolderPermission(string directoryPath)
+    internal static bool CheckFolderPermission(string directoryPath)
     {
       try
       {
@@ -183,12 +185,12 @@ namespace CssCs
     public static void WriteLogIfError(this Task t, string message)
     {
       TaskContinueWriteLogIfError log = new TaskContinueWriteLogIfError(message);
-      t.ContinueWith(new Action<Task>(log.Check));
+      _ = t.ContinueWith(new Action<Task>(log.Check));
     }
     public static void WriteLogIfError<T>(this Task<T> t, string message)
     {
       TaskContinueWriteLogIfError<T> log = new TaskContinueWriteLogIfError<T>(message);
-      t.ContinueWith(new Action<Task<T>>(log.Check));
+      _ = t.ContinueWith(new Action<Task<T>>(log.Check));
     }
   }
 }

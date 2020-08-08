@@ -34,6 +34,9 @@
     <Filter Include="src\Shell">
       <UniqueIdentifier>{4dc9900d-5da3-4aa4-836c-f0808e94f7d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\SyncRoot">
+      <UniqueIdentifier>{33ebf2c5-d1ba-4808-b981-578aa32c5750}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -68,9 +71,6 @@
     </ClCompile>
     <ClCompile Include="UiManaged.cpp">
       <Filter>src\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="SRManaged.cpp">
-      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,11 +107,11 @@
     <ClInclude Include="UiManaged.h">
       <Filter>src\UI</Filter>
     </ClInclude>
-    <ClInclude Include="SRManaged.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="UploadQueue.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="SyncRootViewModel.h">
+      <Filter>src\SyncRoot</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

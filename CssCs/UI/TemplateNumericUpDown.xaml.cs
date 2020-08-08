@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,7 +10,7 @@ namespace CssCs.UI
   /// <summary>
   /// Interaction logic for TemplateNumericUpDown.xaml
   /// </summary>
-  public partial class TemplateNumericUpDown : UserControl, IDisposable//, INotifyPropertyChanged
+  public sealed partial class TemplateNumericUpDown : UserControl, IDisposable//, INotifyPropertyChanged
   {
     public static readonly DependencyProperty NumValueProperty = DependencyProperty.Register(
       "NumValue", 
@@ -35,17 +36,23 @@ namespace CssCs.UI
       typeof(TemplateNumericUpDown),
       new FrameworkPropertyMetadata(1, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+    readonly System.Timers.Timer timer;
+    readonly System.Timers.Timer timer2;
     public TemplateNumericUpDown()
     {
       //this.DataContext = this;
       InitializeComponent();
-      timer = new System.Timers.Timer(1000);
-      timer.AutoReset = false;
+      timer = new System.Timers.Timer(1000)
+      {
+        AutoReset = false
+      };
       timer.Elapsed += Timer_Elapsed;
 
 
-      timer2 = new System.Timers.Timer(100);
-      timer2.AutoReset = false;
+      timer2 = new System.Timers.Timer(100)
+      {
+        AutoReset = false
+      };
       timer2.Elapsed += Timer2_Elapsed;
     }
 
@@ -98,19 +105,11 @@ namespace CssCs.UI
 
     private bool flag_up { get; set; } = false;
 
-
-    private void TxtNum_TextChanged(object sender, TextChangedEventArgs e)
+    
+    private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
     {
-      int num;
-      if (int.TryParse(txtNum.Text, out num))
-      {
-        if (num != NumValue) NumValue = num;
-      }
-      else txtNum.Text = NumValue.ToString();
+      timer2.Start();
     }
-
-    System.Timers.Timer timer;
-    System.Timers.Timer timer2;
     private void Timer2_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
     {
       Dispatcher.Invoke(() =>
@@ -120,14 +119,16 @@ namespace CssCs.UI
       });      
     }
 
-   
 
-    private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+    private void TxtNum_TextChanged(object sender, TextChangedEventArgs e)
     {
-      timer2.Start();
+      if (int.TryParse(txtNum.Text, out int num))
+      {
+        if (num != NumValue) NumValue = num;
+      }
+      else txtNum.Text = NumValue.ToString(CultureInfo.InvariantCulture);
     }
 
-    
     private void EventMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
       flag_up = sender.Equals(up);

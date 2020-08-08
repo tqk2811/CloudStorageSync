@@ -1,14 +1,9 @@
-﻿using CssCs.Cloud;
-using CssCs.UI.ViewModel;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Drive.v3;
-using Google.Apis.Drive.v3.Data;
-using Microsoft.Identity.Client;
+﻿using CssCs.UI.ViewModel;
+using CssCsCloud.Cloud;
+using CssCsData;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,6 +12,7 @@ using System.Windows.Threading;
 
 namespace CssCs.UI
 {
+  public delegate void OnCreateSyncRoot();
   public sealed partial class SettingWindow : Window
   {
     public SettingWindow()
@@ -32,153 +28,133 @@ namespace CssCs.UI
       //cloud_add.Childs.Add(new MenuViewModel(CloudName.MegaNz, Properties.Resources.MegaSync));
       //cloud_add.Childs.Add(new MenuViewModel(CloudName.Dropbox, Properties.Resources.Dropbox256x256));
 
-      cloudEmailMenuViewModels.Add(cloud_add);
-      cloudEmailMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
+      AccountMenuViewModels.Add(cloud_add);
+      AccountMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
 
-      SRMenuViewModels.Add(new MenuViewModel(MenuAction.Refresh));
-      SRMenuViewModels.Add(new MenuViewModel(MenuAction.Add));
-      SRMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
+      SyncRootMenuViewModels.Add(new MenuViewModel(MenuAction.Refresh));
+      SyncRootMenuViewModels.Add(new MenuViewModel(MenuAction.Add));
+      SyncRootMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
     }
 
 
     #region setting
-    public Settings Setting { get { return CssCs.Settings.Setting; } }
+    public SettingViewModel Setting { get; } = new SettingViewModel();
     #endregion
-    
+
 
     #region list email
-    public ObservableCollection<CloudEmailViewModel> cloudEmailViewModels
-    {
-      get { return CloudEmailViewModel.CEVMS; }
-    }
+    public ObservableCollection<AccountViewModel> AccountViewModels => CppInterop.AccountViewModels;
 
-    public ObservableCollection<MenuViewModel> cloudEmailMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
+    public ObservableCollection<MenuViewModel> AccountMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
 
-    CloudEmailViewModel GetCloudEmailSelected()
+    AccountViewModel GetAccountVMSelected()
     {
-      return LV_listemail.SelectedItem as CloudEmailViewModel;
+      return LV_listemail.SelectedItem as AccountViewModel;
     }
 
     private void LV_listemail_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-      var cloudEmailSelected = GetCloudEmailSelected();
+      var cloudEmailSelected = GetAccountVMSelected();
       if (cloudEmailSelected != null)
       {
-        this.SRViewModels.Clear();
-        SyncRootViewModel.FindAll(cloudEmailSelected).ForEach((cevm) => this.SRViewModels.Add(cevm));
+        this.SyncRootViewModels.Clear();
+        cloudEmailSelected.AccountData.GetSyncRoot().ForEach((sr) => this.SyncRootViewModels.Add(sr.SyncRootViewModel));
       }
     }
 
     private async void LV_listemail_MenuItem_Click(object sender, RoutedEventArgs e)
     {
-      MenuItem menuItem = sender as MenuItem;
-      MenuViewModel menuDataModel = menuItem.DataContext as MenuViewModel;
-      switch (menuDataModel.Action)
+      try
       {
-        case MenuAction.Add:
-          AddCloud(menuDataModel);
+        CppInterop.OutPutDebugString.Invoke("LV_listemail_MenuItem_Click");
+        MenuItem menuItem = sender as MenuItem;
+        MenuViewModel menuDataModel = menuItem.DataContext as MenuViewModel;
+        switch (menuDataModel.Action)
+        {
+          case MenuAction.Add:
+            await AddCloud(menuDataModel).ConfigureAwait(true);
             break;
-        case MenuAction.Delete:
-          var ceSelected = GetCloudEmailSelected();
-          if (ceSelected == null) return;
-          var srvms = SRViewModels.ToList();
-          bool isworking = srvms.Any((srvm) => srvm.IsWork);          
-          if (isworking)
-          {
-            MessageBox.Show(this, "Please unregister all syncroot.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-          }
-          else
-          {
-            srvms.ForEach((srvm) => srvm.Delete());
-            SRViewModels.Clear();
+          case MenuAction.Delete:
+            var account = GetAccountVMSelected();
+            if (account == null) return;
+            var srvms = SyncRootViewModels.ToList();
+            bool isworking = srvms.Any((srvm) => srvm.IsWork);
+            if (isworking) MessageBox.Show(this, "Please unregister all syncroot.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            else
+            {
+              srvms.ForEach((srvm) => srvm.SyncRootData.Delete());
+              SyncRootViewModels.Clear();
+              if (await account.Cloud.LogOut().ConfigureAwait(true))
+              {
+                account.AccountData.Delete();
+                AccountViewModels.Remove(account);
+              }
+            }
+            break;
 
-            if (await ceSelected.Cloud.LogOut()) ceSelected.Delete();
-          }
-          
-          break;
-
-        default: break;
+          default: break;
+        }
       }
-
+      catch(Exception ex)
+      {
+        MessageBox.Show("Message: " + ex.Message + "\r\n\r\n" + ex.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+      }
     }
 
-    private async void AddCloud(MenuViewModel menuDataModel)
+    private async Task AddCloud(MenuViewModel menuDataModel)
     {
       try
       {
-        string str_token = string.Empty;
-        string str_email = string.Empty;
-        switch (menuDataModel.CloudName)
+        OauthResult oauthResult = await Oauth.OauthNewAccount(menuDataModel.CloudName).ConfigureAwait(true);
+        if(null != oauthResult)
         {
-          case CloudName.None: return;
-          case CloudName.GoogleDrive:
-            UserCredential credential = await CloudGoogleDrive.Oauth2();
-            DriveService service = CloudGoogleDrive.GetDriveService(credential);
-            var getRequest = service.About.Get();
-            getRequest.Fields = "user";
-            About about = await getRequest.ExecuteAsync();
-            str_email = about.User.EmailAddress;
-            str_token = credential.UserId;
-            break;
-
-          case CloudName.OneDrive:
-            AuthenticationResult result = await CloudOneDrive.Oauth();
-            str_token = result.Account.HomeAccountId.Identifier;
-            str_email = result.Account.Username;
-            break;
-
-          case CloudName.Dropbox:
-
-          case CloudName.MegaNz:
-
-
-          default: MessageBox.Show("This Cloud Not Support Now"); return;
-        }
-        for (int i = 0; i < cloudEmailViewModels.Count; i++)
-          if (cloudEmailViewModels[i].Email.Equals(str_email) && cloudEmailViewModels[i].CloudName == menuDataModel.CloudName)//update if equal
+          AccountViewModel accvm = AccountViewModels.ToList().Find(acc => acc.AccountData.CloudName == oauthResult.CloudName &&
+                                                   acc.AccountData.Email.Equals(oauthResult.Email, StringComparison.OrdinalIgnoreCase));
+          if(null != accvm)//replace token
           {
-            cloudEmailViewModels[i].Token = str_token;
-            await cloudEmailViewModels[i].LoadQuota();
-            return;
+            accvm.AccountData.Token = oauthResult.User;
+            accvm.AccountData.Update();
           }
-        CloudEmailViewModel cevm = new CloudEmailViewModel(str_email, menuDataModel.CloudName, str_token);//add new if not equal
-      }
-      catch (AggregateException ae)
-      {
-        MessageBox.Show("Message: " + ae.InnerException.Message + "\r\n\r\n" + ae.InnerException.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+          else//add new
+          {
+            Account account = new Account(Extensions.RandomString(32), oauthResult.Email, menuDataModel.CloudName);
+            account.Insert();
+            AccountViewModels.Add(new AccountViewModel(account));
+          }
+        }
       }
       catch (Exception ex)
       {
-        if (ex is Microsoft.Identity.Client.MsalClientException msalex &&
-          !string.IsNullOrEmpty(msalex.ErrorCode) &&
-          msalex.ErrorCode.Equals("authentication_canceled")) return;
-
-        MessageBox.Show("Message: " + ex.Message + "\r\n\r\n" + ex.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        if(ex is AggregateException ae) MessageBox.Show("Message: " + ae.InnerException.Message + "\r\n\r\n" + ae.InnerException.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        else MessageBox.Show("Message: " + ex.Message + "\r\n\r\n" + ex.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
     #endregion
 
     #region SyncRoot
-    public ObservableCollection<SyncRootViewModel> SRViewModels { get; } = new ObservableCollection<SyncRootViewModel>();
-    public ObservableCollection<MenuViewModel> SRMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
-    SyncRootViewModel GetSRVMSelected()
+    public ObservableCollection<SyncRootViewModelBase> SyncRootViewModels { get; } = new ObservableCollection<SyncRootViewModelBase>();
+    public ObservableCollection<MenuViewModel> SyncRootMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
+    public event OnCreateSyncRoot OnCreateSyncRoot;
+
+    SyncRootViewModelBase GetSRVMSelected()
     {
-      return LV_SR.SelectedItem as SyncRootViewModel;
+      return LV_SR.SelectedItem as SyncRootViewModelBase;
     }
+
     private void CloudPath_changeClick(object sender, RoutedEventArgs e)
     {
       try
       {
         Button button = sender as Button;
-        SyncRootViewModel srvm = button.DataContext as SyncRootViewModel;
+        SyncRootViewModelBase srvm = button.DataContext as SyncRootViewModelBase;
         if (srvm.IsWork) return;
-        FolderBrowserCloudDialog folderBrowserCloudDialog = new FolderBrowserCloudDialog(GetCloudEmailSelected());
+        FolderBrowserCloudDialog folderBrowserCloudDialog = new FolderBrowserCloudDialog(GetAccountVMSelected());
         folderBrowserCloudDialog.ShowDialog();
         if (folderBrowserCloudDialog.Result != null)
         {
           srvm.CloudFolderName = folderBrowserCloudDialog.Result.Name;
-          srvm.CloudFolderId = folderBrowserCloudDialog.Result.Id;
-          srvm.DisplayName = srvm.CloudFolderName + " - " + srvm.CEVM.Email;
+          srvm.SyncRootData.CloudFolderId = folderBrowserCloudDialog.Result.Id;
+          srvm.DisplayName = srvm.CloudFolderName + " - " + srvm.SyncRootData.Account.Email;
         }
       }
       catch (Exception ex)
@@ -189,7 +165,7 @@ namespace CssCs.UI
     private void LocalPath_changeClick(object sender, RoutedEventArgs e)
     {
       Button button = sender as Button;
-      SyncRootViewModel data = button.DataContext as SyncRootViewModel;
+      SyncRootViewModelBase data = button.DataContext as SyncRootViewModelBase;
       if (data.IsWork) return;
       var dialog = new System.Windows.Forms.FolderBrowserDialog()
       {
@@ -203,14 +179,15 @@ namespace CssCs.UI
         {
           data.LocalPath = dialog.SelectedPath;
         }
-        else MessageBox.Show("App do not have permission to access this folder.\r\nPlease try select difference folder.\r\n\r\nFolder selected:" + dialog.SelectedPath, "Error", MessageBoxButton.OK);
+        else MessageBox.Show("App do not have permission to access this folder.\r\nPlease try select difference folder.\r\n\r\nFolder selected:" + dialog.SelectedPath, 
+          "Error", MessageBoxButton.OK);
       }
       dialog.Dispose();
     }
     private void DisplayName_changeClick(object sender, RoutedEventArgs e)
     {
       Button button = sender as Button;
-      SyncRootViewModel srvm = button.DataContext as SyncRootViewModel;
+      SyncRootViewModelBase srvm = button.DataContext as SyncRootViewModelBase;
       srvm.IsEditingDisplayName = true;
     }
     private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -223,20 +200,18 @@ namespace CssCs.UI
             textBox.SelectAll();
           }));
     }
-
     private void TextBox_LostFocus(object sender, RoutedEventArgs e)
     {
       TextBox textBox = sender as TextBox;
-      SyncRootViewModel srvm = textBox.DataContext as SyncRootViewModel;
+      SyncRootViewModelBase srvm = textBox.DataContext as SyncRootViewModelBase;
       srvm.IsEditingDisplayName = false;
     }
-
     private void tb_DisplayName_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
       if (e.Key == Key.Enter)
       {
         TextBox textBox = sender as TextBox;
-        SyncRootViewModel srvm = textBox.DataContext as SyncRootViewModel;
+        SyncRootViewModelBase srvm = textBox.DataContext as SyncRootViewModelBase;
         srvm.IsEditingDisplayName = false;
       }
     }
@@ -245,23 +220,17 @@ namespace CssCs.UI
     {
       MenuItem menuItem = sender as MenuItem;
       MenuViewModel menuDataModel = menuItem.DataContext as MenuViewModel;
-      var ceSelected = GetCloudEmailSelected();
+      var ceSelected = GetAccountVMSelected();
       switch (menuDataModel.Action)
       {
         case MenuAction.Add:
-          if (ceSelected != null)
-          {
-            SyncRootViewModel SRViewModel = new SyncRootViewModel(ceSelected);
-            SRViewModels.Add(SRViewModel);
-          }
+          if (ceSelected != null) OnCreateSyncRoot?.Invoke();
           break;
         case MenuAction.Delete:
           var SRVMSelected = GetSRVMSelected();
-          if (SRVMSelected != null && !SRVMSelected.IsWork)
-          {
-            SRVMSelected.Delete();
-            SRViewModels.Remove(SRVMSelected);
-          }
+          if (SRVMSelected == null || SRVMSelected.IsWork) break;
+          SRVMSelected.SyncRootData.Delete();
+          SyncRootViewModels.Remove(SRVMSelected);
           break;
 
         case MenuAction.Refresh:

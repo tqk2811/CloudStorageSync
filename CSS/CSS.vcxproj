@@ -87,7 +87,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>comsuppwd.lib;propsys.lib;cldapi.lib;CssWinrt.lib;kernel32.lib;user32.lib;gdi32.lib;shlwapi.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)sqlite-dll-win32-x86-3310100;$(TargetDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(TargetDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -113,7 +113,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>comsuppw.lib;propsys.lib;cldapi.lib;CssWinrt.lib;kernel32.lib;user32.lib;gdi32.lib;shlwapi.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)sqlite-dll-win32-x86-3310100;$(TargetDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(TargetDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -167,7 +167,6 @@
     <ClCompile Include="LocalAction.cpp" />
     <ClCompile Include="ShellCall.cpp" />
     <ClCompile Include="TrackChanges.cpp" />
-    <ClCompile Include="SRManaged.cpp" />
     <ClCompile Include="ConnectSyncRoot.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
@@ -180,8 +179,8 @@
     <ClInclude Include="CloudAction.h" />
     <ClInclude Include="LocalAction.h" />
     <ClInclude Include="ShellCall.h" />
+    <ClInclude Include="SyncRootViewModel.h" />
     <ClInclude Include="TrackChanges.h" />
-    <ClInclude Include="SRManaged.h" />
     <ClInclude Include="ConnectSyncRoot.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Placeholders.h" />
@@ -195,6 +194,12 @@
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CssCsCloud\CssCsCloud.csproj">
+      <Project>{240e273d-4406-4beb-ada9-6135cd9d8eba}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\CssCsData\CssCsData.csproj">
+      <Project>{2ae9ade8-cf09-4b99-bc0e-d217785acdd2}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\CssCs\CssCs.csproj">
       <Project>{0f04a0ea-6186-47c6-a2a9-13eebdb23627}</Project>
     </ProjectReference>

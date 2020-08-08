@@ -1,4 +1,5 @@
 ﻿using CssCs.UI.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,8 +13,8 @@ namespace CssCs.Queues
 
 
 
-    List<IQueue> Queues = new List<IQueue>();
-    List<IQueue> Runnings = new List<IQueue>();
+    readonly List<IQueue> Queues = new List<IQueue>();
+    readonly List<IQueue> Runnings = new List<IQueue>();
     int _MaxRun = 1;
     public int MaxRun
     {
@@ -41,14 +42,14 @@ namespace CssCs.Queues
         IQueue queue = Queues[0];
         Queues.RemoveAt(0);
         lock (Runnings) Runnings.Add(queue);
-        Task work = queue.DoWork();
-        work.ContinueWith(ContinueTaskResult, queue);
+        queue.DoWork().ContinueWith(ContinueTaskResult, queue);
       }
     }
 
 
     public void Add(IQueue queue)
     {
+      if (null == queue) throw new ArgumentNullException(nameof(queue));
       if (queue.IsPrioritize) queue.DoWork();
       else
       {

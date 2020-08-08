@@ -8,8 +8,8 @@
         mc:Ignorable="d" Loaded="Window_Loaded" MouseDown="Window_MouseDown"
         Title="FolderBrowserCloudDialog" Height="452" Width="489" MinHeight="400" MinWidth="400" WindowStartupLocation="CenterScreen">
     <Window.Resources>
-        <viewmodel:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
-        <viewmodel:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
+        <local:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
+        <local:BooleanFalseToHiddenConverter x:Key="FalseToVisibleConverter" IsReversed="True"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -17,7 +17,7 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="40"/>
         </Grid.RowDefinitions>
-        <TreeView x:Name="treeView" Grid.Row="1" Margin="10,0,10,0" ItemsSource="{Binding treeview_CloudItemViewModels}" SelectedItemChanged="treeView_SelectedItemChanged" 
+        <TreeView x:Name="treeView" Grid.Row="1" Margin="10,0,10,0" ItemsSource="{Binding TreeviewCloudItemViewModels}" SelectedItemChanged="treeView_SelectedItemChanged" 
                   ContextMenuOpening="ContextMenu_ContextMenuOpening">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Childs}" DataType="{x:Type viewmodel:TreeviewCloudItemViewModel}">
@@ -70,7 +70,7 @@
                 </Style>                
             </TreeView.ItemContainerStyle>
             <TreeView.ContextMenu>
-                <ContextMenu ItemsSource="{Binding menuViewModels}">
+                <ContextMenu ItemsSource="{Binding TreeViewMenuViewModels}">
                     <ContextMenu.ItemContainerStyle>
                         <Style TargetType="{x:Type MenuItem}">
                             <Setter Property="Header" Value="{Binding Text}"/>

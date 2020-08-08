@@ -90,24 +90,6 @@ namespace CssCs.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to sdxv9bvu37pjd5r.
-        /// </summary>
-        public static string DropboxApiKey {
-            get {
-                return ResourceManager.GetString("DropboxApiKey", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to xsfy8way52uuf1j.
-        /// </summary>
-        public static string DropboxApiSecret {
-            get {
-                return ResourceManager.GetString("DropboxApiSecret", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         public static System.Drawing.Bitmap file_files_document_1_19_512 {
@@ -138,33 +120,6 @@ namespace CssCs.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to AIzaSyCZUicaxZb7DENX-NMpuDc59S0udi3G9WU.
-        /// </summary>
-        public static string GoogleDriveApiKey {
-            get {
-                return ResourceManager.GetString("GoogleDriveApiKey", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to 962171380504-jia11p348837sd22iji10nbul76vc7em.apps.googleusercontent.com.
-        /// </summary>
-        public static string GoogleOauth2_ClientID {
-            get {
-                return ResourceManager.GetString("GoogleOauth2_ClientID", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to ZXqAy1VXh2mc-YOxx3fU4QsP.
-        /// </summary>
-        public static string GoogleOauth2_Clientsecret {
-            get {
-                return ResourceManager.GetString("GoogleOauth2_Clientsecret", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         public static System.Drawing.Bitmap hard_drive_disk_icon_256x256 {
@@ -185,15 +140,6 @@ namespace CssCs.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to K1t33QJC.
-        /// </summary>
-        public static string MegaApiAppKey {
-            get {
-                return ResourceManager.GetString("MegaApiAppKey", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
         public static System.Drawing.Bitmap MegaSync {
@@ -210,15 +156,6 @@ namespace CssCs.Properties {
             get {
                 object obj = ResourceManager.GetObject("onedrive_logo", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to c8eb5627-8b82-43d3-9617-6b8c91d09de9.
-        /// </summary>
-        public static string OneDriveClientId {
-            get {
-                return ResourceManager.GetString("OneDriveClientId", resourceCulture);
             }
         }
     }

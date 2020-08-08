@@ -1,4 +1,4 @@
-﻿using CssCs.DataClass;
+﻿using CssCsData;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -89,7 +89,7 @@ namespace CssCs.UI.ViewModel
     }
 
 
-    public System.Windows.Media.ImageSource _img = null;
+    System.Windows.Media.ImageSource _img = null;
     public System.Windows.Media.ImageSource Img
     {
       get { return _img; }

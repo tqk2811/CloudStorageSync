@@ -10,6 +10,7 @@ namespace CSS
 	internal:
 		static CssCs::UI::SettingWindow^ settingwindow{ nullptr };
 		static void OnClosed(System::Object^ sender, System::EventArgs^ e);
+		static void OnCreateSyncRoot();
 	};
 }
 

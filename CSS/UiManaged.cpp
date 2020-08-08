@@ -41,6 +41,15 @@ namespace CSS
         GC::Collect();
     }
 
+    void UiManaged::OnCreateSyncRoot()
+    {
+        SyncRoot^ sr = gcnew SyncRoot();
+        sr->Id = CssCs::Extensions::RandomString(32);
+        sr->AddOrUpdate();
+        CSS::SyncRootViewModel^ srvm = gcnew CSS::SyncRootViewModel(sr);
+        settingwindow->SyncRootViewModels->Add(srvm);
+    }
+
     LRESULT CALLBACK WndProc_trayicon(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         UINT umsg = (UINT)lParam;
@@ -70,7 +79,8 @@ namespace CSS
                 if (UiManaged::settingwindow == nullptr) 
                 {
                     UiManaged::settingwindow = gcnew CssCs::UI::SettingWindow();
-                    UiManaged::settingwindow->Closed += gcnew System::EventHandler(&CSS::UiManaged::OnClosed);
+                    UiManaged::settingwindow->Closed += gcnew System::EventHandler(&UiManaged::OnClosed);
+                    UiManaged::settingwindow->OnCreateSyncRoot += gcnew CssCs::UI::OnCreateSyncRoot(&UiManaged::OnCreateSyncRoot);
                     UiManaged::settingwindow->Show();
                 }
                 else UiManaged::settingwindow->Show();
@@ -100,5 +110,4 @@ namespace CSS
         }
         return DefWindowProc(hWnd, msg, wParam, lParam);
     }
-
 }

@@ -22,7 +22,7 @@ namespace CSS
                 LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
                 if (localitem)
                 {
-                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"ItemCreated: {0}", localitem->Name);
+                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"ItemCreated: {0}", localitem->Name);
                     if (localitem->LocalId > 0 && childsci[i]->Size == -1)
                     {
                         String^ itemRelative = RelativeOfParent;
@@ -72,11 +72,11 @@ namespace CSS
             /*CF_PLACEHOLDER_STATE state = GetPlaceholderState(pin_fullPathItem);
             if (state != CF_PLACEHOLDER_STATE_INVALID && (state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
             {
-                if (localitem && !String::IsNullOrEmpty(localitem->CloudId) && localitem->CloudId->Equals(clouditem->Id))
+                if (localitem && !String::IsNullOrEmpty(localitem->CloudId) && localitem->CloudId->Equals(clouditem->Id,StringComparison::OrdinalIgnoreCase))
                 {*/
             if (localitem && !String::IsNullOrEmpty(localitem->CloudId))
             {
-                if (!localitem->CloudId->Equals(clouditem->Id))
+                if (!localitem->CloudId->Equals(clouditem->Id, StringComparison::OrdinalIgnoreCase))
                 {
                     //diff id
                     rename_cloud = true;
@@ -90,7 +90,7 @@ namespace CSS
                 if (localIsFolder && cloud_isfolder) convert_to_placeholder = true;//same folder
                 else if (!localIsFolder && !cloud_isfolder)//same file
                 {
-                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(L"Checking hash file: {0}", clouditem->Name);
+                    if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", clouditem->Name);
                     if (srvm->CEVM->Cloud->HashCheck(fullPathItem, clouditem))
                     {
                         //same size and hash
@@ -202,10 +202,10 @@ namespace CSS
             }
             else
             {
-                if (PathExists(pin_fullPathItem)) WriteLog(String::Format(L"Placeholders::Revert can't OpenFile path:{0}", fullPathItem), 0);
+                if (PathExists(pin_fullPathItem)) WriteLog(String::Format(CultureInfo::InvariantCulture, L"Placeholders::Revert can't OpenFile path:{0}", fullPathItem), 0);
                 else
                 {
-                    WriteLog(String::Format(L"Placeholders::Revert Path File doesn't Exists path:{0}", fullPathItem), 0);
+                    WriteLog(String::Format(CultureInfo::InvariantCulture, L"Placeholders::Revert Path File doesn't Exists path:{0}", fullPathItem), 0);
                     li->Delete(true);
                 }
             }
@@ -276,7 +276,7 @@ namespace CSS
         }
         else
         {
-            WriteLog(String::Format(L"Placeholders::Update LocalItem is null,CloudItem:{0}", clouditem), 0);
+            WriteLog(String::Format(CultureInfo::InvariantCulture, L"Placeholders::Update LocalItem is null,CloudItem:{0}", clouditem), 0);
         }
 
         if(InsertErrorDb && tryagain) LocalError::Insert(li->LocalId, srvm->SRId, LocalErrorType::Update, clouditem->Id);
@@ -322,7 +322,7 @@ namespace CSS
         }
         else
         {
-            WriteLog(String::Format(L"Placeholders::Convert LocalItem is null,fileIdentity:{0}", fileIdentity), 0);
+            WriteLog(String::Format(CultureInfo::InvariantCulture, L"Placeholders::Convert LocalItem is null,fileIdentity:{0}", fileIdentity), 0);
         }
         if (InsertErrorDb && tryagain) LocalError::Insert(li->LocalId, srvm->SRId, LocalErrorType::Convert, fileIdentity);
         return result;

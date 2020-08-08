@@ -1,8 +1,7 @@
-﻿using CssCs.Cloud;
-using CssCs.DataClass;
-using CssCs.UI.ViewModel;
-using Google.Apis.Drive.v3;
-using Google.Apis.Drive.v3.Data;
+﻿using CssCs.UI.ViewModel;
+using CssCsCloud.Cloud;
+using CssCsData;
+using CssCsData.Cloud;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,29 +20,26 @@ namespace CssCs.UI
   /// </summary>
   public sealed partial class FolderBrowserCloudDialog : Window
   {
-    readonly CloudEmailViewModel cevm = null;
-
-    internal FolderBrowserCloudDialog(CloudEmailViewModel cevm)
+    readonly AccountViewModel accvm = null;
+    internal FolderBrowserCloudDialog(AccountViewModel accvm)
     {
       this.DataContext = this;
       InitializeComponent();
-      this.cevm = cevm;
-    }
-
-    public ObservableCollection<TreeviewCloudItemViewModel> treeview_CloudItemViewModels { get; } = new ObservableCollection<TreeviewCloudItemViewModel>();
+      this.accvm = accvm;
+    }    
 
     #region Window Event
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-      menuViewModels.Add(new MenuViewModel(MenuAction.NewFolder));
-      menuViewModels.Add(new MenuViewModel(MenuAction.Rename));
-      menuViewModels.Add(new MenuViewModel(MenuAction.Delete));
+      TreeViewMenuViewModels.Add(new MenuViewModel(MenuAction.NewFolder));
+      TreeViewMenuViewModels.Add(new MenuViewModel(MenuAction.Rename));
+      TreeViewMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
 
-      TreeviewCloudItemViewModel rootcloud = new TreeviewCloudItemViewModel(cevm.Email, cevm.CloudName);
-      CloudItem ci = await cevm.Cloud.GetMetadata(rootcloud.Id);
+      TreeviewCloudItemViewModel rootcloud = new TreeviewCloudItemViewModel(accvm.Email, accvm.AccountData.CloudName);
+      CloudItem ci = await accvm.Cloud.GetMetadata(rootcloud.Id).ConfigureAwait(true);
       rootcloud.Id = ci.Id;
-      treeview_CloudItemViewModels.Add(rootcloud);
-      await LoadChildTV(rootcloud);
+      TreeviewCloudItemViewModels.Add(rootcloud);
+      await LoadChildTV(rootcloud).ConfigureAwait(true);
       rootcloud.IsExpanded = true;
     }
     private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -53,6 +49,7 @@ namespace CssCs.UI
     #endregion
 
     #region Treeview
+    public ObservableCollection<TreeviewCloudItemViewModel> TreeviewCloudItemViewModels { get; } = new ObservableCollection<TreeviewCloudItemViewModel>();
     TreeviewCloudItemViewModel _result = null;
     internal TreeviewCloudItemViewModel Result
     {
@@ -72,9 +69,8 @@ namespace CssCs.UI
     private async Task LoadChildTV(TreeviewCloudItemViewModel item)
     {
       item.LoadingVisibility = true;
-      IList<CloudItem> cis = await Task.Factory.StartNew(() => cevm.Cloud.CloudFolderGetChildFolder(item.Id), 
-        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
+      IList<CloudItem> cis = await Task.Factory.StartNew(() => accvm.Cloud.CloudFolderGetChildFolder(item.Id), 
+        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(true);
       foreach (var ci in cis) item.Childs.Add(new TreeviewCloudItemViewModel(ci));
       item.LoadingVisibility = false;
       item.LoadedChilds = true;
@@ -86,8 +82,7 @@ namespace CssCs.UI
       {
         TreeviewCloudItemViewModel tvcloudItemViewModel = treeViewItem.DataContext as TreeviewCloudItemViewModel;
         foreach (var child in tvcloudItemViewModel.Childs)
-          if (!child.LoadedChilds && !child.LoadingVisibility)
-            _ = LoadChildTV(child);
+          if (!child.LoadedChilds && !child.LoadingVisibility) LoadChildTV(child);
       }
     }
 
@@ -126,13 +121,13 @@ namespace CssCs.UI
     #endregion  
 
     #region Treeview Menu
-    public ObservableCollection<MenuViewModel> menuViewModels { get; set; } = new ObservableCollection<MenuViewModel>();
+    public ObservableCollection<MenuViewModel> TreeViewMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
     private void ContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
       bool flag = false;
       if (Result != null && !Result.LoadingVisibility && Result.CloudName == CloudName.Folder) flag = true;
-      foreach (var item in menuViewModels) item.IsEnabled = flag;
-      if (Result != null && Result.CloudName != CloudName.Folder) menuViewModels[0].IsEnabled = true;
+      foreach (var item in TreeViewMenuViewModels) item.IsEnabled = flag;
+      if (Result != null && Result.CloudName != CloudName.Folder) TreeViewMenuViewModels[0].IsEnabled = true;
     }
 
     private async void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -158,26 +153,32 @@ namespace CssCs.UI
               break;
 
             case MenuAction.Delete:
-              CloudItem ci = CloudItem.Select(Result.Id, cevm.EmailSqlId);
-              if (ci.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.OwnedByMe))//my file
+              CloudItem ci = accvm.AccountData.GetCloudItem(Result.Id);
+              if (ci.Flag.HasFlag(CloudItemFlag.OwnedByMe))//my file
               {
                 MessageBoxResult result = MessageBox.Show("Are you sure trash that folder?\r\n" + Result.Name, "Confirm Trash", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (MessageBoxResult.Yes == result)
                 {
                   Result.LoadingVisibility = true;
-                  await cevm.Cloud.TrashItem(Result.Id);
+                  await accvm.Cloud.TrashItem(Result.Id).ConfigureAwait(true);
                   Result.Parent.Childs.Remove(Result);
                 }
               }
               else//file import from other account (only google drive)
               {
-                CloudItem ci_parent = CloudItem.Select(Result.Parent.Id, cevm.EmailSqlId);
-                if (ci_parent.CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag.CanRemoveChildren))
+                CloudItem ci_parent = accvm.AccountData.GetCloudItem(Result.Parent.Id);
+                if (ci_parent.Flag.HasFlag(CloudItemFlag.CanRemoveChildren))
                 {
-                  MessageBoxResult result = MessageBox.Show("Are you sure to remove that folder?\r\n" + Result.Name, "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                  MessageBoxResult result = MessageBox.Show("Are you sure to remove that folder?\r\n" + Result.Name,
+                                                            "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
                   if (MessageBoxResult.Yes == result)
                   {
-                    await cevm.Cloud.UpdateMetadata(new UpdateCloudItem() { Id = ci.Id, ParentIdsRemove = new List<string>() { ci_parent.Id } });
+                    UpdateCloudItem updateCloudItem = new UpdateCloudItem
+                    {
+                      Id = ci.Id
+                    };
+                    updateCloudItem.ParentIdsRemove.Add(ci_parent.Id);
+                    await accvm.Cloud.UpdateMetadata(updateCloudItem).ConfigureAwait(true);
                     Result.Parent.Childs.Remove(Result);
                   }
                 }
@@ -214,14 +215,14 @@ namespace CssCs.UI
           {
             if (!string.IsNullOrEmpty(tvcloudItemViewModel.Name) && tvcloudItemViewModel.Parent != null)
             {
-              CloudItem ci = await cevm.Cloud.CreateFolder(tvcloudItemViewModel.Name, new List<string>() { tvcloudItemViewModel.Parent.Id });
+              CloudItem ci = await accvm.Cloud.CreateFolder(tvcloudItemViewModel.Name, new List<string>() { tvcloudItemViewModel.Parent.Id }).ConfigureAwait(true);
               tvcloudItemViewModel.Id = ci.Id;
             }
             else tvcloudItemViewModel.IsEditing = true;
           }
-          else if (!tvcloudItemViewModel.Name.Equals(tvcloudItemViewModel.OldName))//rename
+          else if (!tvcloudItemViewModel.Name.Equals(tvcloudItemViewModel.OldName, StringComparison.OrdinalIgnoreCase))//rename
           {
-            await cevm.Cloud.UpdateMetadata(new UpdateCloudItem() { Id = tvcloudItemViewModel.Id, NewName = tvcloudItemViewModel.Name });
+            await accvm.Cloud.UpdateMetadata(new UpdateCloudItem() { Id = tvcloudItemViewModel.Id, NewName = tvcloudItemViewModel.Name }).ConfigureAwait(true);
           }
         }
         catch (Exception ex)

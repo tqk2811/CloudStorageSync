@@ -17,7 +17,7 @@ namespace CSS
 
 		void FindNonPlaceholderAndUploadTask(Object^ obj);
 
-		static void TryAgain(LocalError^ le);
+		//static void TryAgain(LocalError^ le);
 	};
 }
 
