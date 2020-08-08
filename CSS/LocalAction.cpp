@@ -10,7 +10,7 @@ namespace CSS
 		//{
 		//	LocalItem^ li = Placeholders::CreateItem(srvm, li_parents[i]->LocalId, li_parents[i]->GetRelativePath()->ToString(), ci);
 		//	if (ci->Size == -1 && li) Placeholders::CreateAll(srvm, li->CloudId, li->LocalId, li->GetRelativePath()->ToString());//create childs of newitem
-		}
+		//}
 	}
 	void LocalAction::DeleteLocal(SyncRootViewModel^ srvm, IList<String^>^ ParentIdsRemove, String^ CloudId)
 	{
@@ -124,104 +124,51 @@ namespace CSS
 		return false;
 	}
 
-
-
-	void LocalAction::FindNonPlaceholderAndUploadTask(Object^ obj)
-	{
-		//SyncRootViewModel^ srvm = (SyncRootViewModel^)obj;
-		//PinStr2(rootpath, srvm->LocalPath);
-		//FindNonPlaceholderAndUpload(srvm, rootpath);
-	}
-
-	void LocalAction::FindNonPlaceholderAndUpload(SyncRootViewModel^ srvm, LPCWSTR FullPath)
-	{
-		//WIN32_FIND_DATA find{ 0 };
-		//std::wstring sfullpath(FullPath);
-		//sfullpath.append(L"\\*");
-		//HANDLE handle = FindFirstFileEx(sfullpath.data(), FindExInfoStandard, &find, FindExSearchNameMatch, NULL, FIND_FIRST_EX_ON_DISK_ENTRIES_ONLY);
-		//if (handle != INVALID_HANDLE_VALUE)
-		//{
-		//	do
-		//	{
-		//		if (!wcscmp(find.cFileName, L".") || !wcscmp(find.cFileName, L"..")) continue;
-		//		std::wstring itempath(FullPath);
-		//		itempath.append(L"\\").append(find.cFileName);
-		//		bool isfolder = find.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-		//		CF_PLACEHOLDER_STATE state = CfGetPlaceholderStateFromFindData(&find);
-		//		if (!(state & CF_PLACEHOLDER_STATE_IN_SYNC))
-		//		{
-		//			String^ itempath_ = gcnew String(itempath.c_str());
-		//			LocalItem^ li = LocalItem::FindFromPath(srvm, itempath_, 0);
-		//			LocalItem^ parent_li = LocalItem::FindFromPath(srvm, itempath_, 1);
-		//			if (!li)
-		//			{
-		//				//new upload                        
-		//				li = gcnew LocalItem();
-		//				if (isfolder) li->Flag = LocalItemFlag::Folder;
-		//				li->LocalParentId = parent_li->LocalId;
-		//				li->Name = gcnew String(find.cFileName);
-		//				li->SRId = srvm->SRId;
-		//				li->Insert();
-		//			}
-		//			UploadQueue^ uq = gcnew UploadQueue(srvm, li);
-		//			if (isfolder) uq->IsPrioritize = true;
-		//			TaskQueues::UploadQueues->Add(uq);
-		//		}
-		//		if (isfolder) FindNonPlaceholderAndUpload(srvm, itempath.c_str());
-		//	} while (FindNextFile(handle, &find));
-		//	FindClose(handle);
-		//}
-		//else
-		//{
-		//	//error
-		//}
-	}
-
-	void LocalAction::TryAgain(LocalError^ le)
-	{
-		//if (!le) return;
-		//bool flag{ false };
-		//SyncRootViewModel^ srvm = SyncRootViewModel::Find(le->SrId);
-		//LocalItem^ li = LocalItem::Find(le->LiId);
-		//if (!srvm || !li) flag = true;//srvm/li not found -> clear
-		//else
-		//{
-		//	String^ fullpath = li->GetFullPath();
-		//	PinStr(fullpath);
-		//	if (!PathExists(pin_fullpath))
-		//	{
-		//		flag = true;//file does not exist
-		//		li->Delete(true);
-		//	}
-		//	else switch (le->Type)
-		//		{
-		//		case LocalErrorType::Revert:
-		//		{
-		//			flag = RevertFilePlaceholdersAndMoveRecyleBin(srvm, li, false);
-		//			break;
-		//		}
-		//		case LocalErrorType::Update:
-		//		{
-		//			CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
-		//			if (!ci) flag = true;
-		//			else flag = Placeholders::Update(srvm, li, ci, false);
-		//			break;
-		//		}
-		//		case LocalErrorType::Convert:
-		//		{
-		//			flag = Placeholders::Convert(srvm, li, le->CIId, false);
-		//			break;
-		//		}
-		//		case LocalErrorType::Rename:
-		//		{
-		//			CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
-		//			if (!ci) flag = true;
-		//			else flag = LocalAction::RenameLocal(srvm, li, ci, false);
-		//			break;
-		//		}
-		//		default: break;
-		//		}
-		//}
-		//if (flag) le->Delete();
-	}
+	//void LocalAction::TryAgain(LocalError^ le)
+	//{
+	//	if (!le) return;
+	//	bool flag{ false };
+	//	SyncRootViewModel^ srvm = SyncRootViewModel::Find(le->SrId);
+	//	LocalItem^ li = LocalItem::Find(le->LiId);
+	//	if (!srvm || !li) flag = true;//srvm/li not found -> clear
+	//	else
+	//	{
+	//		String^ fullpath = li->GetFullPath();
+	//		PinStr(fullpath);
+	//		if (!PathExists(pin_fullpath))
+	//		{
+	//			flag = true;//file does not exist
+	//			li->Delete(true);
+	//		}
+	//		else switch (le->Type)
+	//			{
+	//			case LocalErrorType::Revert:
+	//			{
+	//				flag = RevertFilePlaceholdersAndMoveRecyleBin(srvm, li, false);
+	//				break;
+	//			}
+	//			case LocalErrorType::Update:
+	//			{
+	//				CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
+	//				if (!ci) flag = true;
+	//				else flag = Placeholders::Update(srvm, li, ci, false);
+	//				break;
+	//			}
+	//			case LocalErrorType::Convert:
+	//			{
+	//				flag = Placeholders::Convert(srvm, li, le->CIId, false);
+	//				break;
+	//			}
+	//			case LocalErrorType::Rename:
+	//			{
+	//				CloudItem^ ci = CloudItem::Select(le->CIId, srvm->CEVM->EmailSqlId);
+	//				if (!ci) flag = true;
+	//				else flag = LocalAction::RenameLocal(srvm, li, ci, false);
+	//				break;
+	//			}
+	//			default: break;
+	//			}
+	//	}
+	//	if (flag) le->Delete();
+	//}
 }

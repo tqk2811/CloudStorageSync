@@ -37,15 +37,13 @@ namespace CssCs
     CustomFileSystemEventHandler customFileSystemEventHandler;
     readonly FileSystemWatcher watcher_lastwrite;
     readonly FileSystemWatcher watcher_attribute;
-    readonly SyncRootViewModelBase srvm;
     readonly ManualResetEvent resetEvent = new ManualResetEvent(false);
 
     System.Timers.Timer aTimer;
     Queue<CustomFileSystemEventArgs> FileSystemEventArgsQueue { get; } = new Queue<CustomFileSystemEventArgs>();
 
-    internal Watcher(SyncRootViewModelBase srvm)
+    public Watcher()
     {
-      this.srvm = srvm;
       watcher_attribute = new FileSystemWatcher
       {
         NotifyFilter = NotifyFilters.Attributes | NotifyFilters.CreationTime |

@@ -166,7 +166,7 @@
     <ClCompile Include="CloudAction.cpp" />
     <ClCompile Include="LocalAction.cpp" />
     <ClCompile Include="ShellCall.cpp" />
-    <ClCompile Include="TrackChanges.cpp" />
+    <ClCompile Include="SyncRootViewModel.cpp" />
     <ClCompile Include="ConnectSyncRoot.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
@@ -180,7 +180,6 @@
     <ClInclude Include="LocalAction.h" />
     <ClInclude Include="ShellCall.h" />
     <ClInclude Include="SyncRootViewModel.h" />
-    <ClInclude Include="TrackChanges.h" />
     <ClInclude Include="ConnectSyncRoot.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Placeholders.h" />

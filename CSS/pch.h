@@ -42,7 +42,7 @@ namespace CSS
 	using namespace System::Text;
 	using namespace System::Text::RegularExpressions;
 	using namespace System::Globalization;
-	using namespace System::ComponentModel;
+	using namespace System::ComponentModel;	
 	typedef ref class SyncRootViewModel;
 }
 
@@ -54,8 +54,6 @@ namespace CSS
 #include "UiManaged.h"
 #include "SyncRootViewModel.h"
 #include "LocalAction.h"
-#include "TrackChanges.h"
-#include "SRManaged.h"
 #include "CloudAction.h"
 #include "ConnectSyncRoot.h"//typedef
 //include

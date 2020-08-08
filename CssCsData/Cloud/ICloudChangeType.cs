@@ -23,4 +23,9 @@ namespace CssCsData.Cloud
     IList<string> ParentsCurrent { get; }
     CloudItem CiNew { get; }
   }
+
+  public interface ICloudChangeTypeCollection : ICollection<ICloudChangeType>
+  {
+    string NewWatchToken { get; }
+  }
 }

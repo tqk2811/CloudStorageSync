@@ -120,7 +120,7 @@ namespace CSS
 	{
         LONGLONG start = callbackParameters->FetchData.RequiredFileOffset.QuadPart;
         LONGLONG end = callbackParameters->FetchData.RequiredLength.QuadPart + start - 1;
-        auto task_stream = srvm->CEVM->Cloud->Download(ci, start, end);
+        auto task_stream = srvm->SyncRootData->Account->AccountViewModel->Cloud->Download(ci, start, end);
 
         std::wstring fullClientPath(callbackInfo->VolumeDosName);
         fullClientPath.append(callbackInfo->NormalizedPath);

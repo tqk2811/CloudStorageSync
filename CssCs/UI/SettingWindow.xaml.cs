@@ -47,7 +47,7 @@ namespace CssCs.UI
 
     public ObservableCollection<MenuViewModel> AccountMenuViewModels { get; } = new ObservableCollection<MenuViewModel>();
 
-    AccountViewModel GetAccountVMSelected()
+    public AccountViewModel GetAccountVMSelected()
     {
       return LV_listemail.SelectedItem as AccountViewModel;
     }

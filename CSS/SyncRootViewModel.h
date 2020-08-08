@@ -49,87 +49,19 @@ namespace CSS
             }
         }
 
-        void Register()
+        void Register();
+        void UnRegister();
+        void LocalOnChanged(CustomFileSystemEventArgs^ e);
+
+
+        void FindNonPlaceholderAndUpload()
         {
-            EnumStatus = SyncRootStatus::RegisteringSyncRoot;
-            if (String::IsNullOrEmpty(DisplayName)) DisplayName = CloudFolderName + gcnew String(L" - ") + SyncRootData->Account->Email;
-            PinStr2(pin_SrId, SyncRootData->Id);
             PinStr(LocalPath);
-            PinStr(DisplayName);
-
-            SyncRootRegistrarInfo srinfo;
-            srinfo.SrId = pin_SrId;
-            srinfo.LocalPath = pin_LocalPath;
-            srinfo.DisplayName = pin_DisplayName;
-            srinfo.IconIndex = (int)SyncRootData->Account->CloudName;
-            srinfo.Version = L"1.0.0";
-            srinfo.RecycleBinUri = nullptr;
-            srinfo.ShowSiblingsAsGroup = false;
-            srinfo.HardlinkPolicy = HardlinkPolicy::Allowed;
-            if (SyncRootData->Account->CloudName == CloudName::MegaNz) srinfo.HydrationPolicy = HydrationPolicy::AlwaysFull;
-            else srinfo.HydrationPolicy = HydrationPolicy::Full;
-            srinfo.HydrationPolicyModifier = HydrationPolicyModifier::AutoDehydrationAllowed | HydrationPolicyModifier::StreamingAllowed;
-            srinfo.PopulationPolicy = PopulationPolicy::AlwaysFull;
-            srinfo.InSyncPolicy = InSyncPolicy::FileCreationTime | InSyncPolicy::DirectoryCreationTime;
-
-            switch (CssWinrt::SyncRoot_RegisterWithShell(srinfo))
-            {
-            case SyncRootRegisterStatus::Register:
-            {
-                ShellCall::AddFolderToSearchIndexer(pin_LocalPath);
-                ConnectionKey = ConnectSyncRoot::ConnectSyncRootTransferCallbacks(pin_LocalPath);
-
-                EnumStatus = SyncRootStatus::CreatingPlaceholder;
-                //CreatePlaceholders(srvm);
-                if (EnumStatus.HasFlag(SyncRootStatus::Error)) return;
-                else Message = String::Empty;
-            }
-            case SyncRootRegisterStatus::Exist:
-            {
-                if (!ConnectionKey) ConnectionKey = ConnectSyncRoot::ConnectSyncRootTransferCallbacks(pin_LocalPath);
-
-                watcher->Change(LocalPath,
-                    gcnew CssCs::CustomFileSystemEventHandler(this, &CSS::SyncRootViewModel::LocalOnChanged));
-                watcher->Start();
-                EnumStatus = SyncRootStatus::Working;
-
-                Task::Factory->StartNew(gcnew Action(this, &SyncRootViewModel::FindNonPlaceholderAndUploadTask));
-                LogWriter::WriteLog(std::wstring(L"Syncroot Register: Success SrId:").append(pin_SrId), 2);
-                break;
-            }
-            case SyncRootRegisterStatus::Failed://Syncroot B can't inside folder in syncroot A, and some...
-            {
-                EnumStatus = SyncRootStatus::RegisteringSyncRoot | SyncRootStatus::Error;
-                Message = gcnew String(L"Registering SyncRoot Failed");
-                break;
-            }
-            }
-            GC::Collect();
+            FindNonPlaceholderAndUpload(pin_LocalPath);
         }
+        void FindNonPlaceholderAndUpload(LPCWSTR FullPath);
 
-        void UnRegister()
-        {
-            PinStr2(pin_SrId, SyncRootData->Id);
-            watcher->Stop();
-            ConnectSyncRoot::DisconnectSyncRootTransferCallbacks(ConnectionKey);
-            ConnectionKey = 0;
-            SyncRoot_UnRegister(pin_SrId);
-            IsListed = false;
-            Root->Remove();
-            EnumStatus = SyncRootStatus::NotWorking;
-            LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(pin_SrId), 2);
-        }
-
-        void LocalOnChanged(CustomFileSystemEventArgs^ e)
-        {
-
-        }
-
-        void FindNonPlaceholderAndUploadTask()
-        {
-
-        }
-
+        
 	public:
         SyncRootViewModel(SyncRoot^ syncRootData) : CssCsData::SyncRootViewModelBase(syncRootData)
         {
@@ -156,6 +88,9 @@ namespace CSS
                 }
             }
         }
+
+        void UpdateChange(ICloudChangeType^ change) override;
+
 
         property SyncRootStatus EnumStatus
         {

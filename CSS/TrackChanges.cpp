@@ -1,9 +1,7 @@
 #include "pch.h"
 #include "TrackChanges.h"
 namespace CSS
-{
-	gcroot<TrackChanges^> trackchanges;
-	
+{	
 	void TrackChanges::InitTimer()
 	{
 		if (resetevent != nullptr) return;
@@ -112,101 +110,4 @@ namespace CSS
 		//}
 	}
 
-	void TrackChanges::LocalOnChanged(SyncRootViewModel^ srvm, CustomFileSystemEventArgs^ e)
-	{
-		//PinStr2(pin_fullpath, e->FullPath);
-		//String^ log = String::Format(CultureInfo::InvariantCulture, "TrackChanges::LocalOnChanged ChangeType: {0}, ChangeInfo:{1}, FullPath: {2}", e->ChangeType, e->ChangeInfo, e->FullPath);
-		//WriteLog(log, 1);	
-		//DWORD attrib = GetFileAttributes(pin_fullpath);
-		//switch (e->ChangeType)
-		//{
-		//case WatcherChangeTypes::Changed://attribute,file change,...
-		//{
-		//	LocalItem^ li = LocalItem::FindFromPath(srvm, e->FullPath, 0);
-		//	switch (e->ChangeInfo)
-		//	{
-		//	case ChangeInfo::Attribute:
-		//	{
-		//		if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))//file only
-		//		{
-		//			CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_fullpath);
-		//			if (state == CF_PLACEHOLDER_STATE_INVALID)
-		//				return;
-		//			if (li && (state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)//placeholder
-		//			{
-		//				if (attrib & FILE_ATTRIBUTE_PINNED) Placeholders::Hydrate(srvm, li, false);
-		//				else if (attrib & FILE_ATTRIBUTE_UNPINNED) Placeholders::Dehydrate(srvm, li, false);
-		//			}
-		//		}
-		//		break;
-		//	}
-		//	case ChangeInfo::LastWrite:
-		//	{
-		//		if (!(attrib & FILE_ATTRIBUTE_DIRECTORY))//file only
-		//		{
-		//			LocalItem^ li = LocalItem::FindFromPath(srvm, e->FullPath, 0);
-		//			if (li)//file revert li was del
-		//			{
-		//				UploadQueue^ uq = gcnew UploadQueue(srvm, li);
-		//				TaskQueues::UploadQueues->Reset(uq);
-		//			}
-		//		}
-		//		break;
-		//	}
-		//	default:
-		//		break;
-		//	}			
-		//	break;
-		//}
-		//case WatcherChangeTypes::Created://new file created
-		//{
-		//	//if item is placeholder -> skip
-		//	//if item is not placeholder -> upload
-		//	//if can't open for check item -> Queue (for try again later)
-		//	CF_PLACEHOLDER_STATE state = Placeholders::GetPlaceholderState(pin_fullpath);
-		//	if (state == CF_PLACEHOLDER_STATE_INVALID)
-		//		return;
-		//	if (!(state & CF_PLACEHOLDER_STATE_PLACEHOLDER))//if new item is not placeholder
-		//	{
-		//		FileInfo^ finfo = gcnew FileInfo(e->FullPath);
-		//		String^ parent_fullpath = e->FullPath->Substring(0, e->FullPath->Length - finfo->Name->Length - 1);
-		//		LocalItem^ li_parent = LocalItem::FindFromPath(srvm, parent_fullpath, 0);
-		//		if (!String::IsNullOrEmpty(li_parent->CloudId))
-		//		{
-		//			CloudItem^ ci_parent = CloudItem::Select(li_parent->CloudId, srvm->CEVM->EmailSqlId);
-		//			if (!ci_parent->CapabilitiesAndFlag.HasFlag(CloudCapabilitiesAndFlag::CanAddChildren)) return;//can't upload child
-		//		}
-		//		//upload
-		//		LocalItem^ li_new = LocalItem::Find(srvm, li_parent->LocalId, finfo->Name);
-		//		if (!li_new)
-		//		{
-		//			li_new = gcnew LocalItem();
-		//			li_new->LocalParentId = li_parent->LocalId;
-		//			li_new->Name = finfo->Name;
-		//			li_new->SRId = srvm->SRId;
-		//			if (finfo->Attributes.HasFlag(FileAttributes::Directory)) li_new->Flag = LocalItemFlag::Folder;
-		//			li_new->Insert();
-		//		}
-		//		UploadQueue^ uq = gcnew UploadQueue(srvm, li_new);
-		//		if (finfo->Attributes.HasFlag(FileAttributes::Directory)) uq->IsPrioritize = true;
-		//		TaskQueues::UploadQueues->Add(uq);
-		//	}
-		//	break;
-		//}
-		//case WatcherChangeTypes::Deleted:
-		//{
-		//	//if item is not placeholder delete localitem
-		//	//if item is placeholder -> skip (ConnectSyncRoot NOTIFY_DELETE/NOTIFY_DELETE_COMPLETION trigger)
-		//	LocalItem^ li = LocalItem::FindFromPath(srvm, e->FullPath, 0);
-		//	if (li && String::IsNullOrEmpty(li->CloudId))
-		//	{
-		//		//request cancel upload
-		//		TaskQueues::UploadQueues->Cancel(gcnew UploadQueue(srvm, li));
-		//		li->Delete(true);
-		//	}
-		//	break;
-		//}
-		//default: break;
-		//}
-	}
 }

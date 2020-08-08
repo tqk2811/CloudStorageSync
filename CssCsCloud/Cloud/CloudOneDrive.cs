@@ -154,7 +154,7 @@ namespace CssCsCloud.Cloud
       return ci;
     }
 
-    private async Task<ICollection<ICloudChangeType>> WatchChange(string UrlWatch)
+    private async Task<ICloudChangeTypeCollection> WatchChange(string UrlWatch)
     {
       CloudChangeTypeCollection result = new CloudChangeTypeCollection();
 
@@ -327,7 +327,7 @@ namespace CssCsCloud.Cloud
       }
     }
 
-    public async Task<ICollection<ICloudChangeType>> WatchChange()
+    public async Task<ICloudChangeTypeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(account.WatchToken))
       {

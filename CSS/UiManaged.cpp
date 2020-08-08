@@ -43,9 +43,8 @@ namespace CSS
 
     void UiManaged::OnCreateSyncRoot()
     {
-        SyncRoot^ sr = gcnew SyncRoot();
-        sr->Id = CssCs::Extensions::RandomString(32);
-        sr->AddOrUpdate();
+        SyncRoot^ sr = gcnew SyncRoot(CssCs::Extensions::RandomString(32), settingwindow->GetAccountVMSelected()->AccountData->Id);
+        sr->Insert();
         CSS::SyncRootViewModel^ srvm = gcnew CSS::SyncRootViewModel(sr);
         settingwindow->SyncRootViewModels->Add(srvm);
     }

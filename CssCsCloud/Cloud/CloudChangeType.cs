@@ -1,24 +1,38 @@
 ﻿using CssCsData;
 using CssCsData.Cloud;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace CssCsCloud.Cloud
 {
-  internal class CloudChangeTypeCollection : Collection<ICloudChangeType>
+  public class CloudChangeTypeCollection : ICloudChangeTypeCollection
   {
+    ICollection<ICloudChangeType> collection = new Collection<ICloudChangeType>();
     public string NewWatchToken { get; internal set; }
+
+    public int Count => collection.Count;
+
+    public bool IsReadOnly => collection.IsReadOnly;
 
     internal void AddRange(IEnumerable<ICloudChangeType> collection)
     {
       if (null == collection) throw new ArgumentNullException(nameof(collection));
-      foreach (var item in collection) this.Add(item);
+      foreach (var item in collection) this.collection.Add(item);
     }
+
+    public void Add(ICloudChangeType item) => throw new NotImplementedException();
+    public void Clear() => throw new NotImplementedException();
+    public bool Contains(ICloudChangeType item) => collection.Contains(item);
+    public void CopyTo(ICloudChangeType[] array, int arrayIndex) => collection.CopyTo(array, arrayIndex);
+    public bool Remove(ICloudChangeType item) => throw new NotImplementedException();
+    public IEnumerator<ICloudChangeType> GetEnumerator() => collection.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => collection.GetEnumerator();
   }
   internal class CloudChangeType: ICloudChangeType
   {
-    public CloudChangeType(string Id, IList<string> parent_old, IList<string> parent_new)
+    internal CloudChangeType(string Id, IList<string> parent_old, IList<string> parent_new)
     {
       if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
       this.Id = Id;

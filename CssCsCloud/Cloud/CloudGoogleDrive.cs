@@ -125,7 +125,7 @@ namespace CssCsCloud.Cloud
       var change = await ds.Changes.GetStartPageToken().ExecuteAsync().ConfigureAwait(false);
       account.WatchToken = change.StartPageTokenValue;
     }
-    async Task<ICollection<ICloudChangeType>> WatchChange(string WatchToken)
+    async Task<ICloudChangeTypeCollection> WatchChange(string WatchToken)
     {
       if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
 
@@ -297,7 +297,7 @@ namespace CssCsCloud.Cloud
     }
 
 
-    public async Task<ICollection<ICloudChangeType>> WatchChange()
+    public async Task<ICloudChangeTypeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(account.WatchToken)) await InitWatch().ConfigureAwait(false);
       else return await WatchChange(account.WatchToken).ConfigureAwait(false);

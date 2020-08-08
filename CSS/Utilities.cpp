@@ -28,7 +28,7 @@ namespace CSS
 
         return filename;
     }
-    String^ FindNewFileName(SyncRootViewModelBase^ srvm, String^ ParentDirectory, String^ filename, String^ extension, CloudItem^ ci)
+    String^ FindNewFileName(SyncRootViewModel^ srvm, String^ ParentDirectory, String^ filename, String^ extension, CloudItem^ ci)
     {
         int i = 0;
         bool isfolder = ci->Size == -1;
@@ -52,8 +52,8 @@ namespace CSS
                         if (isfolder) break;//-> convert
                         else
                         {
-                            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", filename);
-                            if (srvm->CEVM->Cloud->HashCheck(newpath, ci)) break;//same hash -> convert
+                            if (srvm->EnumStatus.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", filename);
+                            if (srvm->SyncRootData->Account->AccountViewModel->Cloud->HashCheck(newpath, ci)) break;//same hash -> convert
                             else continue;//diff hash
                         }
                     }

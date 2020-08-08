@@ -2,8 +2,10 @@
 using CssCsData;
 using CssCsData.Cloud;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace CssCs.UI.ViewModel
 {
@@ -42,6 +44,22 @@ namespace CssCs.UI.ViewModel
 
 
     string _Quota;
+
+
+    public override void WatchChange()
+    {
+      Cloud.WatchChange().ContinueWith(WatchChangeResult, TaskScheduler.Default);
+    }
+
+    void WatchChangeResult(Task<ICloudChangeTypeCollection> t)
+    {
+      if (t.IsCanceled || t.IsFaulted) return;
+      foreach (var sr in AccountData.GetSyncRootWorking()) 
+        foreach (var change in t.Result) 
+          sr.SyncRootViewModel.UpdateChange(change);
+      AccountData.WatchToken = t.Result.NewWatchToken;
+      AccountData.Update();
+    }
 
     #region INotifyPropertyChanged
     private void NotifyPropertyChange([CallerMemberName] string name = "")

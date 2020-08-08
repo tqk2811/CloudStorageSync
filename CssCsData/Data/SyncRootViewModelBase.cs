@@ -1,5 +1,8 @@
-﻿using System;
+﻿using CssCsData.Cloud;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace CssCsData
 {
@@ -32,5 +35,7 @@ namespace CssCsData
     public virtual string DisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }  
     public virtual LocalItemRoot Root => throw new NotImplementedException();
     public virtual event PropertyChangedEventHandler PropertyChanged;
+
+    public abstract void UpdateChange(ICloudChangeType change);
   }
 }

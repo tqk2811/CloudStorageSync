@@ -25,9 +25,6 @@
     <Filter Include="src\Common">
       <UniqueIdentifier>{4a0ba603-82b8-4e83-95db-5fb7b5830921}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\TrackChanges">
-      <UniqueIdentifier>{4fba193b-569e-4f29-bcd8-b99ddb3139b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\ItemAction">
       <UniqueIdentifier>{88bb4fa7-d579-4a31-a6fe-5129773404df}</UniqueIdentifier>
     </Filter>
@@ -57,9 +54,6 @@
     <ClCompile Include="Placeholders.cpp">
       <Filter>src\cfapi</Filter>
     </ClCompile>
-    <ClCompile Include="TrackChanges.cpp">
-      <Filter>src\TrackChanges</Filter>
-    </ClCompile>
     <ClCompile Include="CloudAction.cpp">
       <Filter>src\ItemAction</Filter>
     </ClCompile>
@@ -71,6 +65,9 @@
     </ClCompile>
     <ClCompile Include="UiManaged.cpp">
       <Filter>src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="SyncRootViewModel.cpp">
+      <Filter>src\SyncRoot</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -91,9 +88,6 @@
     </ClInclude>
     <ClInclude Include="Placeholders.h">
       <Filter>src\cfapi</Filter>
-    </ClInclude>
-    <ClInclude Include="TrackChanges.h">
-      <Filter>src\TrackChanges</Filter>
     </ClInclude>
     <ClInclude Include="CloudAction.h">
       <Filter>src\ItemAction</Filter>

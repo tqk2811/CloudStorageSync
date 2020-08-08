@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace CssCsData
 {
-  public class AccountViewModelBase : INotifyPropertyChanged
+  public abstract class AccountViewModelBase : INotifyPropertyChanged
   {
     public AccountViewModelBase(Account account)
     {
@@ -20,5 +20,7 @@ namespace CssCsData
     public virtual ICloud Cloud { get; }
 
     public virtual event PropertyChangedEventHandler PropertyChanged;
+
+    public abstract void WatchChange();
   }
 }
