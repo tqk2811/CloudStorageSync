@@ -2,34 +2,9 @@
 #include "SyncRootViewModel.h"
 namespace CSS
 {
-    //SyncRootViewModel::SyncRootViewModel(SyncRoot^ syncRootData) : CssCsData::SyncRootViewModelBase(syncRootData)
-    //{
-    //    if (nullptr == syncRootData) throw gcnew ArgumentNullException("syncRootData");
-    //    syncRootData->SyncRootViewModel = this;
-    //    eventLock = gcnew Object();
-    //    Status = _EnumStatus.ToString();
-    //    watcher = gcnew Watcher();
-    //    if (IsWork)
-    //    {
-    //        if (IsListed)
-    //        {
-    //            if (!IsWorkChange(true))
-    //            {
-    //                this->SyncRootData->Flag = SyncRootFlag::None;
-    //                this->SyncRootData->Update();
-    //            }
-    //        }
-    //        else
-    //        {
-    //            //set IsWork to false
-    //            this->SyncRootData->Flag = this->SyncRootData->Flag ^ SyncRootFlag::IsWork;
-    //            this->SyncRootData->Update();
-    //        }
-    //    }
-    //}
-
 	void SyncRootViewModel::Register()
     {
+        this->Root = gcnew LocalItemRoot(this, this->SyncRootData->CloudFolderId);
         EnumStatus = SyncRootStatus::RegisteringSyncRoot;
         if (String::IsNullOrEmpty(DisplayName)) DisplayName = CloudFolderName + gcnew String(L" - ") + SyncRootData->Account->Email;
         PinStr2(pin_SrId, SyncRootData->Id);
@@ -59,7 +34,7 @@ namespace CSS
             ConnectionKey = ConnectSyncRoot::ConnectSyncRootTransferCallbacks(pin_LocalPath);
 
             EnumStatus = SyncRootStatus::CreatingPlaceholder;
-            //CreatePlaceholders(srvm);
+            Placeholders::CreateAll(this, this->Root, CloudItem::GetFromId(this->SyncRootData->CloudFolderId, this->SyncRootData->Account->Id), "");
             if (EnumStatus.HasFlag(SyncRootStatus::Error)) return;
             else Message = String::Empty;
         }
@@ -94,7 +69,7 @@ namespace CSS
         ConnectionKey = 0;
         SyncRoot_UnRegister(pin_SrId);
         IsListed = false;
-        Root->Remove();
+        if(this->Root) Root->Remove();
         EnumStatus = SyncRootStatus::NotWorking;
         LogWriter::WriteLog(std::wstring(L"Syncroot UnRegister: Success SrId:").append(pin_SrId), 2);
     }

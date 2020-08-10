@@ -3,7 +3,7 @@ namespace CssWinrt
 {
 	DLL_EXPORTS SyncRootRegisterStatus SyncRoot_RegisterWithShell(const SyncRootRegistrarInfo& registerarInfo);
 	DLL_EXPORTS bool SyncRoot_UnRegister(LPCWSTR CFid);
-
+	DLL_EXPORTS void SyncRoot_UnRegisterAll();
 
 	DLL_EXPORTS void InitAndStartServiceTask();
 	DLL_EXPORTS void ApplyCustomStateToPlaceholderFile(

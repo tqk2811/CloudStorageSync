@@ -253,6 +253,18 @@ namespace CssCsData
         if (null == li) li = FindFromName(Name);
         return li;
       }
+
+      /// <summary>
+      /// If find result by Id null, then find with Name.
+      /// </summary>
+      /// <param name="ci"></param>
+      /// <returns></returns>
+      /// <exception cref="ArgumentNullException"/>
+      public LocalItem Find(CloudItem ci)
+      {
+        if (null == ci) throw new ArgumentNullException(nameof(ci));
+        return Find(ci.Id, ci.Name);
+      }
     }
 
     public sealed class LocalItemReferenceCollection : Collection<LocalItem>

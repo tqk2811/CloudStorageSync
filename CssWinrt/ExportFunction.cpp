@@ -12,6 +12,11 @@ namespace CssWinrt
 		return SyncRootRegistrar::Unregister(CFid);
 	}
 
+	void SyncRoot_UnRegisterAll()
+	{
+		SyncRootRegistrar::UnregisterAll();
+	}
+
 	void InitAndStartServiceTask()
 	{
 		ShellServices::InitAndStartServiceTask();

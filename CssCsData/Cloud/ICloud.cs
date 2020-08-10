@@ -58,9 +58,9 @@ namespace CssCsData.Cloud
 
     Task<ICloudChangeTypeCollection> WatchChange();
 
-    void ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId);
+    Task ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId);
 
-    IList<CloudItem> CloudFolderGetChildFolder(string itemId);
+    Task<IList<CloudItem>> CloudFolderGetChildFolder(string itemId);
 
     Task UpdateMetadata(UpdateCloudItem updateCloudItem);
 

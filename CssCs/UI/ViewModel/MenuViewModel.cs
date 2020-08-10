@@ -7,6 +7,7 @@ namespace CssCs.UI.ViewModel
 {
   public enum MenuAction
   {
+    None,
     Refresh,
     Add,
     Delete,
@@ -37,7 +38,7 @@ namespace CssCs.UI.ViewModel
       set { _IsEnabled = value; NotifyPropertyChange(); }
     }
 
-    public MenuAction Action { get; private set; }
+    public MenuAction Action { get; private set; } = MenuAction.None;
     public string Text { get; private set; }
     public Image Img { get; private set; }
     public CloudName CloudName { get; private set; } = CloudName.None;

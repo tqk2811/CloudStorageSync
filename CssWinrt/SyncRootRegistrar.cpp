@@ -62,11 +62,12 @@ namespace CssWinrt
 
     //  A real sync engine should NOT unregister the sync root upon exit.
     //  This is just to demonstrate the use of StorageProviderSyncRootManager::Unregister.
-    bool SyncRootRegistrar::Unregister(LPCWSTR CFid)
+    bool SyncRootRegistrar::Unregister(LPCWSTR SrId)
     {
         try
         {
-            winrt::StorageProviderSyncRootManager::Unregister(GetSyncRootId(CFid));
+            std::wstring id = GetSyncRootId(SrId);
+            if (CheckSyncRootExist(id)) winrt::StorageProviderSyncRootManager::Unregister(id);
             return true;
         }
         catch (...)
@@ -74,6 +75,22 @@ namespace CssWinrt
             LogWriter::WriteLogError(L"SyncRootRegistrar::Unregister error (StorageProviderSyncRootManager::Unregister)", static_cast<HRESULT>(winrt::to_hresult()));
         }
         return false;
+    }
+
+    void SyncRootRegistrar::UnregisterAll()
+    {
+        auto SyncRootsRegisted = winrt::StorageProviderSyncRootManager::GetCurrentSyncRoots();
+        auto syncroot = SyncRootsRegisted.First();
+        int size = SyncRootsRegisted.Size();
+        for (int i = 0; i < size; i++)
+        {
+            if (syncroot.HasCurrent())
+            {
+                winrt::StorageProviderSyncRootInfo info = syncroot.Current();
+                winrt::StorageProviderSyncRootManager::Unregister(info.Id());
+            }
+            syncroot.MoveNext();
+        }
     }
 
     bool SyncRootRegistrar::CheckSyncRootExist(std::wstring& syncRootID)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CssCsData
@@ -23,6 +24,7 @@ namespace CssCsData
     {
       if (null == syncRoot) throw new ArgumentNullException(nameof(syncRoot));
       this.SyncRootData = syncRoot;
+      TokenSource = new CancellationTokenSource();
     }
     public SyncRoot SyncRootData { get; }
     public virtual bool IsEditingDisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -32,10 +34,11 @@ namespace CssCsData
     public virtual string LocalPath { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual string Status { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual string Message { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public virtual string DisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }  
+    public virtual string DisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public virtual SyncRootStatus EnumStatus { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual LocalItemRoot Root => throw new NotImplementedException();
     public virtual event PropertyChangedEventHandler PropertyChanged;
-
+    public CancellationTokenSource TokenSource { get; }
     public abstract void UpdateChange(ICloudChangeType change);
   }
 }

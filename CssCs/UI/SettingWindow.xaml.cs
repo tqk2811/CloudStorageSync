@@ -4,6 +4,7 @@ using CssCsData;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -66,17 +67,35 @@ namespace CssCs.UI
     {
       try
       {
-        CppInterop.OutPutDebugString.Invoke("LV_listemail_MenuItem_Click");
+        AccountViewModel accvm;
         MenuItem menuItem = sender as MenuItem;
         MenuViewModel menuDataModel = menuItem.DataContext as MenuViewModel;
         switch (menuDataModel.Action)
         {
           case MenuAction.Add:
-            await AddCloud(menuDataModel).ConfigureAwait(true);
+            if ((int)menuDataModel.CloudName >= 250) return;
+            OauthResult oauthResult = await Oauth.OauthNewAccount(menuDataModel.CloudName).ConfigureAwait(true);
+            if (null != oauthResult)
+            {
+              accvm = AccountViewModels.ToList().Find(acc => acc.AccountData.CloudName == oauthResult.CloudName &&
+                                                       acc.AccountData.Email.Equals(oauthResult.Email, StringComparison.OrdinalIgnoreCase));
+              if (null != accvm)//replace token
+              {
+                accvm.AccountData.Token = oauthResult.User;
+                accvm.AccountData.Update();
+              }
+              else//add new
+              {
+                Account account = new Account(Extensions.RandomString(32), oauthResult.Email, menuDataModel.CloudName);
+                account.Token = oauthResult.User;
+                account.Insert();
+                AccountViewModels.Add(new AccountViewModel(account));
+              }
+            }
             break;
           case MenuAction.Delete:
-            var account = GetAccountVMSelected();
-            if (account == null) return;
+            accvm = GetAccountVMSelected();
+            if (accvm == null) return;
             var srvms = SyncRootViewModels.ToList();
             bool isworking = srvms.Any((srvm) => srvm.IsWork);
             if (isworking) MessageBox.Show(this, "Please unregister all syncroot.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -84,10 +103,10 @@ namespace CssCs.UI
             {
               srvms.ForEach((srvm) => srvm.SyncRootData.Delete());
               SyncRootViewModels.Clear();
-              if (await account.Cloud.LogOut().ConfigureAwait(true))
+              if (await accvm.Cloud.LogOut().ConfigureAwait(true))
               {
-                account.AccountData.Delete();
-                AccountViewModels.Remove(account);
+                accvm.AccountData.Delete();
+                AccountViewModels.Remove(accvm);
               }
             }
             break;
@@ -97,35 +116,7 @@ namespace CssCs.UI
       }
       catch(Exception ex)
       {
-        MessageBox.Show("Message: " + ex.Message + "\r\n\r\n" + ex.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-      }
-    }
-
-    private async Task AddCloud(MenuViewModel menuDataModel)
-    {
-      try
-      {
-        OauthResult oauthResult = await Oauth.OauthNewAccount(menuDataModel.CloudName).ConfigureAwait(true);
-        if(null != oauthResult)
-        {
-          AccountViewModel accvm = AccountViewModels.ToList().Find(acc => acc.AccountData.CloudName == oauthResult.CloudName &&
-                                                   acc.AccountData.Email.Equals(oauthResult.Email, StringComparison.OrdinalIgnoreCase));
-          if(null != accvm)//replace token
-          {
-            accvm.AccountData.Token = oauthResult.User;
-            accvm.AccountData.Update();
-          }
-          else//add new
-          {
-            Account account = new Account(Extensions.RandomString(32), oauthResult.Email, menuDataModel.CloudName);
-            account.Insert();
-            AccountViewModels.Add(new AccountViewModel(account));
-          }
-        }
-      }
-      catch (Exception ex)
-      {
-        if(ex is AggregateException ae) MessageBox.Show("Message: " + ae.InnerException.Message + "\r\n\r\n" + ae.InnerException.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        if (ex is AggregateException ae) MessageBox.Show("Message: " + ae.InnerException.Message + "\r\n\r\n" + ae.InnerException.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         else MessageBox.Show("Message: " + ex.Message + "\r\n\r\n" + ex.StackTrace, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }

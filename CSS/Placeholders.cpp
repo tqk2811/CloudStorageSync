@@ -1,161 +1,173 @@
 #include "pch.h"
 #include "Placeholders.h"
-#include <sstream>
-
-#include <propvarutil.h>
-#include <propkey.h>
 namespace CSS
 {
-    void Placeholders::CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId,String^ RelativeOfParent)
+    void Placeholders::CreateAll(SyncRootViewModel^ srvm, LocalItem^ parent, CloudItem^ ci_parent,  String^ RelativeOfParent)
     {
-        //if (srvm) 
-        //{
-        //    IList<CloudItem^>^ childsci = CloudItem::FindChildIds(CI_ParentId, srvm->CEVM->EmailSqlId);
-        //    for (int i = 0; i < childsci->Count; i++)
-        //    {
-        //        if (!srvm->IsWork)
-        //        {
-        //            srvm->Status = SyncRootStatus::Error | SyncRootStatus::CreatingPlaceholder;
-        //            srvm->Message = gcnew String("Cancelling");
-        //            return;
-        //        }
-        //        LocalItem^ localitem = CreateItem(srvm, LI_ParentId, RelativeOfParent, childsci[i]);
-        //        if (localitem)
-        //        {
-        //            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"ItemCreated: {0}", localitem->Name);
-        //            if (localitem->LocalId > 0 && childsci[i]->Size == -1)
-        //            {
-        //                String^ itemRelative = RelativeOfParent;
-        //                if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
-        //                else itemRelative = itemRelative + L"\\" + localitem->Name;
-        //                CreateAll(srvm, childsci[i]->Id, localitem->LocalId, itemRelative);
-        //            }
-        //        }
-        //    }
-        //}
+        if (srvm && parent && ci_parent)
+        {
+            for each(CloudItem^ child in ci_parent->GetChilds())
+            {
+                LocalItem^ localitem = CreateItem(srvm, parent, RelativeOfParent, child);
+                if (localitem)
+                {
+                    if (localitem->ReferenceTo) continue;//this is sub
+                    else
+                    {
+                        if (srvm->EnumStatus ==SyncRootStatus::CreatingPlaceholder) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"ItemCreated: {0}", localitem->Name);
+                        if (child->Size == -1)
+                        {
+                            String^ itemRelative = RelativeOfParent;
+                            if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
+                            else itemRelative = itemRelative + L"\\" + localitem->Name;
+                            CreateAll(srvm, localitem, child, itemRelative);
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    LocalItem^ Placeholders::CreateItem(SyncRootViewModel^ srvm,LONGLONG LI_ParentId, String^ Relative, CloudItem^ clouditem)
+    LocalItem^ Placeholders::CreateItem(SyncRootViewModel^ srvm,LocalItem^ parent, String^ ParentRelative, CloudItem^ clouditem)
     {
-        //if (!srvm || !clouditem) return nullptr;
+        if (!srvm || !parent || !clouditem) return nullptr;
+        if (!String::IsNullOrEmpty(ParentRelative))
+        {
+            if (ParentRelative[0] == L'\\') ParentRelative = ParentRelative->Substring(1);
+            if (ParentRelative[ParentRelative->Length - 1] == L'\\') ParentRelative = ParentRelative->Substring(0, ParentRelative->Length - 2);
+        }
+        bool cloud_isfolder = clouditem->Size == -1;
+        bool convert_to_placeholder(false);
+        bool create_placeholder(false);
+        bool rename_cloud(false);
+        bool file_exist(false);
+        bool create_hardlink(false);
 
-        //bool cloud_isfolder = clouditem->Size == -1;
-        //bool convert_to_placeholder(false);
-        //bool create_placeholder(false);
-        //bool rename_cloud(false);
-        //bool file_exist(false);
-        //bool create_hardlink(false);
+        clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, clouditem->Size != -1);
+        LocalItem^ localitem = parent->Childs->FindFromId(clouditem->Id);
+        if (localitem)
+        {
+            //unlock?
+            return localitem;
+        }
+        LocalItem^ localitem_hardlinkbase = srvm->Root->FindFromCloudId(clouditem->Id);
+        if (localitem_hardlinkbase) create_hardlink = true;
 
-        //clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, clouditem->Size != -1);
-        //LocalItem^ localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
+        String^ fullPathItemParent = srvm->LocalPath;
+        String^ relativeItem;
+        if (String::IsNullOrEmpty(ParentRelative)) relativeItem = clouditem->Name;
+        else
+        {
+            fullPathItemParent = fullPathItemParent + L"\\" + ParentRelative;
+            relativeItem = ParentRelative + L"\\" + clouditem->Name;
+        }
+        String^ fullPathItem = srvm->LocalPath + L"\\" + relativeItem;
 
-        //String^ fullPathItemParent = srvm->LocalPath;
-        //String^ relativeItem;
-        //if (String::IsNullOrEmpty(Relative)) relativeItem = clouditem->Name;
-        //else
-        //{
-        //    fullPathItemParent = fullPathItemParent + L"\\" + Relative;
-        //    relativeItem = Relative + L"\\" + clouditem->Name;
-        //}
-        //String^ fullPathItem = srvm->LocalPath + L"\\" + relativeItem;
+        PinStr(fullPathItem);
+        PinStr(relativeItem);
+        PinStr2(pin_LocalPath, srvm->LocalPath);
 
-        //PinStr(fullPathItem);
-        //PinStr(relativeItem);
-        //PinStr2(pin_LocalPath, srvm->LocalPath);
+        DWORD attribs = GetFileAttributes(pin_fullPathItem);
+        file_exist = INVALID_FILE_ATTRIBUTES != attribs;
 
-        //DWORD attribs = GetFileAttributes(pin_fullPathItem);
-        //file_exist = INVALID_FILE_ATTRIBUTES != attribs;
+        if (!file_exist) create_placeholder = true;
+        else
+        {
+            //item is not placeholder
+            bool localIsFolder = attribs & FILE_ATTRIBUTE_DIRECTORY;
+            if (localIsFolder == cloud_isfolder)//same file/folder
+            {
+                //check two item is hardlink?
+                if (create_hardlink)
+                {
+                    //this is placeholder
+                    String^ basePathItem = localitem_hardlinkbase->GetFullPath()->ToString();
+                    PinStr(basePathItem);
+                    if (TwoItemIsHardLink(pin_basePathItem, pin_fullPathItem))
+                    {
+                        localitem = gcnew LocalItem(srvm, clouditem->Id);
+                        localitem->Name = clouditem->Name;
+                        parent->Childs->Add(localitem);
+                        return localitem;
+                    }
+                    else
+                    {
+                        rename_cloud = true;
+                    }
+                }
+                else//
+                {
+                    if (localIsFolder) convert_to_placeholder = true;//same folder
+                    else//same file
+                    {
+                        if (srvm->EnumStatus.HasFlag(SyncRootStatus::CreatingPlaceholder))
+                            srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", clouditem->Name);
+                        if (srvm->SyncRootData->Account->AccountViewModel->Cloud->HashCheck(fullPathItem, clouditem))
+                        {
+                            //same size and hash
+                            convert_to_placeholder = true;
+                        }
+                        else
+                        {
+                            //diff size / hash
+                            rename_cloud = true;
+                            create_placeholder = true;
+                        }
+                    }
+                }
+            }
+            else//file != folder
+            {
+                rename_cloud = true;
+                create_placeholder = true;
+            }
+        }
 
-        //if (!file_exist) create_placeholder = true;
-        //else
-        //{
-        //    /*CF_PLACEHOLDER_STATE state = GetPlaceholderState(pin_fullPathItem);
-        //    if (state != CF_PLACEHOLDER_STATE_INVALID && (state & CF_PLACEHOLDER_STATE_PLACEHOLDER) == CF_PLACEHOLDER_STATE_PLACEHOLDER)
-        //    {
-        //        if (localitem && !String::IsNullOrEmpty(localitem->CloudId) && localitem->CloudId->Equals(clouditem->Id,StringComparison::OrdinalIgnoreCase))
-        //        {*/
-        //    if (localitem && !String::IsNullOrEmpty(localitem->CloudId))
-        //    {
-        //        if (!localitem->CloudId->Equals(clouditem->Id, StringComparison::OrdinalIgnoreCase))
-        //        {
-        //            //diff id
-        //            rename_cloud = true;
-        //            create_placeholder = true;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //item is not placeholder
-        //        bool localIsFolder = attribs & FILE_ATTRIBUTE_DIRECTORY;
-        //        if (localIsFolder && cloud_isfolder) convert_to_placeholder = true;//same folder
-        //        else if (!localIsFolder && !cloud_isfolder)//same file
-        //        {
-        //            if (srvm->Status.HasFlag(SyncRootStatus::CreatingPlaceholder)) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"Checking hash file: {0}", clouditem->Name);
-        //            if (srvm->CEVM->Cloud->HashCheck(fullPathItem, clouditem))
-        //            {
-        //                //same size and hash
-        //                convert_to_placeholder = true;
-        //            }
-        //            else//diff size / hash
-        //            {
-        //                rename_cloud = true;
-        //                create_placeholder = true;
-        //            }
-        //        }
-        //        else//file != folder
-        //        {
-        //            rename_cloud = true;
-        //            create_placeholder = true;
-        //        }
-        //    }
-        //}
+        if (rename_cloud)
+        {
+            clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem, create_hardlink);//if newname not found -> create, if found -> convert
+            fullPathItem = fullPathItemParent + L"\\" + clouditem->Name;            
+            relativeItem = fullPathItem->Substring(srvm->LocalPath->Length + 1);
+            PinStr3(pin_fullPathItem, fullPathItem);
+            PinStr3(pin_relativeItem, relativeItem);
+            attribs = GetFileAttributes(pin_fullPathItem);
+            file_exist = INVALID_FILE_ATTRIBUTES != attribs;//if create_hardlink -> file_exist alway false
+            if (file_exist)
+            {
+                convert_to_placeholder = true;
+                create_placeholder = false;
+            }
+            else create_placeholder = true;
+        }
 
-        //if (rename_cloud)
-        //{
-        //    clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem);
-        //    fullPathItem = fullPathItemParent + L"\\" + clouditem->Name;            
-        //    relativeItem = fullPathItem->Substring(srvm->LocalPath->Length + 1);
+        
+        PlacehoderResult result = PlacehoderResult::Failed;
+        if (file_exist)
+        {
+            if (convert_to_placeholder) result = Convert(pin_fullPathItem, clouditem->Id);
+        }
+        else
+        {
+            if (create_placeholder)
+            {
+                if (Create(pin_LocalPath, pin_relativeItem, clouditem)) result = PlacehoderResult::Success;
+            }
+            else if (create_hardlink)
+            {
+                String^ baselink = localitem->ReferenceTo->GetFullPath()->ToString();
+                PinStr(baselink);
+                if(CreateHardLink(pin_fullPathItem, pin_baselink, NULL)) result = PlacehoderResult::Success;
+            }
+        }
 
-        //    PinStr3(pin_fullPathItem, fullPathItem);
-        //    PinStr3(pin_relativeItem, relativeItem);
-
-        //    attribs = GetFileAttributes(pin_fullPathItem);
-        //    file_exist = INVALID_FILE_ATTRIBUTES != attribs;
-        //    if (file_exist)
-        //    {
-        //        localitem = LocalItem::Find(srvm, LI_ParentId, clouditem->Name);
-        //        convert_to_placeholder = true;
-        //    }
-        //}
-
-        //if (localitem)
-        //{
-        //    if (localitem->Flag.HasFlag(LocalItemFlag::LockWaitUpdateFromCloudWatch)) localitem->RemoveFlagWithLock(LocalItemFlag::LockWaitUpdateFromCloudWatch);
-        //    localitem->Update();
-        //}
-        //else
-        //{
-        //    localitem = gcnew LocalItem();
-        //    localitem->CloudId = clouditem->Id;
-        //    localitem->Name = clouditem->Name;
-        //    if (clouditem->Size == -1) localitem->Flag = LocalItemFlag::Folder;
-        //    localitem->SRId = srvm->SRId;
-        //    localitem->LocalParentId = LI_ParentId;
-        //    localitem->Insert();
-        //}
-
-
-        //if (file_exist)
-        //{
-        //    if(convert_to_placeholder) Convert(srvm, localitem, clouditem->Id);
-        //}
-        //else
-        //{
-        //    if (create_placeholder) Create(pin_LocalPath, pin_relativeItem, clouditem);
-        //    else if (create_hardlink) CreateHardLink(pin_fullPathItem, L"", NULL);
-        //}
-        //return localitem;
-        return nullptr;
+        if (PlacehoderResult::Success == result)
+        {
+            localitem = gcnew LocalItem(srvm, clouditem->Id);
+            localitem->Name = clouditem->Name;
+            parent->Childs->Add(localitem);
+            return localitem;
+        }
+        else return nullptr;
     }
 
     bool Placeholders::Create(LPCWSTR syncRootPath, LPCWSTR relativePathItem, CloudItem^ clouditem)

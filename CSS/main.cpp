@@ -1,4 +1,6 @@
 #include "pch.h"
+using namespace System::Threading::Tasks;
+using namespace System::Collections::Generic;
 using namespace System;
 using namespace System::Threading;
 MSG g_msg{ 0 };
@@ -8,11 +10,17 @@ gcroot<Mutex^> mutex;
 void LoadAccAndSr()
 {
     auto accs = CssCsData::Account::GetAll();
+    List<Task^>^ tasks = gcnew List<Task^>();
     for (int i = 0; i < accs->Count; i++)
     {
         CssCs::CppInterop::AccountViewModels->Add(gcnew CSS::AccountViewModel(accs[i]));
-        for each (CssCsData::SyncRoot ^ sr in accs[i]->GetSyncRoot()) gcnew CSS::SyncRootViewModel(sr);
+        for each (CssCsData::SyncRoot ^ sr in accs[i]->GetSyncRoot())
+        {
+            CSS::SyncRootViewModel^ srvm = gcnew CSS::SyncRootViewModel(sr);
+            tasks->Add(srvm->Run());
+        }
     }
+    Task::WaitAll(tasks->ToArray());
 }
 
 void MainThread()

@@ -8,6 +8,7 @@ using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -212,6 +213,47 @@ namespace CssCsCloud.Cloud
       return cis;
     }
 
+    public void _ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
+    {
+      syncRoot.SyncRootViewModel.EnumStatus = SyncRootStatus.ScanningCloud;
+      List<string> FolderIds = new List<string>() { StartFolderId };
+      GetMetadata(StartFolderId).ConfigureAwait(false).GetAwaiter().GetResult();//read root first 
+      int reset = 0;
+      int total = 0;
+      string NextPageToken = null;
+      while (FolderIds.Count > 0)
+      {
+        var list_request = ds.Files.List();
+        if (!string.IsNullOrEmpty(NextPageToken)) list_request.PageToken = NextPageToken;
+        list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_List, FolderIds[0]);
+        list_request.OrderBy = OrderBy;
+        list_request.Fields = Fields_DriveFileList;
+        list_request.PageSize = 1000;
+        FileList list_result = list_request.Execute();
+        foreach (var file in list_result.Files)
+        {
+          if (file.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase)) FolderIds.Add(file.Id);//folder
+          else if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
+          InsertToDb(file);
+          total++;
+          reset++;
+          if (syncRoot.SyncRootViewModel.EnumStatus == SyncRootStatus.ScanningCloud) 
+            syncRoot.SyncRootViewModel.Message = string.Format(CultureInfo.InvariantCulture, "Items Scanned: {0}, Name: {1}", total, file.Name);
+        }
+        if (list_result.IncompleteSearch == true) NextPageToken = list_result.NextPageToken;
+        else
+        {
+          NextPageToken = null;
+          FolderIds.RemoveAt(0);
+        }
+        if (reset >= 500)
+        {
+          reset = 0;
+          GC.Collect();
+        }
+      }
+    }
+
 
 
     #region ICloud
@@ -304,52 +346,19 @@ namespace CssCsCloud.Cloud
       return new CloudChangeTypeCollection();
     }
 
-    public IList<CloudItem> CloudFolderGetChildFolder(string itemId)
+    public Task<IList<CloudItem>> CloudFolderGetChildFolder(string itemId)
     {
       if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
-
-      return CloudOpenDialogLoadChildFolder(itemId, null);
+      return Task.Factory.StartNew<IList<CloudItem>>(() => CloudOpenDialogLoadChildFolder(itemId, null), 
+        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
-    public void ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
+    public Task ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
     {
       if (null == syncRoot) throw new ArgumentNullException(nameof(syncRoot));
       if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException(nameof(StartFolderId));
 
-      List<string> FolderIds = new List<string>() { StartFolderId };
-      GetMetadata(StartFolderId).ConfigureAwait(false).GetAwaiter().GetResult();//read root first 
-      int reset = 0;
-      int total = 0;
-      string NextPageToken = null;
-      while (FolderIds.Count > 0)
-      {
-        var list_request = ds.Files.List();
-        if (!string.IsNullOrEmpty(NextPageToken)) list_request.PageToken = NextPageToken;
-        list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_List, FolderIds[0]);
-        list_request.OrderBy = OrderBy;
-        list_request.Fields = Fields_DriveFileList;
-        list_request.PageSize = 1000;
-        FileList list_result = list_request.Execute();
-        foreach (var file in list_result.Files)
-        {
-          if (file.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase)) FolderIds.Add(file.Id);//folder
-          else if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
-          InsertToDb(file);
-          total++;
-          reset++;
-          //if (srvm.Status == SyncRootStatus.ScanningCloud) syncRoot.Message = string.Format(DllInit.DefaultCulture, "Items Scanned: {0}, Name: {1}", total, file.Name);
-        }
-        if (list_result.IncompleteSearch == true) NextPageToken = list_result.NextPageToken;
-        else
-        {
-          NextPageToken = null;
-          FolderIds.RemoveAt(0);
-        }
-        if (reset >= 500)
-        {
-          reset = 0;
-          GC.Collect();
-        }
-      }
+      return Task.Factory.StartNew(() => _ListAllItemsToDb(syncRoot, StartFolderId),
+        syncRoot.SyncRootViewModel.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);//
     }
 
 

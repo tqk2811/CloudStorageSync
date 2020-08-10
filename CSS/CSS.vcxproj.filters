@@ -34,6 +34,9 @@
     <Filter Include="src\SyncRoot">
       <UniqueIdentifier>{33ebf2c5-d1ba-4808-b981-578aa32c5750}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\UploadQueue">
+      <UniqueIdentifier>{16d3de26-1538-4a7c-8c08-739aab6219a2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -69,6 +72,9 @@
     <ClCompile Include="SyncRootViewModel.cpp">
       <Filter>src\SyncRoot</Filter>
     </ClCompile>
+    <ClCompile Include="UploadQueue.cpp">
+      <Filter>src\UploadQueue</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -101,11 +107,11 @@
     <ClInclude Include="UiManaged.h">
       <Filter>src\UI</Filter>
     </ClInclude>
-    <ClInclude Include="UploadQueue.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="SyncRootViewModel.h">
       <Filter>src\SyncRoot</Filter>
+    </ClInclude>
+    <ClInclude Include="UploadQueue.h">
+      <Filter>src\UploadQueue</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

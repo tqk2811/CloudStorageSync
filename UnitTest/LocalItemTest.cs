@@ -1,30 +1,29 @@
 ﻿using System;
 using System.ComponentModel;
+using CssCs;
 using CssCsData;
+using CssCsData.Cloud;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace UnitTest
 {
-  public class SyncRootViewModel : ISyncRootViewModel
+  public class SyncRootViewModel : SyncRootViewModelBase
   {
-    public SyncRootViewModel()
+    public SyncRootViewModel(SyncRoot syncRoot):base(syncRoot)
     {
       Root = new LocalItemRoot(this, "0");
     }
-    public bool IsEditingDisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string CloudFolderId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string CloudFolderName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public bool IsWork { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string LocalPath { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string Status { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string Message { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string DisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public SyncRoot SyncRootData => throw new NotImplementedException();
 
     public LocalItemRoot Root { get; }
 
     public event PropertyChangedEventHandler PropertyChanged;
+
+    public override void UpdateChange(ICloudChangeType change)
+    {
+      throw new NotImplementedException();
+    }
   }
 
 
@@ -40,7 +39,8 @@ namespace UnitTest
     //note (x) is ref to x
     SyncRootViewModel Init()
     {
-      SyncRootViewModel srvm = new SyncRootViewModel();
+      SyncRoot syncRoot = new SyncRoot(Extensions.RandomString(32), Extensions.RandomString(32));
+      SyncRootViewModel srvm = new SyncRootViewModel(syncRoot);
       srvm.Root.Childs.Add(new LocalItem(srvm, "0.0"));
       srvm.Root.Childs[0].Childs.Add(new LocalItem(srvm, "0.0.0"));
       srvm.Root.Childs[0].Childs[0].Childs.Add(new LocalItem(srvm, "0.0.0.0"));

@@ -46,15 +46,6 @@ namespace CSS
 		return static_cast<HICON>(::LoadImage(/*(HINSTANCE)*/GetModuleHandle(NULL), MAKEINTRESOURCE(iDC), IMAGE_ICON, cx, cy, fuLoad));
 	}
 
-	//need delete
-	inline static WCHAR* WStringToWCHARP(std::wstring& s)
-	{
-		WCHAR* c_p = new WCHAR[s.size() + 1];
-		memcpy(c_p, s.c_str(), sizeof(WCHAR) * s.size());
-		c_p[s.size()] = 0;
-		return c_p;
-	}
-
 	//convert wstring to UTF-8 string
 	inline static std::string wstring_to_utf8(const std::wstring& wstr)
 	{
@@ -109,8 +100,6 @@ namespace CSS
 		return false;
 	}
 
-	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci);
-
 	inline static bool CheckHr(HRESULT hr,LPCWSTR info, LPCWSTR info2 = nullptr,bool WriteLogSucceeded = false)
 	{
 		std::wstring log(info);		
@@ -148,4 +137,8 @@ namespace CSS
 		PinStr(text);
 		CssWinrt::LogWriter::WriteLog(pin_text, loglevel);
 	}
+
+
+	bool TwoItemIsHardLink(LPCWSTR fullpath0, LPCWSTR fullpath1);
+	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci, bool hardlink);
 }

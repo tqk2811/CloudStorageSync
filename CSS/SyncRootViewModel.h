@@ -30,8 +30,9 @@ namespace CSS
             {
                 if (CheckBeforeRegister())
                 {
-                    Task::Factory->StartNew(gcnew Action(this, &SyncRootViewModel::Register),
-                        CancellationToken::None, TaskCreationOptions::LongRunning, TaskScheduler::Default);
+                    this->SyncRootData->Account->AccountViewModel->Cloud->ListAllItemsToDb(this->SyncRootData, this->SyncRootData->CloudFolderId)
+                        ->ContinueWith(gcnew Action<Task^>(this, &SyncRootViewModel::Register),
+                            this->TokenSource->Token, TaskContinuationOptions::OnlyOnRanToCompletion, TaskScheduler::Default);
                     return true;
                 }
                 else return false;
@@ -42,6 +43,7 @@ namespace CSS
                     gcnew String("Confirm"), System::Windows::Forms::MessageBoxButtons::YesNo, System::Windows::Forms::MessageBoxIcon::Question);
                 if (result == System::Windows::Forms::DialogResult::Yes)
                 {
+                    this->TokenSource->Cancel();
                     UnRegister();
                     return true;
                 }
@@ -49,6 +51,12 @@ namespace CSS
             }
         }
 
+        void Register(Task^ task)
+        {
+            if (task->IsCanceled || task->IsFaulted) 
+                return;
+            Register();
+        }
         void Register();
         void UnRegister();
         void LocalOnChanged(CustomFileSystemEventArgs^ e);
@@ -70,15 +78,19 @@ namespace CSS
             eventLock = gcnew Object();
             Status = _EnumStatus.ToString();
             watcher = gcnew Watcher();
+        }
+
+        void UpdateChange(ICloudChangeType^ change) override;
+
+        //on start app, UI not run
+        Task^ Run()
+        {
             if (IsWork)
             {
                 if (IsListed)
                 {
-                    if (!IsWorkChange(true))
-                    {
-                        this->SyncRootData->Flag = SyncRootFlag::None;
-                        this->SyncRootData->Update();
-                    }
+                    if (CheckBeforeRegister()) return Task::Factory->StartNew(gcnew Action(this, &SyncRootViewModel::Register),
+                                                      this->TokenSource->Token, TaskCreationOptions::LongRunning, TaskScheduler::Default);
                 }
                 else
                 {
@@ -87,15 +99,17 @@ namespace CSS
                     this->SyncRootData->Update();
                 }
             }
+            return Task::FromResult(0);
         }
 
-        void UpdateChange(ICloudChangeType^ change) override;
+
+
 
 
         property SyncRootStatus EnumStatus
         {
-            SyncRootStatus get() { return _EnumStatus; }
-            void set(CssCsData::SyncRootStatus value)
+            SyncRootStatus get() override { return _EnumStatus; }
+            void set(CssCsData::SyncRootStatus value) override
             {
                 if (value.HasFlag(SyncRootStatus::Error)) Status = SyncRootStatus::Error.ToString();
                 else Status = value.ToString();
@@ -148,10 +162,10 @@ namespace CSS
             bool get() override { return this->SyncRootData->Flag.HasFlag(SyncRootFlag::IsWork); }
             void set(bool value) override 
             {
-                if (IsWorkChange(value))
+                if (IsWorkChange(value))//-> on accept & value = true -> List all item in cloud -> Flag = IsListed
                 {
-                    if (value) this->SyncRootData->Flag = this->SyncRootData->Flag | SyncRootFlag::IsWork;
-                    else this->SyncRootData->Flag = this->SyncRootData->Flag ^ SyncRootFlag::IsWork;
+                    if (value) this->SyncRootData->Flag = SyncRootFlag::IsWork;
+                    else this->SyncRootData->Flag =  SyncRootFlag::None;
                     this->SyncRootData->Update();
                     NotifyPropertyChange("IsWork");
                 }                

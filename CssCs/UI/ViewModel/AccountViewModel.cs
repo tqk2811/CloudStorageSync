@@ -4,6 +4,7 @@ using CssCsData.Cloud;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -18,7 +19,7 @@ namespace CssCs.UI.ViewModel
     /// <exception cref="ArgumentNullException"></exception>
     public AccountViewModel(Account account) : base(account)
     {
-      this.Cloud = Oauth.GetCloud(account);
+      this.Cloud = Oauth.GetCloud(account);      
       System.Drawing.Bitmap Img;
       switch (account.CloudName)
       {
@@ -33,6 +34,7 @@ namespace CssCs.UI.ViewModel
         default: throw new NotSupportedException();
       }
       this.Img = Img.ToImageSource();
+      Extensions.WriteLogIfError(GetQuota(), String.Format(CultureInfo.InvariantCulture, "AccountViewModel(id:{0}).GetQuota", account.Id));
     }
     public System.Windows.Media.ImageSource Img { get; }
     public string Quota
@@ -59,6 +61,18 @@ namespace CssCs.UI.ViewModel
           sr.SyncRootViewModel.UpdateChange(change);
       AccountData.WatchToken = t.Result.NewWatchToken;
       AccountData.Update();
+    }
+
+    public async Task GetQuota()
+    {
+      Quota quota = await Cloud.GetQuota().ConfigureAwait(false);
+      string usage = UnitConventer.ConvertSize(quota.Usage, 2, UnitConventer.UnitSize);
+      if (quota.Limit == null) this.Quota = usage + "/Unlimited";
+      else
+      {
+        string limit = UnitConventer.ConvertSize(quota.Limit.Value, 2, UnitConventer.UnitSize);
+        this.Quota = usage + "/" + limit;
+      }
     }
 
     #region INotifyPropertyChanged

@@ -6,12 +6,14 @@ using Microsoft.Identity.Client;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -204,6 +206,44 @@ namespace CssCsCloud.Cloud
       return result;
     }
 
+    public void _ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
+    {
+      syncRoot.SyncRootViewModel.EnumStatus = SyncRootStatus.ScanningCloud;
+      DriveItem di = MyDrive.Items[StartFolderId].Request().GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+      InsertToDb(di);
+      List<string> folderIds = new List<string>() { di.Id };
+      IDriveItemChildrenCollectionPage childs;
+      string expand = "children";
+      int reset = 0;
+      int total = 0;
+      while (folderIds.Count > 0)
+      {
+        di = MyDrive.Items[folderIds[0]].Request().Expand(expand).GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        folderIds.RemoveAt(0);
+        childs = di.Children;
+        while (true)
+        {
+          foreach (var child in childs)
+          {
+            InsertToDb(child);
+            if (child.Folder != null) folderIds.Add(child.Id);
+            total++;
+            reset++;
+            if (syncRoot.SyncRootViewModel.EnumStatus == SyncRootStatus.ScanningCloud)
+              syncRoot.SyncRootViewModel.Message = string.Format(CultureInfo.InvariantCulture, "Items Scanned: {0}, Name: {1}", total, child.Name);
+          }
+          if (childs.NextPageRequest == null) break;
+          else childs = di.Children.NextPageRequest.GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+        if (reset >= 500)
+        {
+          reset = 0;
+          GC.Collect();
+        }
+      }
+    }
+
+
     static string GetLink(IDriveItemDeltaCollectionPage delta, string linkname)
     {
       return delta.AdditionalData.ContainsKey(linkname) ? delta.AdditionalData[linkname] as string : null;
@@ -339,55 +379,26 @@ namespace CssCsCloud.Cloud
       else return await WatchChange(account.WatchToken).ConfigureAwait(false);
     }
 
-    public IList<CloudItem> CloudFolderGetChildFolder(string itemId)
+    public Task<IList<CloudItem>> CloudFolderGetChildFolder(string itemId)
     {
       if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
-
-      List<CloudItem> cis = new List<CloudItem>();
-      string expand = "children";
-      DriveItem di = MyDrive.Items[itemId].Request().Expand(expand).GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-      foreach (var child in di.Children) cis.Add(InsertToDb(child));
-      return cis;
+      return Task.Factory.StartNew<IList<CloudItem>>(() =>
+      {
+        List<CloudItem> cis = new List<CloudItem>();
+        string expand = "children";
+        DriveItem di = MyDrive.Items[itemId].Request().Expand(expand).GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        foreach (var child in di.Children) cis.Add(InsertToDb(child));
+        return cis;
+      }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 
-    public void ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
+    public Task ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
     {
       if (string.IsNullOrEmpty(StartFolderId)) throw new ArgumentNullException(nameof(StartFolderId));
       if (syncRoot == null) throw new ArgumentNullException(nameof(syncRoot));
 
-      DriveItem di = MyDrive.Items[StartFolderId].Request().GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-      InsertToDb(di);
-      List<string> folderIds = new List<string>() { di.Id };
-      IDriveItemChildrenCollectionPage childs;
-      string expand = "children";
-      int reset = 0;
-      int total = 0;
-      while (folderIds.Count > 0)
-      {
-        //if (!srvm.IsWork) return;
-        di = MyDrive.Items[folderIds[0]].Request().Expand(expand).GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        folderIds.RemoveAt(0);
-        childs = di.Children;
-        while (true)
-        {
-          //if (!srvm.IsWork) return;//stop
-          foreach (var child in childs)
-          {
-            InsertToDb(child);
-            if (child.Folder != null) folderIds.Add(child.Id);
-            total++;
-            reset++;
-            //if (srvm.Status == SyncRootStatus.ScanningCloud) srvm.Message = string.Format(DllInit.DefaultCulture, "Items Scanned: {0}, Name: {1}", total, child.Name);
-          }
-          if (childs.NextPageRequest == null) break;
-          else childs = di.Children.NextPageRequest.GetAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-        if (reset >= 500)
-        {
-          reset = 0;
-          GC.Collect();
-        }
-      }
+      return Task.Factory.StartNew(() => _ListAllItemsToDb(syncRoot,StartFolderId),
+        syncRoot.SyncRootViewModel.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 
     public async Task UpdateMetadata(UpdateCloudItem updateCloudItem)

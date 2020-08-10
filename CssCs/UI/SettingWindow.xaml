@@ -44,7 +44,7 @@
                                 <GridViewColumn Header="Quota" Width="120">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Grid.Column="1" Text="{Binding QuotaString}"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Quota}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

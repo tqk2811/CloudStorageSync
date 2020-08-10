@@ -69,8 +69,7 @@ namespace CssCs.UI
     private async Task LoadChildTV(TreeviewCloudItemViewModel item)
     {
       item.LoadingVisibility = true;
-      IList<CloudItem> cis = await Task.Factory.StartNew(() => accvm.Cloud.CloudFolderGetChildFolder(item.Id), 
-        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default).ConfigureAwait(true);
+      IList<CloudItem> cis = await accvm.Cloud.CloudFolderGetChildFolder(item.Id).ConfigureAwait(true);
       foreach (var ci in cis) item.Childs.Add(new TreeviewCloudItemViewModel(ci));
       item.LoadingVisibility = false;
       item.LoadedChilds = true;

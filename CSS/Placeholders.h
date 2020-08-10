@@ -17,8 +17,8 @@ namespace CSS
 	class Placeholders
 	{
 	public:
-		static void CreateAll(SyncRootViewModel^ srvm, String^ CI_ParentId, LONGLONG LI_ParentId, String^ RelativeOfParent);
-		static LocalItem^ CreateItem(SyncRootViewModel^ srvm, LONGLONG LI_ParentId, String^ Relative, CloudItem^ clouditem);
+		static void CreateAll(SyncRootViewModel^ srvm, LocalItem^ parent, CloudItem^ ci_parent, String^ RelativeOfParent);
+		static LocalItem^ CreateItem(SyncRootViewModel^ srvm, LocalItem^ parent, String^ ParentRelative, CloudItem^ clouditem);
 		static bool Create(LPCWSTR syncRootPath, LPCWSTR relativePathItem, CloudItem^ clouditem);
 		static PlacehoderResult Revert(LPCWSTR fullPath);
 		static PlacehoderResult Update(LPCWSTR fullPath, CloudItem^ clouditem);
