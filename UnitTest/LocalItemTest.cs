@@ -20,6 +20,11 @@ namespace UnitTest
 
     public event PropertyChangedEventHandler PropertyChanged;
 
+    public override bool CheckConnectionKey(long key)
+    {
+      throw new NotImplementedException();
+    }
+
     public override void UpdateChange(ICloudChangeType change)
     {
       throw new NotImplementedException();

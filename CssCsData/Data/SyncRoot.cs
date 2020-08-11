@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace CssCsData
 {
@@ -77,6 +76,10 @@ namespace CssCsData
 
     #region static
     internal static List<SyncRoot> SyncRoots = new List<SyncRoot>();
+    public static SyncRoot FindWithConnectionKey(long key)
+    {
+      return SyncRoots.Find((sr) => sr.SyncRootViewModel.CheckConnectionKey(key));
+    }
     public static List<SyncRoot> GetAll()
     {
       lock (SyncRoots) return SyncRoots.ToList();

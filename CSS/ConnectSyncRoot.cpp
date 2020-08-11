@@ -18,11 +18,11 @@ namespace CSS
         //{ CF_CALLBACK_TYPE_NOTIFY_DEHYDRATE,                ConnectSyncRoot::NOTIFY_DEHYDRATE },
         //{ CF_CALLBACK_TYPE_NOTIFY_DEHYDRATE_COMPLETION,     ConnectSyncRoot::NOTIFY_DEHYDRATE_COMPLETION },
 
-        { CF_CALLBACK_TYPE_NOTIFY_DELETE,                   ConnectSyncRoot::NOTIFY_DELETE },
-        { CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,        ConnectSyncRoot::NOTIFY_DELETE_COMPLETION },
+        //{ CF_CALLBACK_TYPE_NOTIFY_DELETE,                   ConnectSyncRoot::NOTIFY_DELETE },
+        //{ CF_CALLBACK_TYPE_NOTIFY_DELETE_COMPLETION,        ConnectSyncRoot::NOTIFY_DELETE_COMPLETION },
 
-        { CF_CALLBACK_TYPE_NOTIFY_RENAME,                   ConnectSyncRoot::NOTIFY_RENAME },//when move file or rename
-        { CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,        ConnectSyncRoot::NOTIFY_RENAME_COMPLETION },
+        //{ CF_CALLBACK_TYPE_NOTIFY_RENAME,                   ConnectSyncRoot::NOTIFY_RENAME },//when move file or rename
+        //{ CF_CALLBACK_TYPE_NOTIFY_RENAME_COMPLETION,        ConnectSyncRoot::NOTIFY_RENAME_COMPLETION },
 
         //{ CF_CALLBACK_TYPE_VALIDATE_DATA,                   ConnectSyncRoot::VALIDATE_DATA },//see StorageProviderHydrationPolicyModifier::ValidationRequired
         CF_CALLBACK_REGISTRATION_END
@@ -84,27 +84,27 @@ namespace CSS
     //when download file
     void CALLBACK ConnectSyncRoot::FETCH_DATA(_In_ CONST CF_CALLBACK_INFO* callbackInfo, _In_ CONST CF_CALLBACK_PARAMETERS* callbackParameters)
     {
-        //LPCWSTR reason = L"";
-        //if (CssCs::Settings::Setting->HasInternet)
-        //{
-        //    SyncRootViewModel^ srvm = SyncRootViewModel::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
-        //    if (srvm)
-        //    {
-        //        CloudItem^ ci = CloudItem::Select(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), srvm);
-        //        if (ci)
-        //        {
-        //            CloudAction::Download(srvm, ci, callbackInfo, callbackParameters, TransferData);
-        //            LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Accept request")
-        //                .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
-        //            return;
-        //        }
-        //        else reason = L"ci not found";
-        //    }
-        //    else reason = L"srvm not found";
-        //}
-        //else reason = L"No Internet";
-        //LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Cancel, reason:").append(reason)
-        //    .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
+        LPCWSTR reason = L"";
+        if (CssCs::CppInterop::HasInternet)
+        {
+            SyncRoot^ sr = SyncRoot::FindWithConnectionKey(callbackInfo->ConnectionKey.Internal);
+            if (sr)
+            {
+                CloudItem^ ci = CloudItem::GetFromId(gcnew String(GetFileIdentity(callbackInfo->FileIdentity)), sr->Account->Id);
+                if (ci)
+                {
+                    CloudAction::Download(sr->SyncRootViewModel, ci, callbackInfo, callbackParameters, TransferData);
+                    LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Accept request")
+                        .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
+                    return;
+                }
+                else reason = L"ci not found";
+            }
+            else reason = L"srvm not found";
+        }
+        else reason = L"No Internet";
+        LogWriter::WriteLog(std::wstring(L"ConnectSyncRoot::FETCH_DATA Cancel, reason:").append(reason)
+            .append(L", path:").append(callbackInfo->VolumeDosName).append(callbackInfo->NormalizedPath), 1);
         //cancel
         TransferData(
             callbackInfo->ConnectionKey,

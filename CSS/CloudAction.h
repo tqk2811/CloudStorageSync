@@ -6,7 +6,7 @@ namespace CSS
 	ref class CloudAction
 	{
 	public:
-		static void Download(SyncRootViewModel^ srvm, CloudItem^ ci, 
+		static void Download(SyncRootViewModelBase^ srvm, CloudItem^ ci, 
 			CONST CF_CALLBACK_INFO* callbackInfo, CONST CF_CALLBACK_PARAMETERS* callbackParameters, TransferData_CB TransferData);
 	private:
 	};

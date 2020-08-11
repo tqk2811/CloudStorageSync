@@ -41,5 +41,6 @@ namespace CssCsData
     public virtual event PropertyChangedEventHandler PropertyChanged;
     public CancellationTokenSource TokenSource { get; set; }
     public abstract void UpdateChange(ICloudChangeType change);
+    public abstract bool CheckConnectionKey(long key);
   }
 }

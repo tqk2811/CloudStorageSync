@@ -43,7 +43,7 @@ namespace CSS
         READ_COMPLETION_CONTEXT* data;
         array<unsigned char>^ buffer;
         String^ FullPath;
-        void Download(Task<Stream^>^ t, Object^ obj)
+        void Download(Task<Stream^>^ t)
         {
             if (t->IsCanceled || t->IsFaulted || !t->Result)
             {
@@ -115,7 +115,7 @@ namespace CSS
             delete data;
         }
     };
-	void CloudAction::Download(SyncRootViewModel^ srvm, CloudItem^ ci,
+	void CloudAction::Download(SyncRootViewModelBase^ srvm, CloudItem^ ci,
         CONST CF_CALLBACK_INFO* callbackInfo, CONST CF_CALLBACK_PARAMETERS* callbackParameters,TransferData_CB TransferData)
 	{
         LONGLONG start = callbackParameters->FetchData.RequiredFileOffset.QuadPart;
@@ -135,8 +135,8 @@ namespace CSS
         di->data->CallbackInfo_RequestKey = callbackInfo->RequestKey;
         di->FullPath = gcnew String(fullClientPath.c_str());
 
-        auto action = gcnew Action<Task<Stream^>^, Object^>(di, &DownloadItem::Download);
-        task_stream->ContinueWith(action, di);
+        auto action = gcnew Action<Task<Stream^>^>(di, &DownloadItem::Download);
+        task_stream->ContinueWith(action);
         return;
 	}
 

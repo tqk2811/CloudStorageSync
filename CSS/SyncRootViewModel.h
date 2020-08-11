@@ -58,6 +58,7 @@ namespace CSS
             if (task->IsCanceled || task->IsFaulted) 
                 return;
             this->SyncRootData->Flag = this->SyncRootData->Flag | SyncRootFlag::IsListed;
+            this->SyncRootData->Update();
             Register();
         }
         void Register();
@@ -107,7 +108,10 @@ namespace CSS
 
 
 
-
+        bool CheckConnectionKey(LONGLONG key) override
+        {
+            return this->ConnectionKey == key;
+        }
 
         property SyncRootStatus EnumStatus
         {

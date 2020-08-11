@@ -26,6 +26,8 @@ namespace CSS
         srinfo.PopulationPolicy = PopulationPolicy::AlwaysFull;
         srinfo.InSyncPolicy = InSyncPolicy::FileCreationTime | InSyncPolicy::DirectoryCreationTime;
 
+        ConnectionKey = 0;
+
         switch (CssWinrt::SyncRoot_RegisterWithShell(srinfo))
         {
         case SyncRootRegisterStatus::Register:

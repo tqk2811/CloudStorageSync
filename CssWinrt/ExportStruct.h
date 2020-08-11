@@ -32,10 +32,11 @@ namespace CssWinrt
         StreamingAllowed = 0x2,
         AutoDehydrationAllowed = 0x4,
     };
-    inline HydrationPolicyModifier operator|(HydrationPolicyModifier l,HydrationPolicyModifier r)
-    {
-        return (HydrationPolicyModifier)((uint32_t)l | (uint32_t)r);
-    }
+    DEFINE_ENUM_FLAG_OPERATORS (HydrationPolicyModifier)
+    //inline HydrationPolicyModifier operator|(HydrationPolicyModifier l,HydrationPolicyModifier r)
+    //{
+    //    return (HydrationPolicyModifier)((uint32_t)l | (uint32_t)r);
+    //}
 
     //doc https://docs.microsoft.com/en-us/uwp/api/windows.storage.provider.storageprovidersyncrootinfo.insyncpolicy?view=winrt-19041
     enum class InSyncPolicy : uint32_t
@@ -53,10 +54,11 @@ namespace CssWinrt
         DirectoryLastWriteTime = 0x200,
         PreserveInsyncForSyncEngine = 0x80000000,
     };
-    inline InSyncPolicy operator|(InSyncPolicy l, InSyncPolicy r)
-    {
-        return (InSyncPolicy)((uint32_t)l | (uint32_t)r);
-    }
+    DEFINE_ENUM_FLAG_OPERATORS(InSyncPolicy)
+    //inline InSyncPolicy operator|(InSyncPolicy l, InSyncPolicy r)
+    //{
+    //    return (InSyncPolicy)((uint32_t)l | (uint32_t)r);
+    //}
 
     //doc https://docs.microsoft.com/en-us/uwp/api/windows.storage.provider.storageprovidersyncrootinfo.populationpolicy?view=winrt-19041
     enum class PopulationPolicy : int32_t

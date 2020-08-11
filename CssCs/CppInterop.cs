@@ -29,6 +29,6 @@ namespace CssCs
 
     public static ObservableCollection<AccountViewModel> AccountViewModels { get; } = new ObservableCollection<AccountViewModel>();
 
-    public static bool HasInternet { get; set; } = false;
+    public static bool HasInternet { get; set; } = true;
   }
 }
