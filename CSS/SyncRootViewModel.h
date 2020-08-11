@@ -32,7 +32,7 @@ namespace CSS
                 {
                     this->SyncRootData->Account->AccountViewModel->Cloud->ListAllItemsToDb(this->SyncRootData, this->SyncRootData->CloudFolderId)
                         ->ContinueWith(gcnew Action<Task^>(this, &SyncRootViewModel::Register),
-                            this->TokenSource->Token, TaskContinuationOptions::OnlyOnRanToCompletion, TaskScheduler::Default);
+                            this->TokenSource->Token, TaskContinuationOptions::None, TaskScheduler::Default);
                     return true;
                 }
                 else return false;
@@ -44,6 +44,8 @@ namespace CSS
                 if (result == System::Windows::Forms::DialogResult::Yes)
                 {
                     this->TokenSource->Cancel();
+                    delete this->TokenSource;
+                    this->TokenSource = gcnew CancellationTokenSource();
                     UnRegister();
                     return true;
                 }
@@ -55,6 +57,7 @@ namespace CSS
         {
             if (task->IsCanceled || task->IsFaulted) 
                 return;
+            this->SyncRootData->Flag = this->SyncRootData->Flag | SyncRootFlag::IsListed;
             Register();
         }
         void Register();
@@ -111,8 +114,20 @@ namespace CSS
             SyncRootStatus get() override { return _EnumStatus; }
             void set(CssCsData::SyncRootStatus value) override
             {
-                if (value.HasFlag(SyncRootStatus::Error)) Status = SyncRootStatus::Error.ToString();
-                else Status = value.ToString();
+                if (value.HasFlag(SyncRootStatus::Error)) Status = "Error";
+                else
+                {
+                    switch (value)
+                    {
+                    case SyncRootStatus::NotWorking: Status = "Not Working"; break;
+                    case SyncRootStatus::ScanningCloud: Status = "Scanning Cloud"; break;
+                    case SyncRootStatus::ScanningLocal: Status = "Scanning Local"; break;
+                    case SyncRootStatus::CreatingPlaceholder: Status = "Creating Placeholder"; break;
+                    case SyncRootStatus::RegisteringSyncRoot: Status = "Registering SyncRoot"; break;
+                    case SyncRootStatus::Working: Status = "Working"; break;
+                    default: return;
+                    }
+                }
                 _EnumStatus = value;
             }
         }
@@ -134,6 +149,7 @@ namespace CSS
                     _PropertyChanged = static_cast<PropertyChangedEventHandler^> (Delegate::Combine(_PropertyChanged, handler));
                 }
                 else _PropertyChanged += handler;
+                Monitor::Exit(eventLock);
             }
 
             void remove(PropertyChangedEventHandler^ handler) override

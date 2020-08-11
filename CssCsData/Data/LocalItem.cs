@@ -124,7 +124,7 @@ namespace CssCsData
 
     public StringBuilder GetFullPath()
     {
-      return GetRelativePath().Insert(0, srvm.LocalPath);
+      return GetRelativePath().Insert(0, srvm.LocalPath + "\\");
     }
 
     public StringBuilder GetRelativePath()
@@ -142,6 +142,10 @@ namespace CssCsData
       }
     }
 
+    public override string ToString()
+    {
+      return string.Format("Name: {0} , Id: {1}", this.Name, this.CloudId);
+    }
 
     public sealed class LocalItemChildCollection : Collection<LocalItem>
     {

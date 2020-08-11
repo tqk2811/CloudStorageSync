@@ -36,7 +36,7 @@ namespace CssCs.UI
       SyncRootMenuViewModels.Add(new MenuViewModel(MenuAction.Add));
       SyncRootMenuViewModels.Add(new MenuViewModel(MenuAction.Delete));
     }
-
+    public System.Drawing.Icon WindowIcon => Properties.Resources._32xHappy_Cloud;
 
     #region setting
     public SettingViewModel Setting { get; } = new SettingViewModel();
@@ -179,6 +179,7 @@ namespace CssCs.UI
     {
       Button button = sender as Button;
       SyncRootViewModelBase srvm = button.DataContext as SyncRootViewModelBase;
+      if (srvm.IsWork) return;
       srvm.IsEditingDisplayName = true;
     }
     private void TextBox_GotFocus(object sender, RoutedEventArgs e)

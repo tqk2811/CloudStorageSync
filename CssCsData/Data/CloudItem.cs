@@ -47,5 +47,10 @@ namespace CssCsData
     public static IList<CloudItem> GetChilds(string IdParent, string IdAccount) => SqliteManaged.CloudItemFindChildIds(IdParent, IdAccount);
     public static void Delete(string Id,string IdAccount) => SqliteManaged.CloudItemDelete(Id, IdAccount);
     #endregion
+
+    public override string ToString()
+    {
+      return string.Format("Name: {0} , Id: {1}", this.Name, this.Id);
+    }
   }
 }

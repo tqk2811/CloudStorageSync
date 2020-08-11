@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CssCs.UI"
         x:Class="CssCs.UI.SettingWindow"
-        mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding Properties.Resources._32xHappy_Cloud}"
+        mc:Ignorable="d" Loaded="Window_Loaded" Icon="{Binding WindowIcon}"
         Title="Setting" Height="346" Width="1233" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" WindowStyle="ThreeDBorderWindow">
     <Window.Resources>
         <local:BooleanFalseToHiddenConverter x:Key="TrueToVisibleConverter" />
@@ -161,7 +161,7 @@
                                 <GridViewColumn x:Name="SR_Status" Header="Status" Width="125">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding StatusString}"/>
+                                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Status}"/>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>

@@ -148,15 +148,20 @@ namespace CSS
         }
         else
         {
-            if (create_placeholder)
+            if (create_hardlink)
+            {
+                String^ baselink = localitem_hardlinkbase->GetFullPath()->ToString();
+                PinStr(baselink);
+                if (CreateHardLink(pin_fullPathItem, pin_baselink, NULL)) result = PlacehoderResult::Success;
+                else
+                {
+                    LogWriter::WriteLogError(std::wstring(L"CreateHardLink failed, FileName:").append(pin_fullPathItem)
+                        .append(L", ExistingFileName:").append(pin_baselink), (int)GetLastError());
+                }
+            }
+            else if (create_placeholder)
             {
                 if (Create(pin_LocalPath, pin_relativeItem, clouditem)) result = PlacehoderResult::Success;
-            }
-            else if (create_hardlink)
-            {
-                String^ baselink = localitem->ReferenceTo->GetFullPath()->ToString();
-                PinStr(baselink);
-                if(CreateHardLink(pin_fullPathItem, pin_baselink, NULL)) result = PlacehoderResult::Success;
             }
         }
 

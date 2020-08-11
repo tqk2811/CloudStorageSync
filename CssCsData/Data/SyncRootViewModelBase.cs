@@ -24,9 +24,10 @@ namespace CssCsData
     {
       if (null == syncRoot) throw new ArgumentNullException(nameof(syncRoot));
       this.SyncRootData = syncRoot;
-      TokenSource = new CancellationTokenSource();
+      this.TokenSource = new CancellationTokenSource();
     }
     public SyncRoot SyncRootData { get; }
+
     public virtual bool IsEditingDisplayName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual string CloudFolderName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual bool IsWork { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -38,7 +39,7 @@ namespace CssCsData
     public virtual SyncRootStatus EnumStatus { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public virtual LocalItemRoot Root => throw new NotImplementedException();
     public virtual event PropertyChangedEventHandler PropertyChanged;
-    public CancellationTokenSource TokenSource { get; }
+    public CancellationTokenSource TokenSource { get; set; }
     public abstract void UpdateChange(ICloudChangeType change);
   }
 }

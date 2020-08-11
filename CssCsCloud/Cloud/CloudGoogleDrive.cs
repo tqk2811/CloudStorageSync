@@ -217,7 +217,7 @@ namespace CssCsCloud.Cloud
     {
       syncRoot.SyncRootViewModel.EnumStatus = SyncRootStatus.ScanningCloud;
       List<string> FolderIds = new List<string>() { StartFolderId };
-      GetMetadata(StartFolderId).ConfigureAwait(false).GetAwaiter().GetResult();//read root first 
+      GetMetadata(StartFolderId).ConfigureAwait(true).GetAwaiter().GetResult();//read root first 
       int reset = 0;
       int total = 0;
       string NextPageToken = null;
