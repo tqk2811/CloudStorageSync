@@ -69,7 +69,7 @@ namespace CssCs.UI
     private async Task LoadChildTV(TreeviewCloudItemViewModel item)
     {
       item.LoadingVisibility = true;
-      IList<CloudItem> cis = await accvm.Cloud.CloudFolderGetChildFolder(item.Id).ConfigureAwait(true);
+      IList<CloudItem> cis = await accvm.Cloud.ListChildsFolderOfFolder(item.Id).ConfigureAwait(true);
       foreach (var ci in cis) item.Childs.Add(new TreeviewCloudItemViewModel(ci));
       item.LoadingVisibility = false;
       item.LoadedChilds = true;
@@ -81,7 +81,7 @@ namespace CssCs.UI
       {
         TreeviewCloudItemViewModel tvcloudItemViewModel = treeViewItem.DataContext as TreeviewCloudItemViewModel;
         foreach (var child in tvcloudItemViewModel.Childs)
-          if (!child.LoadedChilds && !child.LoadingVisibility) LoadChildTV(child);
+          if (!child.LoadedChilds && !child.LoadingVisibility) _ = LoadChildTV(child);
       }
     }
 
@@ -163,25 +163,7 @@ namespace CssCs.UI
                   Result.Parent.Childs.Remove(Result);
                 }
               }
-              else//file import from other account (only google drive)
-              {
-                CloudItem ci_parent = accvm.AccountData.GetCloudItem(Result.Parent.Id);
-                if (ci_parent.Flag.HasFlag(CloudItemFlag.CanRemoveChildren))
-                {
-                  MessageBoxResult result = MessageBox.Show("Are you sure to remove that folder?\r\n" + Result.Name,
-                                                            "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                  if (MessageBoxResult.Yes == result)
-                  {
-                    UpdateCloudItem updateCloudItem = new UpdateCloudItem
-                    {
-                      Id = ci.Id
-                    };
-                    updateCloudItem.ParentIdsRemove.Add(ci_parent.Id);
-                    await accvm.Cloud.UpdateMetadata(updateCloudItem).ConfigureAwait(true);
-                    Result.Parent.Childs.Remove(Result);
-                  }
-                }
-              }
+              else MessageBox.Show("You not have permision do delete item.\r\n" + Result.Name, "Info", MessageBoxButton.OK, MessageBoxImage.Information);
               break;
 
             default: break;
@@ -214,7 +196,7 @@ namespace CssCs.UI
           {
             if (!string.IsNullOrEmpty(tvcloudItemViewModel.Name) && tvcloudItemViewModel.Parent != null)
             {
-              CloudItem ci = await accvm.Cloud.CreateFolder(tvcloudItemViewModel.Name, new List<string>() { tvcloudItemViewModel.Parent.Id }).ConfigureAwait(true);
+              CloudItem ci = await accvm.Cloud.CreateFolder(tvcloudItemViewModel.Name, tvcloudItemViewModel.Parent.Id).ConfigureAwait(true);
               tvcloudItemViewModel.Id = ci.Id;
             }
             else tvcloudItemViewModel.IsEditing = true;

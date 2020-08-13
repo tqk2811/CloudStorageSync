@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 
 namespace CssCsCloud.Cloud
 {
-  public class CloudChangeTypeCollection : ICloudChangeTypeCollection
+  internal class CloudChangeTypeCollection : ICloudChangeTypeCollection
   {
     ICollection<ICloudChangeType> collection = new Collection<ICloudChangeType>();
     public string NewWatchToken { get; internal set; }
@@ -30,53 +30,38 @@ namespace CssCsCloud.Cloud
     public IEnumerator<ICloudChangeType> GetEnumerator() => collection.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => collection.GetEnumerator();
   }
-  internal class CloudChangeType: ICloudChangeType
+  internal class CloudChangeType : ICloudChangeType
   {
-    internal CloudChangeType(string Id, IList<string> parent_old, IList<string> parent_new)
+    internal CloudChangeType(CloudItem CloudItemOld, CloudItem CloudItemNew)
     {
-      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
-      this.Id = Id;
-      if (parent_old == null) Flag |= CloudChangeFlag.IsNewItem;
-      else ParentsRemove = new List<string>(parent_old);
+      this.CloudItemNew = CloudItemNew;
+      this.CloudItemOld = CloudItemOld;
 
-      if (parent_new != null) ParentsNew = new List<string>(parent_new);
-
-      if (parent_old != null && parent_new != null) CheckParent();
-    }
-    public CloudChangeFlag Flag { get; set; } = CloudChangeFlag.None;
-    public bool IsChangeParent
-    {
-      get
+      if (null == CloudItemNew) Flag |= CloudChangeFlag.Deleted;
+      else if (null == CloudItemOld) Flag |= CloudChangeFlag.NewItem;
+      else
       {
-        if (ParentsCurrent == null || (ParentsRemove.Count == 0 && ParentsNew.Count == 0)) return false;
-        return true;
+        //only google drive can change id
+        if (!CloudItemOld.Id.Equals(CloudItemNew.Id, StringComparison.OrdinalIgnoreCase)) Flag |= CloudChangeFlag.ChangedId;
+
+        //only root or shared item has ParentId = null
+        if (  !string.IsNullOrEmpty(CloudItemOld.ParentId) && 
+              !CloudItemOld.ParentId.Equals(CloudItemNew.ParentId, StringComparison.OrdinalIgnoreCase)) Flag |= CloudChangeFlag.ChangedParent;
+
+        if( CloudItemOld.DateCreate != CloudItemNew.DateCreate || 
+            CloudItemOld.DateMod != CloudItemNew.DateMod || 
+            CloudItemOld.Size != CloudItemNew.Size) Flag |= CloudChangeFlag.ChangeTimeAndSize;
+
+        //need test, root name can null
+        if( !string.IsNullOrEmpty(CloudItemOld.Name) && 
+            !CloudItemOld.Name.Equals(CloudItemNew.Name)) Flag |= CloudChangeFlag.Rename;
       }
     }
 
-    //public long SQLId { get; set; } = -1;
-    public string IdAccount { get; internal set; }
-    public string Id { get; internal set; }
-    public string IdNew { get; internal set; }
-    public IList<string> ParentsRemove { get; } = new List<string>();
-    public IList<string> ParentsNew { get; } = new List<string>();
-    public IList<string> ParentsCurrent { get; } = new List<string>();
-    public CloudItem CiNew { get; internal set; }
-    void CheckParent()
-    {
-      for (int i = 0; i < ParentsRemove.Count; i++)
-      {
-        for (int j = 0; j < ParentsNew.Count; j++)
-        {
-          if (ParentsNew[j].Equals(ParentsRemove[i], StringComparison.OrdinalIgnoreCase))
-          {
-            ParentsCurrent.Add(ParentsRemove[i]);
-            ParentsRemove.RemoveAt(i);
-            ParentsNew.RemoveAt(j);
-            i--;
-            j--;
-          }
-        }
-      }
-    }
+    public CloudItem CloudItemNew { get; }
+
+    public CloudItem CloudItemOld { get; }
+
+    public CloudChangeFlag Flag { get; } = CloudChangeFlag.None;
   }
 }

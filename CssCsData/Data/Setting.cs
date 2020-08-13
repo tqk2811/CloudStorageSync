@@ -1,5 +1,12 @@
 ﻿namespace CssCsData
 {
+  public enum SettingFlag : long
+  {
+    None = 0,
+    SkipNoticeMalware = 1 << 0,
+    UploadPrioritizeFirst = 1 << 1,
+    DownloadPrioritizeFirst = 1 << 2,
+  }
   public class Setting
   {
     public string FileIgnore { get; set; }

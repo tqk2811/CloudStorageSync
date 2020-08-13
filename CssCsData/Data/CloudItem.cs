@@ -3,24 +3,37 @@ using System.Collections.Generic;
 
 namespace CssCsData
 {
+  public enum CloudItemFlag : long
+  {
+    None = 0,
+
+    CanDownload = 1 << 0,
+    CanEdit = 1 << 1,
+    CanRename = 1 << 2,
+    CanShare = 1 << 3,
+    CanTrash = 1 << 4,
+    CanUntrash = 1 << 5,
+
+    CanAddChildren = 1 << 6,
+    CanRemoveChildren = 1 << 7,
+
+    Shortcut = 1 << 62,
+    OwnedByMe = 1 << 63,
+    All = CanDownload | CanEdit | CanRename | CanShare | CanTrash | CanUntrash | CanAddChildren | CanRemoveChildren |
+          OwnedByMe,
+  }
   public class CloudItem
   {
     public string Id { get; set; }
     public string IdAccount { get; set; }
     public string Name { get; set; }
-    public IList<string> ParentIds
-    {
-      get { return ParentsString.StringSplit(); }
-      set { ParentsString = value.MakeSplitString(); }
-    }    
+    public string ParentId { get; set; }
     public long Size { get; set; }
     public long DateCreate { get; set; }
     public long DateMod { get; set; }
-    public CloudItemFlag Flag { get; set; }
+    public CloudItemFlag Flag { get; set; } = CloudItemFlag.None;
     public string HashString { get; set; }
-
-    internal string ParentsString { get; set; }
-
+    public string IdTargetOfShortcut { get; set; }
 
     public override bool Equals(object obj)
     {
@@ -38,10 +51,12 @@ namespace CssCsData
 
 
     public IList<CloudItem> GetChilds() => SqliteManaged.CloudItemFindChildIds(this.Id, this.IdAccount);
+    public CloudItem GetParent() => SqliteManaged.CloudItemSelect(this.ParentId, this.IdAccount);
     public Account GetAccount()
     {
       lock (Account.Accounts) return Account.Accounts.Find(acc => acc.Id.Equals(this.IdAccount, StringComparison.OrdinalIgnoreCase));
     }
+
     #region static
     public static CloudItem GetFromId(string Id, string IdAccount) => SqliteManaged.CloudItemSelect(Id, IdAccount);
     public static IList<CloudItem> GetChilds(string IdParent, string IdAccount) => SqliteManaged.CloudItemFindChildIds(IdParent, IdAccount);

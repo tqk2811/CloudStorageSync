@@ -2,26 +2,21 @@
 
 namespace CssCsData.Cloud
 {
-  public enum CloudChangeFlag : byte
+  public enum CloudChangeFlag : int
   {
     None = 0,
-    IsChangeTimeAndSize = 1,
-    IsDeleted = 1 << 1,
-    IsChangedId = 1 << 2,
-    IsRename = 1 << 3,
-    IsNewItem = 1 << 4
+    ChangeTimeAndSize = 1 << 0,
+    Deleted = 1 << 1,
+    ChangedId = 1 << 2,
+    Rename = (1 << 3) | ChangeTimeAndSize,
+    NewItem = 1 << 4,
+    ChangedParent = 1 << 5
   }
   public interface ICloudChangeType
   {
     CloudChangeFlag Flag { get; }
-    bool IsChangeParent { get; }
-    string IdAccount { get; }
-    string Id { get; }
-    string IdNew { get; }
-    IList<string> ParentsRemove { get; }
-    IList<string> ParentsNew { get; } 
-    IList<string> ParentsCurrent { get; }
-    CloudItem CiNew { get; }
+    CloudItem CloudItemNew { get; }
+    CloudItem CloudItemOld { get; }
   }
 
   public interface ICloudChangeTypeCollection : ICollection<ICloudChangeType>

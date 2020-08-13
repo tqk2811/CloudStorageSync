@@ -213,24 +213,25 @@ LocalPath = $LocalPath , DisplayName = $DisplayName , Flag = $Flag where Id = $I
 
     #region CloudItem
     const string _clouditem_create = @"create table if not exists CloudItem(
-                                    Id CHAR(128)        NOT NULL,
-                                    IdAccount CHAR(32)    NOT NULL,
-                                    Name TEXT           NOT NULL,
-                                    Parents TEXT,
-                                    Size BIG INT        DEFAULT 0,
-                                    DateCreate BIG INT  DEFAULT 0,
-                                    DateMod BIG INT     DEFAULT 0,
-                                    CapabilitiesAndFlag BIG INT DEFAULT 0,
-                                    HashString Text,
+                                    Id                  CHAR(128)             NOT NULL,
+                                    IdAccount           CHAR(32)              NOT NULL,
+                                    Name                TEXT                  NOT NULL,
+                                    ParentId            CHAR(128),
+                                    Size                BIG INT     DEFAULT 0 NOT NULL,
+                                    DateCreate          BIG INT     DEFAULT 0 NOT NULL,
+                                    DateMod             BIG INT     DEFAULT 0 NOT NULL,
+                                    Flag                BIG INT     DEFAULT 0 NOT NULL,
+                                    HashString          CHAR(256),
+                                    IdTargetOfShortcut  CHAR(128),
                                     PRIMARY KEY (Id, IdAccount),
                                     FOREIGN KEY(IdAccount) REFERENCES Email(Id));";
     const string _clouditem_select = "select * from CloudItem where Id = $Id and IdAccount = $IdAccount;";
-    const string _clouditem_insert_update = @"insert into CloudItem(Id,IdAccount,Name,Parents,Size,DateCreate,DateMod,CapabilitiesAndFlag,HashString)
-values($Id,$IdAccount,$Name,$Parents,$Size,$DateCreate,$DateMod,$CapabilitiesAndFlag,$HashString) on conflict(Id, IdAccount)
-do update set Name=$Name, Parents=$Parents, Size = $Size, DateCreate = $DateCreate, DateMod = $DateMod, CapabilitiesAndFlag = $CapabilitiesAndFlag, HashString = $HashString
+    const string _clouditem_insert_update = @"insert into CloudItem(Id,IdAccount,Name,ParentId,Size,DateCreate,DateMod,Flag,HashString,IdTargetOfShortcut)
+values($Id,$IdAccount,$Name,$ParentId,$Size,$DateCreate,$DateMod,$Flag,$HashString,$IdTargetOfShortcut) on conflict(Id, IdAccount)
+do update set Name=$Name, ParentId=$ParentId, Size = $Size, DateCreate = $DateCreate, DateMod = $DateMod, Flag = $Flag, HashString = $HashString, IdTargetOfShortcut = $IdTargetOfShortcut
 where Id = $Id AND IdAccount = $IdAccount;";
     const string _clouditem_delete = "delete from CloudItem where Id = $Id and IdAccount = $IdAccount;";
-    const string _clouditem_findchild = "select * from CloudItem where IdAccount = $IdAccount and Parents like $Parent;";
+    const string _clouditem_findchild = "select * from CloudItem where IdAccount = $IdAccount and ParentId = $ParentId;";
     internal static CloudItem CloudItemSelect(string Id, string IdAccount)
     {
       if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
@@ -242,21 +243,7 @@ where Id = $Id AND IdAccount = $IdAccount;";
         command.Parameters.AddWithValue("$IdAccount", IdAccount);
         using (var reader = command.ExecuteReader())
         {
-          if (reader.Read())
-          {
-            return new CloudItem
-            {
-              Id = reader.GetString(0),
-              IdAccount = reader.GetString(1),
-              Name = reader.GetString(2),
-              ParentsString = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-              Size = reader.GetInt64(4),
-              DateCreate = reader.GetInt64(5),
-              DateMod = reader.GetInt64(6),
-              Flag = (CloudItemFlag)reader.GetInt32(7),
-              HashString = reader.IsDBNull(8) ? string.Empty : reader.GetString(8)//nullable
-            };
-          }
+          if (reader.Read()) return ReadCloudItem(reader);
           else return null;
         }
       }
@@ -269,12 +256,13 @@ where Id = $Id AND IdAccount = $IdAccount;";
         command.Parameters.AddWithValue("$Id", cloudItem.Id);
         command.Parameters.AddWithValue("$IdAccount", cloudItem.IdAccount);
         command.Parameters.AddWithValue("$Name", cloudItem.Name);
-        command.Parameters.AddWithValue("$Parents", cloudItem.ParentsString);
+        command.Parameters.AddWithValue("$ParentId", cloudItem.ParentId);
         command.Parameters.AddWithValue("$Size", cloudItem.Size);
         command.Parameters.AddWithValue("$DateCreate", cloudItem.DateCreate);
         command.Parameters.AddWithValue("$DateMod", cloudItem.DateMod);
-        command.Parameters.AddWithValue("$CapabilitiesAndFlag", (long)cloudItem.Flag);
+        command.Parameters.AddWithValue("$Flag", (long)cloudItem.Flag);
         command.Parameters.AddWithValue("$HashString", cloudItem.HashString);
+        command.Parameters.AddWithValue("$IdTargetOfShortcut", cloudItem.IdTargetOfShortcut);
         lock (_lock) command.ExecuteNonQuery();
       }
     }
@@ -290,37 +278,39 @@ where Id = $Id AND IdAccount = $IdAccount;";
         command.ExecuteNonQuery();
       }
     }
-    internal static IList<CloudItem> CloudItemFindChildIds(string CI_ParentId, string IdAccount)
+    internal static IList<CloudItem> CloudItemFindChildIds(string ParentId, string IdAccount)
     {
-      if (string.IsNullOrEmpty(CI_ParentId)) throw new ArgumentNullException(nameof(CI_ParentId));
+      if (string.IsNullOrEmpty(ParentId)) throw new ArgumentNullException(nameof(ParentId));
       if (string.IsNullOrEmpty(IdAccount)) throw new ArgumentNullException(nameof(IdAccount));
 
       using (var command = _con.CreateCommand())
       {
         command.CommandText = _clouditem_findchild;
         command.Parameters.AddWithValue("$IdAccount", IdAccount);
-        command.Parameters.AddWithValue("$Parent", string.Format(CultureInfo.InvariantCulture, "%{0}%", CI_ParentId));
+        command.Parameters.AddWithValue("$Parent", string.Format(CultureInfo.InvariantCulture, "%{0}%", ParentId));
         List<CloudItem> cis = new List<CloudItem>();
         using (var reader = command.ExecuteReader())
         {
-          while (reader.Read())
-          {
-            cis.Add(new CloudItem
-            {
-              Id = reader.GetString(0),
-              IdAccount = reader.GetString(1),
-              Name = reader.GetString(2),
-              ParentsString = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-              Size = reader.GetInt64(4),
-              DateCreate = reader.GetInt64(5),
-              DateMod = reader.GetInt64(6),
-              Flag = (CloudItemFlag)reader.GetInt32(7),
-              HashString = reader.IsDBNull(8) ? string.Empty : reader.GetString(8)//nullable
-            });
-          }
+          while (reader.Read()) cis.Add(ReadCloudItem(reader));
         }
         return cis;
       }
+    }
+    static CloudItem ReadCloudItem(SQLiteDataReader reader)
+    {
+      return new CloudItem
+      {
+        Id = reader.GetString(0),
+        IdAccount = reader.GetString(1),
+        Name = reader.GetString(2),
+        ParentId = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),//nullable
+        Size = reader.GetInt64(4),
+        DateCreate = reader.GetInt64(5),
+        DateMod = reader.GetInt64(6),
+        Flag = (CloudItemFlag)reader.GetInt32(7),
+        HashString = reader.IsDBNull(8) ? string.Empty : reader.GetString(8),//nullable
+        IdTargetOfShortcut = reader.IsDBNull(9) ? string.Empty : reader.GetString(9)//nullable
+      };
     }
     #endregion
 

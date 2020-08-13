@@ -146,7 +146,7 @@ namespace CssCsCloud.Cloud
         Name = driveItem.Name,
         DateCreate = driveItem.CreatedDateTime.Value.ToUnixTimeSeconds(),
         DateMod = driveItem.LastModifiedDateTime.Value.ToUnixTimeSeconds(),
-        ParentIds = new List<string>() { driveItem.ParentReference.Id },
+        ParentId = driveItem.ParentReference.Id,
         Size = isfolder ? -1 : driveItem.Size.Value,
         IdAccount = account.Id
       };
@@ -172,32 +172,17 @@ namespace CssCsCloud.Cloud
 
         trackChangesResult = JsonConvert.DeserializeObject<TrackChangesResult>(await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false));
       }
+
       foreach (var item in trackChangesResult.DriveItems)
       {
-        CloudChangeType cloudChangeType;
         CloudItem ci_old = CloudItem.GetFromId(item.Id, account.Id);
-        if (item.Deleted != null)
-        {
-          cloudChangeType = new CloudChangeType(item.Id, null, null);
-          cloudChangeType.Flag |= CloudChangeFlag.IsDeleted;
-        }
-        else
-        {
-          cloudChangeType = new CloudChangeType(item.Id, ci_old?.ParentIds, new List<string>() { item.ParentReference.Id });
-          if (ci_old != null && !item.Name.Equals(ci_old.Name, StringComparison.OrdinalIgnoreCase)) cloudChangeType.Flag |= CloudChangeFlag.IsRename;
-          //if (!item.Id.Equals(item.Id)) cloudChangeType.Flag |= CloudChangeFlag.IsChangedId;
-          //cloudChangeType.IdNew = cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId) ? item.Id : null;
-          if (ci_old != null &&
-            (ci_old.Size != item.Size ||
-            ci_old.DateMod != item.LastModifiedDateTime.Value.ToUnixTimeSeconds())) cloudChangeType.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
-        }
-        cloudChangeType.IdAccount = account.Id;
-        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(item.Id, account.Id);
-        else
-        {
-          //if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(item.Id, cevm.Id);
-          cloudChangeType.CiNew = InsertToDb(item);
-        }
+        CloudItem ci_new = null;
+        if (item.Deleted == null) ci_new = InsertToDb(item);
+
+        CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
+        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) ||
+          cloudChangeType.Flag.HasFlag(CloudChangeFlag.ChangedId)) CloudItem.Delete(item.Id, account.Id);
+
         result.Add(cloudChangeType);
       }
       if (!string.IsNullOrEmpty(trackChangesResult.DeltaLink)) result.NewWatchToken = trackChangesResult.DeltaLink;
@@ -243,7 +228,6 @@ namespace CssCsCloud.Cloud
       }
     }
 
-
     static string GetLink(IDriveItemDeltaCollectionPage delta, string linkname)
     {
       return delta.AdditionalData.ContainsKey(linkname) ? delta.AdditionalData[linkname] as string : null;
@@ -257,16 +241,14 @@ namespace CssCsCloud.Cloud
       return true;
     }
 
-    public async Task<Stream> Download(CloudItem ci, long start, long end)
+    public async Task<Stream> Download(string Id, long posStart, long posEnd)
     {
-      if (null == ci || string.IsNullOrEmpty(ci.Id)) throw new ArgumentNullException("ci or ci.Id is null");
-      if (start < 0 || end < 0 || end > ci.Size - 1 || start > end) throw new ArgumentException("Start and end is invalid.");
-
-      var driveItemInfo = await MyDrive.Items[ci.Id].Request().GetAsync().ConfigureAwait(false);
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
+      var driveItemInfo = await MyDrive.Items[Id].Request().GetAsync().ConfigureAwait(false);
       driveItemInfo.AdditionalData.TryGetValue("@microsoft.graph.downloadUrl", out object downloadUrl);
       using (var requestMessage = new HttpRequestMessage(HttpMethod.Get, (string)downloadUrl))
       {
-        requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(start, end);
+        requestMessage.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(posStart, posEnd);
         var response = await httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
         if (response.IsSuccessStatusCode)
         {
@@ -276,21 +258,13 @@ namespace CssCsCloud.Cloud
       }
     }
 
-
-    /// <summary>
-    /// Upload file.
-    /// </summary>
-    /// <param name="FilePath">Path of file</param>
-    /// <param name="ParentIds">Id of parent. For onedrive, only 1 parent.</param>
-    /// <param name="ItemCloudId">In onedrive, it not important.</param>
-    /// <returns>CloudItem</returns>
-    public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
+    public async Task<CloudItem> Upload(string FilePath, string ParentId, string ItemCloudId = null)
     {
       if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException(nameof(FilePath));
-      if (null == ParentIds || ParentIds.Count == 0 || ParentIds.Count > 1) throw new ArgumentException("ParentIds is invalid");
+      if (string.IsNullOrEmpty(ParentId)) throw new ArgumentNullException(nameof(ParentId));
 
       FileInfo fi = new FileInfo(FilePath);
-      if (fi.Attributes.HasFlag(FileAttributes.Directory)) return await CreateFolder(fi.Name, ParentIds).ConfigureAwait(false);
+      if (fi.Attributes.HasFlag(FileAttributes.Directory)) return await CreateFolder(fi.Name, ParentId).ConfigureAwait(false);
       else
       {
         DriveItemUploadableProperties driveItemUploadableProperties = new DriveItemUploadableProperties
@@ -306,7 +280,7 @@ namespace CssCsCloud.Cloud
         };
 
         string uploadrequest_json = JsonConvert.SerializeObject(driveItemUploadableProperties, DllCloudInit.JsonSerializerSettings);
-        DriveItem di = await MyDrive.Items[ParentIds[0]].Request().GetAsync().ConfigureAwait(false);
+        DriveItem di = await MyDrive.Items[ParentId].Request().GetAsync().ConfigureAwait(false);
         string itemRelativePath = di.ParentReference.Path + "/" + di.Name + "/" + fi.Name;
         Uri uri = new Uri(string.Format(DllCloudInit.DefaultCulture, create_upload_session, itemRelativePath));
 
@@ -324,7 +298,7 @@ namespace CssCsCloud.Cloud
           else
           {
             UploadSessionResource uploadSessionResource = JsonConvert.DeserializeObject<UploadSessionResource>(await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false));
-            using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite), false))
+            using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, DllCloudInit.FileShareDefault), false))
             {
               long part = fs.Length / DllCloudInit.ChunkUploadDownload;
               if (part * DllCloudInit.ChunkUploadDownload < fs.Length) part++;
@@ -379,7 +353,7 @@ namespace CssCsCloud.Cloud
       else return await WatchChange(account.WatchToken).ConfigureAwait(false);
     }
 
-    public Task<IList<CloudItem>> CloudFolderGetChildFolder(string itemId)
+    public Task<IList<CloudItem>> ListChildsFolderOfFolder(string itemId)
     {
       if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
       return Task.Factory.StartNew<IList<CloudItem>>(() =>
@@ -412,6 +386,7 @@ namespace CssCsCloud.Cloud
         CreatedDateTime = updateCloudItem.CreationTime,
         LastModifiedDateTime = updateCloudItem.LastWriteTime
       };
+
       if (!string.IsNullOrEmpty(updateCloudItem.NewParentId)) di.ParentReference = new ItemReference() { Id = updateCloudItem.NewParentId };
       await MyDrive.Items[updateCloudItem.Id].Request().UpdateAsync(di).ConfigureAwait(false);
     }
@@ -423,16 +398,17 @@ namespace CssCsCloud.Cloud
       return MyDrive.Items[Id].Request().DeleteAsync();
     }
 
-    public async Task<CloudItem> CreateFolder(string name, IList<string> ParentIds)
+    public async Task<CloudItem> CreateFolder(string Name, string ParentId)
     {
-      if (null == ParentIds || ParentIds.Count == 0 || ParentIds.Count > 1) throw new ArgumentException("ParentIds is invalid");
+      if (string.IsNullOrEmpty(ParentId)) throw new ArgumentNullException(nameof(ParentId));
+      if (string.IsNullOrEmpty(Name)) throw new ArgumentNullException(nameof(Name));
+
       var driveItem = new DriveItem
       {
-        Name = name,
+        Name = Name,
         Folder = new Microsoft.Graph.Folder { }
       };
-      DriveItem di = await MyDrive.Items[ParentIds[0]].Children.Request().AddAsync(driveItem).ConfigureAwait(false);
-      return InsertToDb(di);
+      return InsertToDb(await MyDrive.Items[ParentId].Children.Request().AddAsync(driveItem).ConfigureAwait(false));
     }
 
     public async Task<CssCsData.Cloud.Quota> GetQuota()
@@ -446,16 +422,16 @@ namespace CssCsCloud.Cloud
       return quota;
     }
 
-    public bool HashCheck(string filepath, CloudItem ci)
+    public bool HashCheck(string filePath, CloudItem ci)
     {
-      if (null != ci && System.IO.File.Exists(filepath))
+      if (null != ci && System.IO.File.Exists(filePath))
       {
-        FileInfo finfo = new FileInfo(filepath);
+        FileInfo finfo = new FileInfo(filePath);
         if (finfo.Length == ci.Size && !string.IsNullOrEmpty(ci.HashString))
         {
           using (SHA1 sha1 = SHA1.Create())
           {
-            using (FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
               byte[] hash = sha1.ComputeHash(fs);
               string hashstring = BitConverter.ToString(hash).Replace("-", "");

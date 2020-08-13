@@ -5,6 +5,18 @@ using System.Runtime.CompilerServices;
 
 namespace CssCsData
 {
+  public enum CloudName : int
+  {
+    GoogleDrive = 0,
+    OneDrive = 1,
+    MegaNz = 2,
+    Dropbox = 3,
+
+    File = 250,
+    Folder = 251,
+    //Empty = 252,
+    None = 255
+  }
   public class Account
   {
     public Account(string Id,string Email,CloudName cloudName)

@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Globalization;
+using System.IO;
 
 namespace CssCsCloud
 {
@@ -19,7 +20,7 @@ namespace CssCsCloud
     public static int SpeedDownloadLimitByte { get; set; } = 0;
     public static int SpeedUploadLimitByte { get; set; } = 0;
     public static bool SkipNoticeMalware { get; set; } = false;
-
+    internal static FileShare FileShareDefault { get; } = FileShare.Read;
 
     internal static string UWPLocalStatePath { get; private set; }
     public static void Init(string UWPLocalStatePath)

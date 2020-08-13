@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CssCsData
 {
@@ -14,7 +12,6 @@ namespace CssCsData
     {
       if (null == srvm) throw new ArgumentNullException(nameof(srvm));
       if (string.IsNullOrEmpty(CloudId)) throw new ArgumentNullException(nameof(CloudId));
-
       base.hashtable = new Hashtable();
       base.IsRoot = true;
       hashtable.Add(CloudId, this);
@@ -56,7 +53,6 @@ namespace CssCsData
     }
   }
 
-
   public class LocalItem
   {
     public LocalItem(SyncRootViewModelBase srvm, string CloudId)
@@ -66,7 +62,6 @@ namespace CssCsData
       this.srvm = srvm ?? throw new ArgumentNullException(nameof(srvm));
       _Childs = new LocalItemChildCollection(this);
       ReferenceFrom = new LocalItemReferenceCollection(this);
-      
     }
     protected Hashtable hashtable;//only for root
     protected bool IsRoot = false;
@@ -80,7 +75,7 @@ namespace CssCsData
         return _CloudId;
       }
       set
-      {        
+      {
         if (null == ReferenceTo)
         {
           //if this is main
@@ -103,10 +98,10 @@ namespace CssCsData
     public LocalItemReferenceCollection ReferenceFrom { get; }
 
     public LocalItem Parent { get; private set; }//only set from LocalItemChildCollection
-    
+
     public LocalItemChildCollection Childs
     {
-      get 
+      get
       {
         if (ReferenceTo == null) return _Childs;
         else return ReferenceTo.Childs;
@@ -163,7 +158,7 @@ namespace CssCsData
         if (!parent.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
         if (parent.IsRemoved) throw new Exception("Parent is not in root");
 
-        if(parent.srvm.Root.hashtable.ContainsKey(item.CloudId))
+        if (parent.srvm.Root.hashtable.ContainsKey(item.CloudId))
         {
           LocalItem main = (LocalItem)parent.srvm.Root.hashtable[item.CloudId];
           main.ReferenceFrom.MyInsertItem(item);//item is sub -> link ref to main
@@ -184,7 +179,7 @@ namespace CssCsData
         foreach (var item in this) RemoveParentAndRefItem(item);//remove item.parent
         base.ClearItems();
       }
-      
+
       void MyAddItems(LocalItem item)
       {
         item.Parent = this.parent;

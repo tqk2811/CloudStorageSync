@@ -7,9 +7,11 @@ using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -23,11 +25,12 @@ namespace CssCsCloud.Cloud
   {
     const string OrderBy = "folder,name,createdTime";
 
-    const string Fields_DriveFile = "id,name,mimeType,trashed,parents,webContentLink,hasThumbnail,thumbnailLink,createdTime,modifiedTime,ownedByMe,capabilities,md5Checksum,size";
+    const string Fields_DriveFile = "id,name,mimeType,trashed,parents,webContentLink,hasThumbnail,thumbnailLink,createdTime,modifiedTime,ownedByMe,capabilities,md5Checksum,size,shortcutDetails";
     const string Fields_DriveFileList = "nextPageToken,incompleteSearch,files(" + Fields_DriveFile + ")";
     const string Fields_WatchChange = "nextPageToken,newStartPageToken,changes(type,changeType,time,removed,fileId,file(" + Fields_DriveFile + "))";
 
     const string MimeType_Folder = "application/vnd.google-apps.folder";
+    const string MimeType_Shortcut = "application/vnd.google-apps.shortcut";
     const string MimeType_googleapp = "application/vnd.google-apps.";
 
     const string Query_ListFolder = "'{0}' in parents and mimeType = '" + MimeType_Folder + "' and trashed = false";
@@ -40,6 +43,7 @@ namespace CssCsCloud.Cloud
     readonly Account account;
     readonly UserCredential user;
     readonly DriveService ds;
+
     internal CloudGoogleDrive(Account account)
     {
       if (account == null) throw new ArgumentNullException(nameof(account));
@@ -79,6 +83,7 @@ namespace CssCsCloud.Cloud
 #endif
       }
     }
+
     internal static DriveService GetDriveService(UserCredential user)
     {
       if (null == user) throw new ArgumentNullException(nameof(user));
@@ -95,7 +100,8 @@ namespace CssCsCloud.Cloud
     {
       if (drivefile == null) return null;
 
-      bool isfolder = drivefile.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase);
+      bool isFolder = drivefile.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase);
+      bool isShortcut = drivefile.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase);
       CloudItem ci = new CloudItem
       {
         Id = drivefile.Id,
@@ -104,8 +110,8 @@ namespace CssCsCloud.Cloud
         DateCreate = drivefile.CreatedTime.Value.GetUnixTimeSeconds(),
         DateMod = drivefile.ModifiedTime.Value.GetUnixTimeSeconds()
       };
-      if (drivefile.Parents != null) ci.ParentIds = drivefile.Parents;
-      ci.Size = isfolder ? -1 : drivefile.Size.Value;
+      ci.ParentId = drivefile?.Parents[0];//goolge api will change after sep 2020
+      ci.Size = isFolder ? -1 : drivefile.Size.Value;
       ci.HashString = drivefile.Md5Checksum;
       if (drivefile.Capabilities.CanDownload == true) ci.Flag |= CloudItemFlag.CanDownload;
       if (drivefile.Capabilities.CanEdit == true) ci.Flag |= CloudItemFlag.CanEdit;
@@ -115,7 +121,11 @@ namespace CssCsCloud.Cloud
       if (drivefile.Capabilities.CanUntrash == true) ci.Flag |= CloudItemFlag.CanUntrash;
       if (drivefile.Capabilities.CanAddChildren == true) ci.Flag |= CloudItemFlag.CanAddChildren;
       if (drivefile.Capabilities.CanRemoveChildren == true) ci.Flag |= CloudItemFlag.CanRemoveChildren;
-
+      if (isShortcut)
+      {
+        ci.Flag |= CloudItemFlag.Shortcut;
+        ci.IdTargetOfShortcut = drivefile.ShortcutDetails.TargetId;
+      }
       if (drivefile.OwnedByMe == true) ci.Flag |= CloudItemFlag.OwnedByMe;
       ci.InsertOrUpdate();
       return ci;
@@ -126,6 +136,7 @@ namespace CssCsCloud.Cloud
       var change = await ds.Changes.GetStartPageToken().ExecuteAsync().ConfigureAwait(false);
       account.WatchToken = change.StartPageTokenValue;
     }
+
     async Task<ICloudChangeTypeCollection> WatchChange(string WatchToken)
     {
       if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
@@ -139,44 +150,31 @@ namespace CssCsCloud.Cloud
       foreach (var change in change_list.Changes)
       {
         if (!change.ChangeType.Equals("file", StringComparison.OrdinalIgnoreCase)) continue;
-
         if (change.Removed == false && //not delete
           !change.File.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase) &&//not folder
+          !change.File.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase) &&//not shortcut
           change.File.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
 
         CloudItem ci_old = CloudItem.GetFromId(change.FileId, account.Id);
-        CloudChangeType changetype;
+        CloudItem ci_new = null;
         if (change.Removed == true || change.File.Trashed == true)
         {
-          changetype = new CloudChangeType(change.FileId, ci_old?.ParentIds, null);//delete
-          changetype.Flag |= CloudChangeFlag.IsDeleted;
+          if (null == ci_old) continue;
         }
-        else
-        {
-          changetype = new CloudChangeType(change.FileId, ci_old?.ParentIds, change.File.Parents);
+        else ci_new = InsertToDb(change.File);
 
-          if (null != ci_old && !change.File.Name.Equals(ci_old.Name, StringComparison.OrdinalIgnoreCase)) changetype.Flag |= CloudChangeFlag.IsRename;
-          if (!change.FileId.Equals(change.File.Id, StringComparison.OrdinalIgnoreCase)) changetype.Flag |= CloudChangeFlag.IsChangedId;
-          changetype.IdNew = changetype.Flag.HasFlag(CloudChangeFlag.IsChangedId) ? change.File.Id : null;
+        CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
+        if(cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || 
+          cloudChangeType.Flag.HasFlag(CloudChangeFlag.ChangedId)) CloudItem.Delete(change.FileId, account.Id);
 
-          if (null != ci_old &&
-            (ci_old.Size != change.File.Size ||
-            ci_old.DateMod != change.File.ModifiedTime.Value.GetUnixTimeSeconds())) changetype.Flag |= CloudChangeFlag.IsChangeTimeAndSize;
-        }
-        changetype.IdAccount = account.Id;
-        if (changetype.Flag.HasFlag(CloudChangeFlag.IsDeleted)) CloudItem.Delete(change.FileId, account.Id);
-        else
-        {
-          if (changetype.Flag.HasFlag(CloudChangeFlag.IsChangedId)) CloudItem.Delete(change.FileId, account.Id);
-          changetype.CiNew = InsertToDb(change.File);
-        }
-        result.Add(changetype);
+        result.Add(cloudChangeType);
       }
       if (!string.IsNullOrEmpty(change_list.NextPageToken)) result.AddRange(await WatchChange(change_list.NextPageToken).ConfigureAwait(false));
 
       result.NewWatchToken = change_list.NewStartPageToken;
       return result;
     }
+
     async Task<Stream> Download_(string uri, long start, long end)
     {
       using (var requestMessage = new HttpRequestMessage(HttpMethod.Get, uri))
@@ -198,54 +196,70 @@ namespace CssCsCloud.Cloud
         }
       }
     }
-    IList<CloudItem> CloudOpenDialogLoadChildFolder(string item_id, string NextPageToken = null)
+
+    IList<CloudItem> CloudOpenDialogLoadChildFolder(string Id, string NextPageToken = null)
     {
       List<CloudItem> cis = new List<CloudItem>();
       var list_request = ds.Files.List();
       if (!string.IsNullOrEmpty(NextPageToken)) list_request.PageToken = NextPageToken;
-      list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_ListFolder, item_id);
+      list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_ListFolder, Id);
       list_request.OrderBy = OrderBy;
       list_request.Fields = Fields_DriveFileList;
       list_request.PageSize = 1000;
       var list_result = list_request.Execute();
-      foreach (var file in list_result.Files) cis.Add(InsertToDb(file));
-      if (list_result.IncompleteSearch == true) cis.AddRange(CloudOpenDialogLoadChildFolder(item_id, list_result.NextPageToken));
+      foreach (var file in list_result.Files)
+      {
+        file.Parents = new List<string>() { Id };//google api will change after sep 2020
+        cis.Add(InsertToDb(file));
+      }
+      if (list_result.IncompleteSearch == true) cis.AddRange(CloudOpenDialogLoadChildFolder(Id, list_result.NextPageToken));
       return cis;
     }
 
     public void _ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
     {
+      Hashtable hashtable = new Hashtable();
+      Queue<string> queue = new Queue<string>(new List<string>() { StartFolderId });
       syncRoot.SyncRootViewModel.EnumStatus = SyncRootStatus.ScanningCloud;
-      List<string> FolderIds = new List<string>() { StartFolderId };
       GetMetadata(StartFolderId).ConfigureAwait(true).GetAwaiter().GetResult();//read root first 
       int reset = 0;
       int total = 0;
       string NextPageToken = null;
-      while (FolderIds.Count > 0)
+      while (queue.Count > 0)
       {
+        string Id = queue.Dequeue();
+        if (hashtable.ContainsKey(Id)) continue;
+        else hashtable.Add(Id, Id);
+
         var list_request = ds.Files.List();
         if (!string.IsNullOrEmpty(NextPageToken)) list_request.PageToken = NextPageToken;
-        list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_List, FolderIds[0]);
+        list_request.Q = string.Format(DllCloudInit.DefaultCulture, Query_List, Id);
         list_request.OrderBy = OrderBy;
         list_request.Fields = Fields_DriveFileList;
         list_request.PageSize = 1000;
         FileList list_result = list_request.Execute();
         foreach (var file in list_result.Files)
         {
-          if (file.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase)) FolderIds.Add(file.Id);//folder
-          else if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
+          if (file.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase)) queue.Enqueue(file.Id);//folder
+          else
+          {
+            if (hashtable.ContainsKey(file.Id)) continue;
+            else hashtable.Add(file.Id, file.Id);
+
+            if (file.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase)) continue;//Shortcut
+            else if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
+          }
+          file.Parents = new List<string>() { Id };//google api will change after sep 2020
           InsertToDb(file);
           total++;
           reset++;
-          if (syncRoot.SyncRootViewModel.EnumStatus == SyncRootStatus.ScanningCloud) 
+          if (syncRoot.SyncRootViewModel.EnumStatus == SyncRootStatus.ScanningCloud)
             syncRoot.SyncRootViewModel.Message = string.Format(CultureInfo.InvariantCulture, "Items Scanned: {0}, Name: {1}", total, file.Name);
         }
+
         if (list_result.IncompleteSearch == true) NextPageToken = list_result.NextPageToken;
-        else
-        {
-          NextPageToken = null;
-          FolderIds.RemoveAt(0);
-        }
+        else NextPageToken = null;
+
         if (reset >= 500)
         {
           reset = 0;
@@ -265,23 +279,22 @@ namespace CssCsCloud.Cloud
       }
     }
 
-    public async Task<Stream> Download(CloudItem ci, long start, long end)
+    public async Task<Stream> Download(string Id, long posStart, long posEnd)
     {
-      if (null == ci || string.IsNullOrEmpty(ci.Id)) throw new ArgumentNullException("ci or ci.Id is null");
-      if (start < 0 || end < 0 || end > ci.Size - 1 || start > end) throw new ArgumentException("Start and end is invalid.");
-
-      string uri = string.Format(DllCloudInit.DefaultCulture, DownloadUri, ci.Id);
-      return await Download_(uri, start, end).ConfigureAwait(false);
+      if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException("ci or ci.Id is null");
+      string uri = string.Format(DllCloudInit.DefaultCulture, DownloadUri, Id);
+      return await Download_(uri, posStart, posEnd).ConfigureAwait(false);
     }
-    public async Task<CloudItem> Upload(string FilePath, IList<string> ParentIds, string ItemCloudId = null)
+
+    public async Task<CloudItem> Upload(string FilePath, string ParentId, string ItemCloudId = null)
     {
       if (string.IsNullOrEmpty(FilePath)) throw new ArgumentNullException(nameof(FilePath));
-      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException(nameof(ParentIds));
+      if (string.IsNullOrEmpty(ParentId)) throw new ArgumentException(nameof(ParentId));
 
       FileInfo fi = new FileInfo(FilePath);
       if (fi.Attributes.HasFlag(FileAttributes.Directory))
       {
-        return await CreateFolder(fi.Name, ParentIds).ConfigureAwait(false);
+        return await CreateFolder(fi.Name, ParentId).ConfigureAwait(false);
       }
       else//file
       {
@@ -295,7 +308,7 @@ namespace CssCsCloud.Cloud
             Name = fi.Name,
             CreatedTime = fi.CreationTimeUtc,
             ModifiedTime = fi.LastWriteTimeUtc,
-            Parents = new List<string>(ParentIds)
+            Parents = new List<string>() { ParentId }
           };
 
           requestMessage = new HttpRequestMessage(HttpMethod.Post, UploadUri);
@@ -317,7 +330,7 @@ namespace CssCsCloud.Cloud
         requestMessage.Dispose();
 
         //Upload file
-        using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Delete | FileShare.ReadWrite), false))
+        using (ThrottledStream fs = new ThrottledStream(new FileStream(fi.FullName, FileMode.Open, FileAccess.Read, DllCloudInit.FileShareDefault), false))
         {
           HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uploadid);
           request.Method = "PUT";
@@ -338,7 +351,6 @@ namespace CssCsCloud.Cloud
       }
     }
 
-
     public async Task<ICloudChangeTypeCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(account.WatchToken)) await InitWatch().ConfigureAwait(false);
@@ -346,12 +358,13 @@ namespace CssCsCloud.Cloud
       return new CloudChangeTypeCollection();
     }
 
-    public Task<IList<CloudItem>> CloudFolderGetChildFolder(string itemId)
+    public Task<IList<CloudItem>> ListChildsFolderOfFolder(string itemId)
     {
       if (string.IsNullOrEmpty(itemId)) throw new ArgumentNullException(nameof(itemId));
       return Task.Factory.StartNew<IList<CloudItem>>(() => CloudOpenDialogLoadChildFolder(itemId, null), 
         CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
+
     public Task ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
     {
       if (null == syncRoot) throw new ArgumentNullException(nameof(syncRoot));
@@ -361,10 +374,13 @@ namespace CssCsCloud.Cloud
         syncRoot.SyncRootViewModel.TokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);//
     }
 
-
     public async Task UpdateMetadata(UpdateCloudItem updateCloudItem)
     {
-      if (null == updateCloudItem) throw new ArgumentNullException(nameof(updateCloudItem));
+      if (null == updateCloudItem || string.IsNullOrEmpty(updateCloudItem.Id)) throw new ArgumentNullException(nameof(updateCloudItem));
+
+      var getrequest = ds.Files.Get(updateCloudItem.Id);
+      getrequest.Fields = Fields_DriveFile;
+      Google.Apis.Drive.v3.Data.File drivefile_get = getrequest.Execute();
 
       Google.Apis.Drive.v3.Data.File drivefile = new Google.Apis.Drive.v3.Data.File()
       {
@@ -374,10 +390,11 @@ namespace CssCsCloud.Cloud
       };
       var request = ds.Files.Update(drivefile, updateCloudItem.Id);
       request.Fields = Fields_DriveFile;
-      request.AddParents = Extensions.ParentsCommaSeparatedList(updateCloudItem.ParentIdsAdd);
-      request.RemoveParents = Extensions.ParentsCommaSeparatedList(updateCloudItem.ParentIdsRemove);
+      request.AddParents = updateCloudItem.NewParentId;
+      request.RemoveParents = Extensions.ParentsCommaSeparatedList(drivefile_get.Parents);
       await request.ExecuteAsync().ConfigureAwait(false);
     }
+
     public async Task TrashItem(string Id)
     {
       if (string.IsNullOrEmpty(Id)) throw new ArgumentNullException(nameof(Id));
@@ -385,20 +402,21 @@ namespace CssCsCloud.Cloud
       await ds.Files.Update(new Google.Apis.Drive.v3.Data.File() { Trashed = true }, Id).ExecuteAsync().ConfigureAwait(false);
     }
 
-    public async Task<CloudItem> CreateFolder(string name, IList<string> ParentIds)
+    public async Task<CloudItem> CreateFolder(string Name, string ParentId)
     {
-      if (string.IsNullOrEmpty(name)) throw new ArgumentNullException(nameof(name));
-      if (null == ParentIds || ParentIds.Count == 0) throw new ArgumentException(nameof(ParentIds));
+      if (string.IsNullOrEmpty(Name)) throw new ArgumentNullException(nameof(Name));
+      if (string.IsNullOrEmpty(ParentId)) throw new ArgumentException(nameof(ParentId));
 
       Google.Apis.Drive.v3.Data.File file = new Google.Apis.Drive.v3.Data.File
       {
-        Name = name,
+        Name = Name,
         MimeType = MimeType_Folder,
-        Parents = new List<string>(ParentIds)
+        Parents = new List<string>() { ParentId }
       };
       var request = ds.Files.Create(file);
       request.Fields = Fields_DriveFile;
       var result = await request.ExecuteAsync().ConfigureAwait(false);
+      result.Parents = new List<string>() { ParentId };
       return InsertToDb(result);
     }
 
@@ -415,16 +433,16 @@ namespace CssCsCloud.Cloud
       return quota;
     }
 
-    public bool HashCheck(string filepath, CloudItem ci)
+    public bool HashCheck(string filePath, CloudItem ci)
     {
-      if (null != ci && System.IO.File.Exists(filepath))
+      if (null != ci && System.IO.File.Exists(filePath))
       {
-        FileInfo finfo = new FileInfo(filepath);
+        FileInfo finfo = new FileInfo(filePath);
         if (finfo.Length == ci.Size && !string.IsNullOrEmpty(ci.HashString))
         {
           using (var md5 = MD5.Create())
           {
-            using (FileStream fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
               byte[] hash = md5.ComputeHash(fs);
               string hashstring = BitConverter.ToString(hash).Replace("-", "");
@@ -442,7 +460,13 @@ namespace CssCsCloud.Cloud
 
       var getrequest = ds.Files.Get(Id);
       getrequest.Fields = Fields_DriveFile;
-      return InsertToDb(await getrequest.ExecuteAsync().ConfigureAwait(false));
+
+      Task<Google.Apis.Drive.v3.Data.File> task_file = getrequest.ExecuteAsync();
+      CloudItem ci = CloudItem.GetFromId(Id, this.account.Id);
+      Google.Apis.Drive.v3.Data.File file = await task_file.ConfigureAwait(false);
+      if (null != ci && null != file.Parents) file.Parents = new List<string>() { ci.Id };
+
+      return InsertToDb(file);
     }
     #endregion
   }

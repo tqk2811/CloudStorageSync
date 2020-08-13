@@ -72,11 +72,7 @@
     <Compile Include="Cloud\ICloud.cs" />
     <Compile Include="Data\AccountViewModelBase.cs" />
     <Compile Include="Data\SqliteManaged.cs" />
-    <Compile Include="Data\Enums\SyncRootFlag.cs" />
-    <Compile Include="Data\Enums\SettingFlag.cs" />
-    <Compile Include="Data\Enums\CloudItemFlag.cs" />
     <Compile Include="Data\LocalItem.cs" />
-    <Compile Include="Data\Enums\CloudName.cs" />
     <Compile Include="DllDataInit.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Data\Account.cs" />

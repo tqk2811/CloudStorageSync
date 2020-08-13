@@ -12,6 +12,7 @@ namespace CssCsData
       if (string.IsNullOrEmpty(IdAccount)) throw new ArgumentNullException(nameof(IdAccount));
       this.Id = Id;
       this.IdAccount = IdAccount;
+      lock (Account.Accounts) this.Account =  Account.Accounts.Find(acc => acc.Id.Equals(this.IdAccount, StringComparison.OrdinalIgnoreCase));
     }
     public string Id { get; }
     public string IdAccount { get; }
@@ -24,7 +25,7 @@ namespace CssCsData
 
 
     public bool IsAvailableInDb { get; internal set; } = false;
-
+    public Account Account { get; }
 
 
     public void Insert()
@@ -62,17 +63,6 @@ namespace CssCsData
       return base.GetHashCode();
     }
 
-    Account _account;
-    Account GetAccount()
-    {
-      lock (Account.Accounts) return Account.Accounts.Find(acc => acc.Id.Equals(this.IdAccount, StringComparison.OrdinalIgnoreCase));
-    }
-
-    public Account Account 
-    { 
-      get { return _account ?? GetAccount(); }
-    }
-    
 
     #region static
     internal static List<SyncRoot> SyncRoots = new List<SyncRoot>();
