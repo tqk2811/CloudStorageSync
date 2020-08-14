@@ -1,19 +1,6 @@
 #pragma once
 namespace CSS
 {
-	enum class PlacehoderResult : int
-	{
-		Success = 0,
-		Failed = 1 << 0,
-		OpenByOtherProcess = 1 << 1,
-		CanNotOpen = 1 << 2,
-		FileNotFound = 1 << 3,
-	};
-	inline PlacehoderResult operator|(PlacehoderResult l, PlacehoderResult r)
-	{
-		return (PlacehoderResult)((int)l | (uint32_t)r);
-	}
-
 	class Placeholders
 	{
 	public:

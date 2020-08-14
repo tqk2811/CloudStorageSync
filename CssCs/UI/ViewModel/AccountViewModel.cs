@@ -48,17 +48,32 @@ namespace CssCs.UI.ViewModel
     string _Quota;
 
 
-    public override void WatchChange()
+    public override Task WatchChange()
     {
-      Cloud.WatchChange().ContinueWith(WatchChangeResult, TaskScheduler.Default);
+      return Cloud.WatchChange().ContinueWith(WatchChangeResult, TaskScheduler.Default);
     }
 
     void WatchChangeResult(Task<ICloudChangeTypeCollection> t)
     {
-      if (t.IsCanceled || t.IsFaulted) return;
+      if (t.IsCanceled) return;
+      if(t.IsFaulted)
+      {
+        CppInterop.OutPutDebugString("WatchChangeResult Exception:" + t.Exception.Message + ", StackTrace:" + t.Exception.StackTrace, 0);
+        return;
+      }
       foreach (var sr in AccountData.GetSyncRootWorking()) 
-        foreach (var change in t.Result) 
-          sr.SyncRootViewModel.UpdateChange(change);
+        foreach (var change in t.Result)
+        {
+          try
+          {
+            sr.SyncRootViewModel.UpdateChange(change);
+          }
+          catch (Exception ex)
+          {
+            CppInterop.OutPutDebugString(string.Format("SyncRootViewModel.UpdateChange CloudItemId:{0}, Syncroot Id:{1}, Exception:{2}, StackTrace:{3}",
+              change.CloudItemOld?.Id ?? change.CloudItemNew?.Id, sr.Id, ex.Message, ex.StackTrace), 0);
+          }
+        }          
       AccountData.WatchToken = t.Result.NewWatchToken;
       AccountData.Update();
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define Shortcut
+using System;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -61,7 +62,9 @@ namespace CssCsData
       this._CloudId = CloudId;
       this.srvm = srvm ?? throw new ArgumentNullException(nameof(srvm));
       _Childs = new LocalItemChildCollection(this);
-      ReferenceFrom = new LocalItemReferenceCollection(this);
+#if Shortcut
+      ShortcutsFrom = new LocalItemShortcutCollection(this);
+#endif
     }
     protected Hashtable hashtable;//only for root
     protected bool IsRoot = false;
@@ -76,26 +79,36 @@ namespace CssCsData
       }
       set
       {
-        if (null == ReferenceTo)
+#if Shortcut
+        if (null == ShortcutTo)
         {
           //if this is main
           if (string.IsNullOrEmpty(value)) throw new ArgumentNullException(nameof(value));
           if (value.Equals(CloudId, StringComparison.OrdinalIgnoreCase)) return;//if not change id
           if (srvm.Root.hashtable.ContainsKey(CloudId)) srvm.Root.hashtable.Remove(CloudId);//remove id in hash
           else throw new Exception("bug code");
-
           srvm.Root.hashtable.Add(value, this);
           _CloudId = value;
-          foreach (var sub in ReferenceFrom) sub._CloudId = value;
+          foreach (var sub in ShortcutsFrom) sub._CloudId = value;
         }
-        else ReferenceTo.CloudId = value;//if this is sub -> move to main
+        else ShortcutTo.CloudId = value;//if this is sub -> move to main
+#else
+        if (value.Equals(CloudId, StringComparison.OrdinalIgnoreCase)) return;//if not change id
+        if (srvm.Root.hashtable.ContainsKey(CloudId)) srvm.Root.hashtable.Remove(CloudId);//remove id in hash
+        else throw new Exception("bug code");
+        srvm.Root.hashtable.Add(value, this);//add id to hash
+        _CloudId = value;
+#endif
       }
     }
+
     public string Name { get; set; }
 
-    public LocalItem ReferenceTo { get; private set; }//only set from LocalItemReferenceCollection
+#if Shortcut
+    public LocalItem ShortcutTo { get; private set; }//only set from LocalItemReferenceCollection
 
-    public LocalItemReferenceCollection ReferenceFrom { get; }
+    public LocalItemShortcutCollection ShortcutsFrom { get; }
+#endif
 
     public LocalItem Parent { get; private set; }//only set from LocalItemChildCollection
 
@@ -103,8 +116,12 @@ namespace CssCsData
     {
       get
       {
-        if (ReferenceTo == null) return _Childs;
-        else return ReferenceTo.Childs;
+#if Shortcut
+        if (ShortcutTo == null) return _Childs;
+        else return ShortcutTo.Childs;
+#else
+        return _Childs;
+#endif
       }
     }
 
@@ -160,8 +177,12 @@ namespace CssCsData
 
         if (parent.srvm.Root.hashtable.ContainsKey(item.CloudId))
         {
+#if Shortcut
           LocalItem main = (LocalItem)parent.srvm.Root.hashtable[item.CloudId];
-          main.ReferenceFrom.MyInsertItem(item);//item is sub -> link ref to main
+          main.ShortcutsFrom.MyInsertItem(item);//item is sub -> link ref to main
+#else
+          throw new Exception("this item was inside syncroot");
+#endif
         }
         else parent.srvm.Root.hashtable.Add(item.CloudId, item);//add to hash as main
         item.Parent = this.parent;
@@ -186,32 +207,36 @@ namespace CssCsData
         base.InsertItem(this.Count, item);
       }
 
+#if Shortcut
       void MoveChildsFromThisToTarget(LocalItemChildCollection target)
       {
         foreach (var item in this) target.MyAddItems(item);
         base.ClearItems();
       }
+#endif
 
       void RemoveParentAndRefItem(LocalItem childRemove)
       {
         childRemove.Parent = null;//clear parent
-        if (null == childRemove.ReferenceTo)//if main, it link in hash
+#if Shortcut
+        if (null == childRemove.ShortcutTo)//if main, it link in hash
         {
           childRemove.srvm.Root.hashtable.Remove(childRemove.CloudId);//remove main from hash
-          if (childRemove.ReferenceFrom.Count > 0)//if main have sub
+          if (childRemove.ShortcutsFrom.Count > 0)//if main have sub
           {
-            LocalItem newRefTo = childRemove.ReferenceFrom[0];//first sub -> new main
+            LocalItem newRefTo = childRemove.ShortcutsFrom[0];//first sub -> new main
             childRemove._Childs.MoveChildsFromThisToTarget(newRefTo._Childs);//move childs from old main to new main
             parent.srvm.Root.hashtable.Add(newRefTo.CloudId, newRefTo);//add new main to hash
-            newRefTo.ReferenceTo = null;//clear ref to old main
-            while (1 < childRemove.ReferenceFrom.Count)//move ref from old main to new main
+            newRefTo.ShortcutTo = null;//clear ref to old main
+            while (1 < childRemove.ShortcutsFrom.Count)//move ref from old main to new main
             {
-              LocalItem refFrom = childRemove.ReferenceFrom[1];
-              childRemove.ReferenceFrom.MyRemoveItemAt(1);
-              newRefTo.ReferenceFrom.MyInsertItem(refFrom);
+              LocalItem refFrom = childRemove.ShortcutsFrom[1];
+              childRemove.ShortcutsFrom.MyRemoveItemAt(1);
+              newRefTo.ShortcutsFrom.MyInsertItem(refFrom);
             }
           }
         }
+#endif
       }
 
 
@@ -266,10 +291,11 @@ namespace CssCsData
       }
     }
 
-    public sealed class LocalItemReferenceCollection : Collection<LocalItem>
+#if Shortcut
+    public sealed class LocalItemShortcutCollection : Collection<LocalItem>
     {
       LocalItem refTo;
-      internal LocalItemReferenceCollection(LocalItem refTo)
+      internal LocalItemShortcutCollection(LocalItem refTo)
       {
         this.refTo = refTo;
       }
@@ -280,26 +306,27 @@ namespace CssCsData
 
       internal void MyInsertItem(LocalItem item)
       {
-        if (null != item.ReferenceTo) throw new Exception("item had ReferenceTo other");
+        if (null != item.ShortcutTo) throw new Exception("item had ReferenceTo other");
         if (!refTo.srvm.Equals(item.srvm)) throw new Exception("srvm not equal");
         if (!refTo.CloudId.Equals(item.CloudId)) throw new Exception("CloudId not equal");
 
-        item.ReferenceTo = this.refTo;
+        item.ShortcutTo = this.refTo;
         base.InsertItem(this.Count, item);
       }
 
       internal void MyRemoveItemAt(int index)
       {
-        this[index].ReferenceTo = null;
+        this[index].ShortcutTo = null;
         base.RemoveItem(index);
       }
 
       internal void MyClearItems()
       {
-        foreach (var item in this) item.ReferenceTo = null;
+        foreach (var item in this) item.ShortcutTo = null;
         base.ClearItems();
       }
 
     }
+#endif
   }
 }

@@ -28,6 +28,7 @@ namespace CSS
 	using namespace CssCs::UI;
 	using namespace CssCs::UI::ViewModel;
 	using namespace CssCsData;
+	using namespace CssCsData::Data;
 	using namespace CssCsData::Cloud;
 	using namespace CssCsCloud;
 	using namespace CssCsCloud::Cloud;

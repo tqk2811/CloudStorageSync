@@ -81,19 +81,6 @@ namespace CSS
 		return lists;
 	}
 
-	inline static bool MoveToRecycleBin(std::wstring& fullpath)
-	{
-		WCHAR* p = new WCHAR[fullpath.size() + 2]{ 0 };
-		wcscpy(p, fullpath.c_str());
-		SHFILEOPSTRUCT shfile{ 0 };
-		shfile.wFunc = FO_DELETE;
-		shfile.pFrom = p;
-		shfile.fFlags = FOF_ALLOWUNDO | FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI;
-		int result = SHFileOperation(&shfile);
-		delete p;
-		return result == 0;
-	}
-
 	inline static bool FindId(List<String^>^ Ids, String^ IdFind)
 	{
 		for (int i = 0; i < Ids->Count; i++) if (Ids[i]->Equals(IdFind, StringComparison::OrdinalIgnoreCase)) return true;
@@ -132,6 +119,20 @@ namespace CSS
 		return INVALID_FILE_ATTRIBUTES != file_attri;
 	}
 
+	inline static bool MoveToRecycleBin(std::wstring& fullpath)
+	{
+		if (!PathExists(fullpath.c_str())) return true;
+		WCHAR* p = new WCHAR[fullpath.size() + 2]{ 0 };
+		wcscpy(p, fullpath.c_str());
+		SHFILEOPSTRUCT shfile{ 0 };
+		shfile.wFunc = FO_DELETE;
+		shfile.pFrom = p;
+		shfile.fFlags = FOF_ALLOWUNDO | FOF_SILENT | FOF_NOCONFIRMATION | FOF_NOERRORUI;
+		int result = SHFileOperation(&shfile);
+		delete p;
+		return result == 0;
+	}
+
 	inline static void WriteLog(System::String^ text, int loglevel = 10)
 	{
 		PinStr(text);
@@ -140,5 +141,5 @@ namespace CSS
 
 
 	bool TwoItemIsHardLink(LPCWSTR fullpath0, LPCWSTR fullpath1);
-	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci, bool hardlink);
+	String^ FindNewNameItem(SyncRootViewModel^ srvm, String^ parentFullPath, CloudItem^ ci, bool hardlink = false);
 }

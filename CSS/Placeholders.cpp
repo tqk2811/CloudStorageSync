@@ -11,17 +11,13 @@ namespace CSS
                 LocalItem^ localitem = CreateItem(srvm, parent, RelativeOfParent, child);
                 if (localitem)
                 {
-                    if (localitem->ReferenceTo) continue;//this is sub
-                    else
+                    if (srvm->EnumStatus == SyncRootStatus::CreatingPlaceholder) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"ItemCreated: {0}", localitem->Name);
+                    if (child->Size == -1)
                     {
-                        if (srvm->EnumStatus ==SyncRootStatus::CreatingPlaceholder) srvm->Message = String::Format(CultureInfo::InvariantCulture, L"ItemCreated: {0}", localitem->Name);
-                        if (child->Size == -1)
-                        {
-                            String^ itemRelative = RelativeOfParent;
-                            if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
-                            else itemRelative = itemRelative + L"\\" + localitem->Name;
-                            CreateAll(srvm, localitem, child, itemRelative);
-                        }
+                        String^ itemRelative = RelativeOfParent;
+                        if (String::IsNullOrEmpty(itemRelative)) itemRelative = localitem->Name;
+                        else itemRelative = itemRelative + L"\\" + localitem->Name;
+                        CreateAll(srvm, localitem, child, itemRelative);
                     }
                 }
             }
@@ -41,7 +37,7 @@ namespace CSS
         bool create_placeholder(false);
         bool rename_cloud(false);
         bool file_exist(false);
-        bool create_hardlink(false);
+        //bool create_hardlink(false);
 
         clouditem->Name = CssCs::Extensions::RenameFileNameUnInvalid(clouditem->Name, clouditem->Size != -1);
         LocalItem^ localitem = parent->Childs->FindFromId(clouditem->Id);
@@ -50,8 +46,8 @@ namespace CSS
             //unlock?
             return localitem;
         }
-        LocalItem^ localitem_hardlinkbase = srvm->Root->FindFromCloudId(clouditem->Id);
-        if (localitem_hardlinkbase) create_hardlink = true;
+        //LocalItem^ localitem_hardlinkbase = srvm->Root->FindFromCloudId(clouditem->Id);
+        //if (localitem_hardlinkbase) create_hardlink = true;
 
         String^ fullPathItemParent = srvm->LocalPath;
         String^ relativeItem;
@@ -78,25 +74,25 @@ namespace CSS
             if (localIsFolder == cloud_isfolder)//same file/folder
             {
                 //check two item is hardlink?
-                if (create_hardlink)
-                {
-                    //this is placeholder
-                    String^ basePathItem = localitem_hardlinkbase->GetFullPath()->ToString();
-                    PinStr(basePathItem);
-                    if (TwoItemIsHardLink(pin_basePathItem, pin_fullPathItem))
-                    {
-                        localitem = gcnew LocalItem(srvm, clouditem->Id);
-                        localitem->Name = clouditem->Name;
-                        parent->Childs->Add(localitem);
-                        return localitem;
-                    }
-                    else
-                    {
-                        rename_cloud = true;
-                    }
-                }
-                else//
-                {
+                //if (create_hardlink)
+                //{
+                //    //this is placeholder
+                //    String^ basePathItem = localitem_hardlinkbase->GetFullPath()->ToString();
+                //    PinStr(basePathItem);
+                //    if (TwoItemIsHardLink(pin_basePathItem, pin_fullPathItem))
+                //    {
+                //        localitem = gcnew LocalItem(srvm, clouditem->Id);
+                //        localitem->Name = clouditem->Name;
+                //        parent->Childs->Add(localitem);
+                //        return localitem;
+                //    }
+                //    else
+                //    {
+                //        rename_cloud = true;
+                //    }
+                //}
+                //else//
+                //{
                     if (localIsFolder) convert_to_placeholder = true;//same folder
                     else//same file
                     {
@@ -114,7 +110,7 @@ namespace CSS
                             create_placeholder = true;
                         }
                     }
-                }
+                //}
             }
             else//file != folder
             {
@@ -125,7 +121,7 @@ namespace CSS
 
         if (rename_cloud)
         {
-            clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem, create_hardlink);//if newname not found -> create, if found -> convert
+            clouditem->Name = FindNewNameItem(srvm, fullPathItemParent, clouditem /*, create_hardlink*/);//if newname not found -> create, if found -> convert
             fullPathItem = fullPathItemParent + L"\\" + clouditem->Name;            
             relativeItem = fullPathItem->Substring(srvm->LocalPath->Length + 1);
             PinStr3(pin_fullPathItem, fullPathItem);
@@ -148,18 +144,19 @@ namespace CSS
         }
         else
         {
-            if (create_hardlink)
-            {
-                String^ baselink = localitem_hardlinkbase->GetFullPath()->ToString();
-                PinStr(baselink);
-                if (CreateHardLink(pin_fullPathItem, pin_baselink, NULL)) result = PlacehoderResult::Success;
-                else
-                {
-                    LogWriter::WriteLogError(std::wstring(L"CreateHardLink failed, FileName:").append(pin_fullPathItem)
-                        .append(L", ExistingFileName:").append(pin_baselink), (int)GetLastError());
-                }
-            }
-            else if (create_placeholder)
+            //if (create_hardlink)
+            //{
+            //    String^ baselink = localitem_hardlinkbase->GetFullPath()->ToString();
+            //    PinStr(baselink);
+            //    if (CreateHardLink(pin_fullPathItem, pin_baselink, NULL)) result = PlacehoderResult::Success;
+            //    else
+            //    {
+            //        LogWriter::WriteLogError(std::wstring(L"CreateHardLink failed, FileName:").append(pin_fullPathItem)
+            //            .append(L", ExistingFileName:").append(pin_baselink), (int)GetLastError());
+            //    }
+            //}
+            //else 
+            if (create_placeholder)
             {
                 if (Create(pin_LocalPath, pin_relativeItem, clouditem)) result = PlacehoderResult::Success;
             }

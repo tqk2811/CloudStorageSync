@@ -180,8 +180,7 @@ namespace CssCsCloud.Cloud
         if (item.Deleted == null) ci_new = InsertToDb(item);
 
         CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
-        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) ||
-          cloudChangeType.Flag.HasFlag(CloudChangeFlag.ChangedId)) CloudItem.Delete(item.Id, account.Id);
+        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || cloudChangeType.ChangedId) CloudItem.Delete(item.Id, account.Id);
 
         result.Add(cloudChangeType);
       }

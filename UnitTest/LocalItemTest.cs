@@ -63,7 +63,7 @@ namespace UnitTest
       SyncRootViewModel srvm = Init();
       //ref from
       srvm.Root.Childs[1].Childs[0].CloudId = "0.0.0x";
-      Assert.AreEqual(srvm.Root.FindFromCloudId("0.0.0x"), srvm.Root.Childs[1].Childs[0].ReferenceTo);
+      Assert.AreEqual(srvm.Root.FindFromCloudId("0.0.0x"), srvm.Root.Childs[1].Childs[0].ShortcutTo);
       Assert.IsNull(srvm.Root.FindFromCloudId("0.0.0"));
       Assert.AreEqual(srvm.Root.Childs[0].Childs[0].CloudId, "0.0.0x");
       Assert.IsNull(srvm.Root.FindFromCloudId("0.0.0"));
@@ -99,10 +99,10 @@ namespace UnitTest
       Assert.IsNull(itemRemoved.Parent);//old base will remove parent
       
       Assert.IsTrue(srvm.Root.Childs[0].Childs.Count == 1);//only one child 0.0.1
-      Assert.IsNull(srvm.Root.Childs[1].Childs[0].ReferenceTo);//this is new base
+      Assert.IsNull(srvm.Root.Childs[1].Childs[0].ShortcutTo);//this is new base
       Assert.AreEqual(srvm.Root.Childs[1].Childs[0], srvm.Root.FindFromCloudId("0.0.0"));//check new base is in hash?
-      Assert.IsNotNull(srvm.Root.Childs[1].Childs[0].ReferenceFrom.Count == 1);//check this is ref to base?
-      Assert.AreEqual(srvm.Root.Childs[2].Childs[0].ReferenceTo, srvm.Root.Childs[1].Childs[0]);//check is ref to new base
+      Assert.IsNotNull(srvm.Root.Childs[1].Childs[0].ShortcutsFrom.Count == 1);//check this is ref to base?
+      Assert.AreEqual(srvm.Root.Childs[2].Childs[0].ShortcutTo, srvm.Root.Childs[1].Childs[0]);//check is ref to new base
       Assert.AreEqual(childOfRemoved, srvm.Root.FindFromCloudId("0.0.0").Childs[0]);//check child is in new base?
     }
   }

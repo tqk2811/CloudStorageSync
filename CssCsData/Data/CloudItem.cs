@@ -17,7 +17,9 @@ namespace CssCsData
     CanAddChildren = 1 << 6,
     CanRemoveChildren = 1 << 7,
 
-    Shortcut = 1 << 62,
+    /// <summary>
+    /// only google drive can not OwnedByMe
+    /// </summary>
     OwnedByMe = 1 << 63,
     All = CanDownload | CanEdit | CanRename | CanShare | CanTrash | CanUntrash | CanAddChildren | CanRemoveChildren |
           OwnedByMe,
@@ -32,8 +34,14 @@ namespace CssCsData
     public long DateCreate { get; set; }
     public long DateMod { get; set; }
     public CloudItemFlag Flag { get; set; } = CloudItemFlag.None;
+    /// <summary>
+    /// Hash of file
+    /// </summary>
     public string HashString { get; set; }
-    public string IdTargetOfShortcut { get; set; }
+    /// <summary>
+    /// For google drive, this is Id target of application/vnd.google-apps.shortcut
+    /// </summary>
+    public string Shortcut { get; set; }
 
     public override bool Equals(object obj)
     {

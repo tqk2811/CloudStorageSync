@@ -32,31 +32,43 @@ namespace CssCsCloud.Cloud
   }
   internal class CloudChangeType : ICloudChangeType
   {
+    /// <summary>
+    /// old & new can't same null
+    /// </summary>
+    /// <param name="CloudItemOld"></param>
+    /// <param name="CloudItemNew"></param>
     internal CloudChangeType(CloudItem CloudItemOld, CloudItem CloudItemNew)
     {
       this.CloudItemNew = CloudItemNew;
       this.CloudItemOld = CloudItemOld;
 
-      if (null == CloudItemNew) Flag |= CloudChangeFlag.Deleted;
+      if (null == CloudItemNew && null == CloudItemOld) throw new ArgumentException("old & new can't same null.");
+      else if (null == CloudItemNew) Flag |= CloudChangeFlag.Deleted;
       else if (null == CloudItemOld) Flag |= CloudChangeFlag.NewItem;
       else
       {
         //only google drive can change id
-        if (!CloudItemOld.Id.Equals(CloudItemNew.Id, StringComparison.OrdinalIgnoreCase)) Flag |= CloudChangeFlag.ChangedId;
+        if (!CloudItemOld.Id.Equals(CloudItemNew.Id, StringComparison.OrdinalIgnoreCase)) Flag |= CloudChangeFlag.Change;
 
         //only root or shared item has ParentId = null
-        if (  !string.IsNullOrEmpty(CloudItemOld.ParentId) && 
-              !CloudItemOld.ParentId.Equals(CloudItemNew.ParentId, StringComparison.OrdinalIgnoreCase)) Flag |= CloudChangeFlag.ChangedParent;
+        if (!string.IsNullOrEmpty(CloudItemOld.ParentId) &&
+              !CloudItemOld.ParentId.Equals(CloudItemNew.ParentId, StringComparison.OrdinalIgnoreCase))
+        {
+          Flag |= CloudChangeFlag.Move;
+          ChangedId = true;
+        }
 
         if( CloudItemOld.DateCreate != CloudItemNew.DateCreate || 
             CloudItemOld.DateMod != CloudItemNew.DateMod || 
-            CloudItemOld.Size != CloudItemNew.Size) Flag |= CloudChangeFlag.ChangeTimeAndSize;
+            CloudItemOld.Size != CloudItemNew.Size) Flag |= CloudChangeFlag.Change;
 
         //need test, root name can null
         if( !string.IsNullOrEmpty(CloudItemOld.Name) && 
-            !CloudItemOld.Name.Equals(CloudItemNew.Name)) Flag |= CloudChangeFlag.Rename;
+            !CloudItemOld.Name.Equals(CloudItemNew.Name)) Flag |= CloudChangeFlag.Move;
       }
     }
+
+    internal bool ChangedId { get; private set; } = false;
 
     public CloudItem CloudItemNew { get; }
 

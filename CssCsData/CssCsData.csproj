@@ -71,6 +71,7 @@
   <ItemGroup>
     <Compile Include="Cloud\ICloud.cs" />
     <Compile Include="Data\AccountViewModelBase.cs" />
+    <Compile Include="Data\PlaceholderResult.cs" />
     <Compile Include="Data\SqliteManaged.cs" />
     <Compile Include="Data\LocalItem.cs" />
     <Compile Include="DllDataInit.cs" />

@@ -5,12 +5,22 @@ namespace CssCsData.Cloud
   public enum CloudChangeFlag : int
   {
     None = 0,
-    ChangeTimeAndSize = 1 << 0,
-    Deleted = 1 << 1,
-    ChangedId = 1 << 2,
-    Rename = (1 << 3) | ChangeTimeAndSize,
+    /// <summary>
+    /// rename and change parent
+    /// </summary>
+    Move = 1 << 0,
+    /// <summary>
+    /// change time, size, id
+    /// </summary>
+    Change = 1 << 1,
+    /// <summary>
+    /// delete
+    /// </summary>
+    Deleted = 1 << 2,
+    /// <summary>
+    /// create new
+    /// </summary>
     NewItem = 1 << 4,
-    ChangedParent = 1 << 5
   }
   public interface ICloudChangeType
   {

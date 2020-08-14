@@ -218,30 +218,144 @@ namespace CSS
     //}
     }
 
+    //revert placeholder and move to recycle bin
+    bool DeleteItem(SyncRootViewModel^ srvm, CloudItem^ ci_old)
+    {
+        LocalItem^ li_delete = srvm->Root->FindFromCloudId(ci_old->Id);
+        if (li_delete)
+        {
+            String^ fullPathItem = li_delete->GetFullPath()->ToString();
+            PinStr(fullPathItem);
+            PlacehoderResult result = Placeholders::Revert(pin_fullPathItem);
+            if (result.HasFlag(PlacehoderResult::FileNotFound)) ;
+            else if (result.HasFlag(PlacehoderResult::OpenByOtherProcess) || result.HasFlag(PlacehoderResult::CanNotOpen))
+            {
+                //try again later
+                return false;
+            }
+            else//Success/Failed only -> move to recycle bin
+            {
+                if (!MoveToRecycleBin(std::wstring(pin_fullPathItem)))
+                {
+                    //try again later
+                    return false;
+                }
+            }
+            li_delete->Parent->Childs->Remove(li_delete);
+        }
+        return true;
+    }
+
+    //create new placeholder and child
+    void CreateItem(SyncRootViewModel^ srvm, CloudItem^ ci_new)
+    {
+        LocalItem^ li_parent = srvm->Root->FindFromCloudId(ci_new->ParentId);
+        if (li_parent)
+        {
+            LocalItem^ item_created = Placeholders::CreateItem(srvm, li_parent, li_parent->GetRelativePath()->ToString(), ci_new);
+            if (ci_new->Size == -1)//folder
+            {
+                srvm->SyncRootData->Account->AccountViewModel->Cloud->ListAllItemsToDb(srvm->SyncRootData, ci_new->Id)->Wait();
+                Placeholders::CreateAll(srvm, item_created, ci_new, item_created->GetRelativePath()->ToString());
+            }
+        }
+    }
+
+    //for rename & change parent   (need old & new because maybe change id)
+    //need update placeholder after this
+    bool MoveItem(SyncRootViewModel^ srvm, CloudItem^ ci_old, CloudItem^ ci_new)
+    {
+        String^ Name = CssCs::Extensions::RenameFileNameUnInvalid(ci_new->Name, ci_new->Size != -1);//new name
+        LocalItem^ li = srvm->Root->FindFromCloudId(ci_old->Id);
+        LocalItem^ li_newparent = srvm->Root->FindFromCloudId(ci_new->Id);
+
+        String^ newparentpath = li->Parent->GetFullPath()->ToString();//old parent
+        String^ oldpath = li->GetFullPath()->ToString();
+        String^ newpath = newparentpath + L"\\" + Name;
+        if (PathExists(newpath))
+        {
+            Name = FindNewNameItem(srvm, newparentpath, ci_new);
+            newpath = newparentpath + L"\\" + Name;
+        }
+        PinStr(oldpath);
+        PinStr(newpath);
+        if (MoveFile(pin_oldpath, pin_newpath))
+        {
+            li->Name = Name;//rename
+            if (!li->Parent->Equals(li_newparent))//if move -> move 
+            {
+                li->Parent->Childs->Remove(li);
+                li_newparent->Childs->Add(li);
+            }            
+            return true;
+        }
+        else
+        {
+            int err = (int)GetLastError();
+            LogWriter::WriteLogError(std::wstring(L"RenameItem failed, oldpath:").append(pin_oldpath)
+                .append(L", newpath:").append(pin_newpath), err);
+        }
+        return false;
+    }
+
+
     void SyncRootViewModel::UpdateChange(ICloudChangeType^ change)
     {
-        //String^ log = String::Format(CultureInfo::InvariantCulture, "CSS::TrackChanges::UpdateChange for CloudItemId:{0} in SRId:{1}", change->Id, srvm->SRId);
-        //WriteLog(log, 2);
-        //IList<LocalItem^>^ localitems = LocalItem::FindAll(srvm, change->Id);
-        //if (change->Flag.HasFlag(CloudChangeFlag::IsDeleted)) for (int i = 0; i < localitems->Count; i++) LocalAction::DeleteLocal(srvm, localitems[i]);
-        //else if (change->Flag.HasFlag(CloudChangeFlag::IsNewItem)) LocalAction::InsertLocal(srvm, change->ParentsNew, change->CiNew);
-        //else
-        //{
-        //	if (localitems->Count == 0) LocalAction::InsertLocal(srvm, change->CiNew->ParentsId, change->CiNew);//item not found in local -> try insert inside parent
-        //	else
-        //	{
-        //		//check is change parent
-        //		IList<String^>^ localitems_Parents = nullptr;
-        //		if (change->IsChangeParent)
-        //		{
-        //			LocalAction::DeleteLocal(srvm, change->ParentsRemove, change->Id);
-        //			LocalAction::InsertLocal(srvm, change->ParentsNew, change->CiNew);
-        //			localitems_Parents = change->ParentsCurrent;
-        //		}
-        //		else localitems_Parents = change->CiNew->ParentsId;
-        //		if (change->Flag.HasFlag(CloudChangeFlag::IsRename)) LocalAction::RenameLocal(srvm, localitems, change->CiNew);//if rename -> time Mod change -> UpdateLocal
-        //		if (change->Flag.HasFlag(CloudChangeFlag::IsChangeTimeAndSize)) LocalAction::UpdateLocal(srvm, localitems_Parents, change->CiNew);
-        //	}
-        //}
+        CloudChangeFlag tryagain = CloudChangeFlag::None;
+        if (change->Flag.HasFlag(CloudChangeFlag::Deleted))
+        {
+            //delete item
+            if (!DeleteItem(this, change->CloudItemOld)) tryagain = tryagain | CloudChangeFlag::Deleted;
+        }
+        else if (change->Flag.HasFlag(CloudChangeFlag::NewItem))
+        {
+            //create new placeholder
+            CreateItem(this, change->CloudItemNew);
+        }
+        else//old & new not null
+        {
+            if (change->Flag.HasFlag(CloudChangeFlag::Move))//rename/change parent
+            {
+                if (this->Root->FindFromCloudId(change->CloudItemNew->ParentId))
+                {
+                    if (!MoveItem(this, change->CloudItemOld, change->CloudItemNew)) 
+                        tryagain = tryagain | CloudChangeFlag::Move;//move in syncrot -> move & rename                  
+                }
+                else
+                {
+                    if (!DeleteItem(this, change->CloudItemOld))  
+                        tryagain = tryagain | CloudChangeFlag::Deleted;//move out syncroot -> delete
+                }
+            }
+
+            //update
+            if (change->Flag.HasFlag(CloudChangeFlag::Move) ||
+                change->Flag.HasFlag(CloudChangeFlag::Change))
+            {
+                LocalItem^ li = this->Root->FindFromCloudId(change->CloudItemOld->Id);
+                String^ fullpath = li->GetFullPath()->ToString();
+                PinStr(fullpath);
+                PlacehoderResult result = Placeholders::Update(pin_fullpath, change->CloudItemNew);
+                if (result.HasFlag(PlacehoderResult::Failed))
+                {
+                    if (result.HasFlag(PlacehoderResult::FileNotFound))
+                    {
+                        li->Parent->Childs->Remove(li);
+                        LogWriter::WriteLog(std::wstring(L"Placeholders::Update FileNotFound"), 0);
+                        return;
+                    }
+                    tryagain = tryagain | CloudChangeFlag::Change;
+                }
+                else
+                {
+                    li->CloudId = change->CloudItemNew->Id;
+                }
+            }
+        }
+
+        if (tryagain != CloudChangeFlag::None)
+        {
+            //add error to db
+        }
     }
 }

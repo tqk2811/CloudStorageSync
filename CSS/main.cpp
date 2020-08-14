@@ -6,6 +6,7 @@ using namespace System::Threading;
 MSG g_msg{ 0 };
 gcroot<Mutex^> mutex;
 //gcroot<ManualResetEvent^> resetEvent;
+gcroot<System::Timers::Timer^> timer;
 
 void LoadAccAndSr()
 {
@@ -22,12 +23,49 @@ void LoadAccAndSr()
     }
     Task::WaitAll(tasks->ToArray());
 }
+void OnElapsed(Object^ source, System::Timers::ElapsedEventArgs^ e)
+{
+    //resetevent->Reset();
+    static int count = CssCsData::Setting::SettingData->TimeWatchChangeCloud;//run at start app
+    try
+    {
+        //IList<LocalError^>^ les = LocalError::ListAll();
+        //for (int i = 0; i < les->Count; i++) LocalAction::TryAgain(les[i]);
+        count++;
+        if (count >= CssCsData::Setting::SettingData->TimeWatchChangeCloud && CssCs::Extensions::Ping())//check internet
+        {
+            count = 0;
+            List<Task^>^ taskwait = gcnew List<Task^>();
+            for (int i = 0; i < CssCs::CppInterop::AccountViewModels->Count; i++)
+            {
+                taskwait->Add(CssCs::CppInterop::AccountViewModels[i]->WatchChange());
+            }
+            Task::WaitAll(taskwait->ToArray());
+
+            static int count_for_collectGC = 0;
+            if (count_for_collectGC++ >= 36)//~ >10p
+            {
+                count_for_collectGC = 0;
+                GC::Collect();
+            }
+        }
+    }
+    catch (...) {}
+    timer->Start();
+    //resetevent->Set();
+}
 
 void MainThread()
 {
     CssCs::CppInterop::OutPutDebugString = gcnew CssCs::_OutPutDebugString(CSS::WriteLog);
     if (!CssCs::CppInterop::Init(gcnew String(CssWinrt::GetLocalStateUWPFolder().c_str()))) return;
     LoadAccAndSr();
+
+    timer = gcnew System::Timers::Timer(1000);
+    timer->AutoReset = false;
+    timer->Elapsed += gcnew System::Timers::ElapsedEventHandler(&OnElapsed);
+    OnElapsed(nullptr, nullptr);
+
     CSS::UiManaged::Init();
     //resetEvent->Set();
     //------------------------main loop-----------------------------

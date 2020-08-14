@@ -222,13 +222,13 @@ LocalPath = $LocalPath , DisplayName = $DisplayName , Flag = $Flag where Id = $I
                                     DateMod             BIG INT     DEFAULT 0 NOT NULL,
                                     Flag                BIG INT     DEFAULT 0 NOT NULL,
                                     HashString          CHAR(256),
-                                    IdTargetOfShortcut  CHAR(128),
+                                    Shortcut  CHAR(128),
                                     PRIMARY KEY (Id, IdAccount),
                                     FOREIGN KEY(IdAccount) REFERENCES Email(Id));";
     const string _clouditem_select = "select * from CloudItem where Id = $Id and IdAccount = $IdAccount;";
-    const string _clouditem_insert_update = @"insert into CloudItem(Id,IdAccount,Name,ParentId,Size,DateCreate,DateMod,Flag,HashString,IdTargetOfShortcut)
-values($Id,$IdAccount,$Name,$ParentId,$Size,$DateCreate,$DateMod,$Flag,$HashString,$IdTargetOfShortcut) on conflict(Id, IdAccount)
-do update set Name=$Name, ParentId=$ParentId, Size = $Size, DateCreate = $DateCreate, DateMod = $DateMod, Flag = $Flag, HashString = $HashString, IdTargetOfShortcut = $IdTargetOfShortcut
+    const string _clouditem_insert_update = @"insert into CloudItem(Id,IdAccount,Name,ParentId,Size,DateCreate,DateMod,Flag,HashString,Shortcut)
+values($Id,$IdAccount,$Name,$ParentId,$Size,$DateCreate,$DateMod,$Flag,$HashString,$Shortcut) on conflict(Id, IdAccount)
+do update set Name=$Name, ParentId=$ParentId, Size = $Size, DateCreate = $DateCreate, DateMod = $DateMod, Flag = $Flag, HashString = $HashString, Shortcut = $Shortcut
 where Id = $Id AND IdAccount = $IdAccount;";
     const string _clouditem_delete = "delete from CloudItem where Id = $Id and IdAccount = $IdAccount;";
     const string _clouditem_findchild = "select * from CloudItem where IdAccount = $IdAccount and ParentId = $ParentId;";
@@ -262,7 +262,7 @@ where Id = $Id AND IdAccount = $IdAccount;";
         command.Parameters.AddWithValue("$DateMod", cloudItem.DateMod);
         command.Parameters.AddWithValue("$Flag", (long)cloudItem.Flag);
         command.Parameters.AddWithValue("$HashString", cloudItem.HashString);
-        command.Parameters.AddWithValue("$IdTargetOfShortcut", cloudItem.IdTargetOfShortcut);
+        command.Parameters.AddWithValue("$Shortcut", cloudItem.Shortcut);
         lock (_lock) command.ExecuteNonQuery();
       }
     }
@@ -287,7 +287,7 @@ where Id = $Id AND IdAccount = $IdAccount;";
       {
         command.CommandText = _clouditem_findchild;
         command.Parameters.AddWithValue("$IdAccount", IdAccount);
-        command.Parameters.AddWithValue("$Parent", string.Format(CultureInfo.InvariantCulture, "%{0}%", ParentId));
+        command.Parameters.AddWithValue("$Parent",  ParentId);
         List<CloudItem> cis = new List<CloudItem>();
         using (var reader = command.ExecuteReader())
         {
@@ -309,7 +309,7 @@ where Id = $Id AND IdAccount = $IdAccount;";
         DateMod = reader.GetInt64(6),
         Flag = (CloudItemFlag)reader.GetInt32(7),
         HashString = reader.IsDBNull(8) ? string.Empty : reader.GetString(8),//nullable
-        IdTargetOfShortcut = reader.IsDBNull(9) ? string.Empty : reader.GetString(9)//nullable
+        Shortcut = reader.IsDBNull(9) ? string.Empty : reader.GetString(9)//nullable
       };
     }
     #endregion

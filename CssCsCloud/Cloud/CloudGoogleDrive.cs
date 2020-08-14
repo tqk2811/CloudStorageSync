@@ -101,7 +101,7 @@ namespace CssCsCloud.Cloud
       if (drivefile == null) return null;
 
       bool isFolder = drivefile.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase);
-      bool isShortcut = drivefile.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase);
+      //bool isShortcut = drivefile.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase);
       CloudItem ci = new CloudItem
       {
         Id = drivefile.Id,
@@ -121,11 +121,11 @@ namespace CssCsCloud.Cloud
       if (drivefile.Capabilities.CanUntrash == true) ci.Flag |= CloudItemFlag.CanUntrash;
       if (drivefile.Capabilities.CanAddChildren == true) ci.Flag |= CloudItemFlag.CanAddChildren;
       if (drivefile.Capabilities.CanRemoveChildren == true) ci.Flag |= CloudItemFlag.CanRemoveChildren;
-      if (isShortcut)
-      {
-        ci.Flag |= CloudItemFlag.Shortcut;
-        ci.IdTargetOfShortcut = drivefile.ShortcutDetails.TargetId;
-      }
+      //if (isShortcut)
+      //{
+      //  ci.Flag |= CloudItemFlag.Shortcut;
+      //  ci.IdTargetOfShortcut = drivefile.ShortcutDetails.TargetId;
+      //}
       if (drivefile.OwnedByMe == true) ci.Flag |= CloudItemFlag.OwnedByMe;
       ci.InsertOrUpdate();
       return ci;
@@ -152,20 +152,19 @@ namespace CssCsCloud.Cloud
         if (!change.ChangeType.Equals("file", StringComparison.OrdinalIgnoreCase)) continue;
         if (change.Removed == false && //not delete
           !change.File.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase) &&//not folder
-          !change.File.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase) &&//not shortcut
-          change.File.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
+          //!change.File.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase) &&//not shortcut
+          change.File.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app (& shortcut)
 
         CloudItem ci_old = CloudItem.GetFromId(change.FileId, account.Id);
         CloudItem ci_new = null;
         if (change.Removed == true || change.File.Trashed == true)
         {
-          if (null == ci_old) continue;
+          if (null == ci_old) continue;//old & new can't null
         }
         else ci_new = InsertToDb(change.File);
 
         CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
-        if(cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || 
-          cloudChangeType.Flag.HasFlag(CloudChangeFlag.ChangedId)) CloudItem.Delete(change.FileId, account.Id);
+        if(cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || cloudChangeType.ChangedId) CloudItem.Delete(change.FileId, account.Id);
 
         result.Add(cloudChangeType);
       }
@@ -218,7 +217,7 @@ namespace CssCsCloud.Cloud
 
     public void _ListAllItemsToDb(SyncRoot syncRoot, string StartFolderId)
     {
-      Hashtable hashtable = new Hashtable();
+      //Hashtable hashtable = new Hashtable();
       Queue<string> queue = new Queue<string>(new List<string>() { StartFolderId });
       syncRoot.SyncRootViewModel.EnumStatus = SyncRootStatus.ScanningCloud;
       GetMetadata(StartFolderId).ConfigureAwait(true).GetAwaiter().GetResult();//read root first 
@@ -228,8 +227,8 @@ namespace CssCsCloud.Cloud
       while (queue.Count > 0)
       {
         string Id = queue.Dequeue();
-        if (hashtable.ContainsKey(Id)) continue;
-        else hashtable.Add(Id, Id);
+        //if (hashtable.ContainsKey(Id)) continue;
+        //else hashtable.Add(Id, Id);
 
         var list_request = ds.Files.List();
         if (!string.IsNullOrEmpty(NextPageToken)) list_request.PageToken = NextPageToken;
@@ -243,11 +242,12 @@ namespace CssCsCloud.Cloud
           if (file.MimeType.Equals(MimeType_Folder, StringComparison.OrdinalIgnoreCase)) queue.Enqueue(file.Id);//folder
           else
           {
-            if (hashtable.ContainsKey(file.Id)) continue;
-            else hashtable.Add(file.Id, file.Id);
+            //if (hashtable.ContainsKey(file.Id)) continue;
+            //else hashtable.Add(file.Id, file.Id);
 
-            if (file.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase)) continue;//Shortcut
-            else if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app
+            //if (file.MimeType.Equals(MimeType_Shortcut, StringComparison.OrdinalIgnoreCase)) continue;//ignore Shortcut
+            //else
+            if (file.MimeType.IndexOf(MimeType_googleapp, StringComparison.OrdinalIgnoreCase) >= 0) continue;//ignore google app (&shortcut)
           }
           file.Parents = new List<string>() { Id };//google api will change after sep 2020
           InsertToDb(file);

@@ -1,6 +1,7 @@
 ﻿using CssCsData.Cloud;
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace CssCsData
 {
@@ -21,6 +22,6 @@ namespace CssCsData
 
     public virtual event PropertyChangedEventHandler PropertyChanged;
 
-    public abstract void WatchChange();
+    public abstract Task WatchChange();
   }
 }
