@@ -65,7 +65,7 @@ namespace CssCsData.Cloud
     /// Read change of cloud.
     /// </summary>
     /// <returns></returns>
-    Task<ICloudChangeTypeCollection> WatchChange();
+    Task<ICloudItemActionCollection> WatchChange();
     /// <summary>
     /// 
     /// </summary>

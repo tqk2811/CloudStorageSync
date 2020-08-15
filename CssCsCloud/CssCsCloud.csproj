@@ -103,7 +103,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cloud\CloudChangeType.cs" />
+    <Compile Include="Cloud\CloudItemActionCollection.cs" />
     <Compile Include="Cloud\Oauth.cs" />
     <Compile Include="Cloud\CloudGoogleDrive.cs" />
     <Compile Include="Cloud\CloudOneDrive.cs" />

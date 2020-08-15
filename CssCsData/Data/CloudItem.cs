@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CssCsData
 {
-  public enum CloudItemFlag : long
+  public enum CloudItemPermissionFlag : long
   {
     None = 0,
 
@@ -20,10 +20,11 @@ namespace CssCsData
     /// <summary>
     /// only google drive can not OwnedByMe
     /// </summary>
-    OwnedByMe = 1 << 63,
+    OwnedByMe = 1 << 62,
     All = CanDownload | CanEdit | CanRename | CanShare | CanTrash | CanUntrash | CanAddChildren | CanRemoveChildren |
           OwnedByMe,
   }
+
   public class CloudItem
   {
     public string Id { get; set; }
@@ -33,7 +34,7 @@ namespace CssCsData
     public long Size { get; set; }
     public long DateCreate { get; set; }
     public long DateMod { get; set; }
-    public CloudItemFlag Flag { get; set; } = CloudItemFlag.None;
+    public CloudItemPermissionFlag PermissionFlag { get; set; } = CloudItemPermissionFlag.None;
     /// <summary>
     /// Hash of file
     /// </summary>
@@ -75,5 +76,83 @@ namespace CssCsData
     {
       return string.Format("Name: {0} , Id: {1}", this.Name, this.Id);
     }
+  }
+
+
+
+  public enum CloudItemActionFlag : long
+  {
+    None = 0,
+    Delete = 1 << 0,
+    Move = 1 << 1,
+    Change = 1 << 2,
+    Create = 1 << 3
+  }
+  public interface ICloudItemAction
+  {
+    string Id { get; }
+    string IdAccount { get; }
+    CloudItemActionFlag Flag { get; }
+  }
+
+  public class CloudItemAction : ICloudItemAction
+  {
+    internal CloudItemAction()
+    {
+
+    }
+    public CloudItemAction(CloudItem CloudItemOld, CloudItem CloudItemNew)
+    {
+      if (null == CloudItemNew && null == CloudItemOld) throw new ArgumentException("old & new can't same null.");
+      else if (null != CloudItemOld && null == CloudItemNew)
+      {
+        Flag |= CloudItemActionFlag.Delete;
+        this.Id = CloudItemOld.Id;
+        this.IdAccount = CloudItemOld.IdAccount;
+      }
+      else if (null == CloudItemOld && null != CloudItemNew)
+      {
+        Flag |= CloudItemActionFlag.Create;
+        this.Id = CloudItemNew.Id;
+        this.IdAccount = CloudItemNew.IdAccount;
+      }
+      else
+      {
+        if (string.IsNullOrEmpty(CloudItemOld.Id) || string.IsNullOrEmpty(CloudItemOld.IdAccount) || !CloudItemOld.Equals(CloudItemNew))
+          throw new ArgumentException("Id/IdAccount null or not equal");
+
+        //only root or shared item has ParentId = null
+        if (!string.IsNullOrEmpty(CloudItemOld.ParentId) &&
+              !CloudItemOld.ParentId.Equals(CloudItemNew.ParentId, StringComparison.OrdinalIgnoreCase))
+          Flag |= CloudItemActionFlag.Move;//change parent
+
+        if (CloudItemOld.DateCreate != CloudItemNew.DateCreate ||
+            CloudItemOld.DateMod != CloudItemNew.DateMod ||
+            CloudItemOld.Size != CloudItemNew.Size) Flag |= CloudItemActionFlag.Change;//change size,time
+
+        //root name can null
+        if (!string.IsNullOrEmpty(CloudItemOld.Name) &&
+            !CloudItemOld.Name.Equals(CloudItemNew.Name)) Flag |= CloudItemActionFlag.Move;//change name
+      }
+    }
+
+    /// <summary>
+    /// CloudItem Id
+    /// </summary>
+    public string Id { get; set; }
+    /// <summary>
+    /// Account Id
+    /// </summary>
+    public string IdAccount { get; set; }
+    public CloudItemActionFlag Flag { get; set; } = CloudItemActionFlag.None;
+
+    public static IList<CloudItemAction> GetAllInAccount(string IdAccount) => SqliteManaged.CloudItemActionSelect(IdAccount);
+    public bool InsertOrUpdate() => this.InsertOrUpdate();
+    public bool Delete() => this.Delete();
+  }
+
+  public interface ICloudItemActionCollection : ICollection<CloudItemAction>
+  {
+    //string NewWatchToken { get; }
   }
 }

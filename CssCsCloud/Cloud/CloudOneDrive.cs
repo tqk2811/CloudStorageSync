@@ -151,14 +151,14 @@ namespace CssCsCloud.Cloud
         IdAccount = account.Id
       };
       if (!isfolder) ci.HashString = driveItem.File.Hashes.Sha1Hash;
-      ci.Flag = CloudItemFlag.All;
+      ci.PermissionFlag = CloudItemPermissionFlag.All;
       ci.InsertOrUpdate();
       return ci;
     }
 
-    private async Task<ICloudChangeTypeCollection> WatchChange(string UrlWatch)
+    private async Task<ICloudItemActionCollection> WatchChange(string UrlWatch)
     {
-      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
+      CloudItemActionCollection result = new CloudItemActionCollection();
 
       var auth_result = await GetAuthenticationResult(msaccount).ConfigureAwait(false);
       TrackChangesResult trackChangesResult;
@@ -179,14 +179,19 @@ namespace CssCsCloud.Cloud
         CloudItem ci_new = null;
         if (item.Deleted == null) ci_new = InsertToDb(item);
 
-        CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
-        if (cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || cloudChangeType.ChangedId) CloudItem.Delete(item.Id, account.Id);
-
-        result.Add(cloudChangeType);
+        CloudItemAction cloudItemAction = new CloudItemAction(ci_old, ci_new);
+        cloudItemAction.InsertOrUpdate();
+        if (cloudItemAction.Flag.HasFlag(CloudItemActionFlag.Delete)) CloudItem.Delete(cloudItemAction.Id, cloudItemAction.IdAccount);
+        result.Add(cloudItemAction);
       }
-      if (!string.IsNullOrEmpty(trackChangesResult.DeltaLink)) result.NewWatchToken = trackChangesResult.DeltaLink;
+      if (!string.IsNullOrEmpty(trackChangesResult.DeltaLink))
+      {
+        this.account.WatchToken = trackChangesResult.DeltaLink;
+        account.Update();
+      }
       else if (!string.IsNullOrEmpty(trackChangesResult.NextLink)) result.AddRange(await WatchChange(trackChangesResult.NextLink).ConfigureAwait(false));
       else throw new Exception("Can't find deltaLink/nextLink");
+
       return result;
     }
 
@@ -340,14 +345,14 @@ namespace CssCsCloud.Cloud
       }
     }
 
-    public async Task<ICloudChangeTypeCollection> WatchChange()
+    public async Task<ICloudItemActionCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(account.WatchToken))
       {
         var queryOptions = new List<QueryOption>() { new QueryOption("token", "latest") };
         IDriveItemDeltaCollectionPage delta = await MyDrive.Root.Delta().Request(queryOptions).GetAsync().ConfigureAwait(false);
         account.WatchToken = GetLink(delta, "@odata.deltaLink");
-        return new CloudChangeTypeCollection();
+        return new CloudItemActionCollection();
       }
       else return await WatchChange(account.WatchToken).ConfigureAwait(false);
     }

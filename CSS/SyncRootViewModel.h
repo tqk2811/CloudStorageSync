@@ -84,7 +84,7 @@ namespace CSS
             watcher = gcnew Watcher();
         }
 
-        void UpdateChange(ICloudChangeType^ change) override;
+        bool UpdateChange(ICloudItemAction^ change) override;
 
         //on start app, UI not run
         Task^ Run()

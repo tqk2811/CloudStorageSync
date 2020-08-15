@@ -153,7 +153,7 @@ namespace CssCs.UI
 
             case MenuAction.Delete:
               CloudItem ci = accvm.AccountData.GetCloudItem(Result.Id);
-              if (ci.Flag.HasFlag(CloudItemFlag.OwnedByMe))//my file
+              if (ci.PermissionFlag.HasFlag(CloudItemPermissionFlag.OwnedByMe))//my file
               {
                 MessageBoxResult result = MessageBox.Show("Are you sure trash that folder?\r\n" + Result.Name, "Confirm Trash", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (MessageBoxResult.Yes == result)

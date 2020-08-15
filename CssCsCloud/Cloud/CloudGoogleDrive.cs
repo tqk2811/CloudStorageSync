@@ -113,20 +113,20 @@ namespace CssCsCloud.Cloud
       ci.ParentId = drivefile?.Parents[0];//goolge api will change after sep 2020
       ci.Size = isFolder ? -1 : drivefile.Size.Value;
       ci.HashString = drivefile.Md5Checksum;
-      if (drivefile.Capabilities.CanDownload == true) ci.Flag |= CloudItemFlag.CanDownload;
-      if (drivefile.Capabilities.CanEdit == true) ci.Flag |= CloudItemFlag.CanEdit;
-      if (drivefile.Capabilities.CanRename == true) ci.Flag |= CloudItemFlag.CanRename;
-      if (drivefile.Capabilities.CanShare == true) ci.Flag |= CloudItemFlag.CanShare;
-      if (drivefile.Capabilities.CanTrash == true) ci.Flag |= CloudItemFlag.CanTrash;
-      if (drivefile.Capabilities.CanUntrash == true) ci.Flag |= CloudItemFlag.CanUntrash;
-      if (drivefile.Capabilities.CanAddChildren == true) ci.Flag |= CloudItemFlag.CanAddChildren;
-      if (drivefile.Capabilities.CanRemoveChildren == true) ci.Flag |= CloudItemFlag.CanRemoveChildren;
+      if (drivefile.Capabilities.CanDownload == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanDownload;
+      if (drivefile.Capabilities.CanEdit == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanEdit;
+      if (drivefile.Capabilities.CanRename == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanRename;
+      if (drivefile.Capabilities.CanShare == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanShare;
+      if (drivefile.Capabilities.CanTrash == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanTrash;
+      if (drivefile.Capabilities.CanUntrash == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanUntrash;
+      if (drivefile.Capabilities.CanAddChildren == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanAddChildren;
+      if (drivefile.Capabilities.CanRemoveChildren == true) ci.PermissionFlag |= CloudItemPermissionFlag.CanRemoveChildren;
       //if (isShortcut)
       //{
       //  ci.Flag |= CloudItemFlag.Shortcut;
       //  ci.IdTargetOfShortcut = drivefile.ShortcutDetails.TargetId;
       //}
-      if (drivefile.OwnedByMe == true) ci.Flag |= CloudItemFlag.OwnedByMe;
+      if (drivefile.OwnedByMe == true) ci.PermissionFlag |= CloudItemPermissionFlag.OwnedByMe;
       ci.InsertOrUpdate();
       return ci;
     }
@@ -137,11 +137,11 @@ namespace CssCsCloud.Cloud
       account.WatchToken = change.StartPageTokenValue;
     }
 
-    async Task<ICloudChangeTypeCollection> WatchChange(string WatchToken)
+    async Task<ICloudItemActionCollection> WatchChange(string WatchToken)
     {
       if (string.IsNullOrEmpty(WatchToken)) throw new ArgumentNullException(nameof(WatchToken));
 
-      CloudChangeTypeCollection result = new CloudChangeTypeCollection();
+      CloudItemActionCollection result = new CloudItemActionCollection();
       var change_request = ds.Changes.List(WatchToken);
       change_request.Fields = Fields_WatchChange;
       change_request.PageSize = 1000;
@@ -163,14 +163,15 @@ namespace CssCsCloud.Cloud
         }
         else ci_new = InsertToDb(change.File);
 
-        CloudChangeType cloudChangeType = new CloudChangeType(ci_old, ci_new);
-        if(cloudChangeType.Flag.HasFlag(CloudChangeFlag.Deleted) || cloudChangeType.ChangedId) CloudItem.Delete(change.FileId, account.Id);
-
-        result.Add(cloudChangeType);
+        CloudItemAction cloudItemAction = new CloudItemAction(ci_old, ci_new);
+        cloudItemAction.InsertOrUpdate();
+        if (cloudItemAction.Flag.HasFlag(CloudItemActionFlag.Delete)) CloudItem.Delete(cloudItemAction.Id, cloudItemAction.IdAccount);
+        result.Add(cloudItemAction);
       }
       if (!string.IsNullOrEmpty(change_list.NextPageToken)) result.AddRange(await WatchChange(change_list.NextPageToken).ConfigureAwait(false));
 
-      result.NewWatchToken = change_list.NewStartPageToken;
+      account.WatchToken = change_list.NewStartPageToken;
+      account.Update();
       return result;
     }
 
@@ -351,11 +352,11 @@ namespace CssCsCloud.Cloud
       }
     }
 
-    public async Task<ICloudChangeTypeCollection> WatchChange()
+    public async Task<ICloudItemActionCollection> WatchChange()
     {
       if (string.IsNullOrEmpty(account.WatchToken)) await InitWatch().ConfigureAwait(false);
       else return await WatchChange(account.WatchToken).ConfigureAwait(false);
-      return new CloudChangeTypeCollection();
+      return new CloudItemActionCollection();
     }
 
     public Task<IList<CloudItem>> ListChildsFolderOfFolder(string itemId)

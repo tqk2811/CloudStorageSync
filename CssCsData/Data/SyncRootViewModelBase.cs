@@ -46,7 +46,7 @@ namespace CssCsData
     public virtual LocalItemRoot Root => throw new NotImplementedException();
     public virtual event PropertyChangedEventHandler PropertyChanged;
     public CancellationTokenSource TokenSource { get; set; }
-    public abstract void UpdateChange(ICloudChangeType change);
+    public abstract bool UpdateChange(ICloudItemAction change);
     public abstract bool CheckConnectionKey(long key);
   }
 }

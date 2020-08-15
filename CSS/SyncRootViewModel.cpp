@@ -298,64 +298,40 @@ namespace CSS
         return false;
     }
 
-
-    void SyncRootViewModel::UpdateChange(ICloudChangeType^ change)
+    //for change size, time, id,
+    bool ChangeItem(SyncRootViewModel^ srvm, CloudItem^ ci_old, CloudItem^ ci_new)
     {
-        CloudChangeFlag tryagain = CloudChangeFlag::None;
-        if (change->Flag.HasFlag(CloudChangeFlag::Deleted))
+        LocalItem^ li = srvm->Root->FindFromCloudId(ci_old->Id);
+        String^ fullpath = li->GetFullPath()->ToString();
+        PinStr(fullpath);
+        PlacehoderResult result = Placeholders::Update(pin_fullpath, ci_new);
+        if (result.HasFlag(PlacehoderResult::Failed))
         {
-            //delete item
-            if (!DeleteItem(this, change->CloudItemOld)) tryagain = tryagain | CloudChangeFlag::Deleted;
-        }
-        else if (change->Flag.HasFlag(CloudChangeFlag::NewItem))
-        {
-            //create new placeholder
-            CreateItem(this, change->CloudItemNew);
-        }
-        else//old & new not null
-        {
-            if (change->Flag.HasFlag(CloudChangeFlag::Move))//rename/change parent
+            if (result.HasFlag(PlacehoderResult::FileNotFound))
             {
-                if (this->Root->FindFromCloudId(change->CloudItemNew->ParentId))
-                {
-                    if (!MoveItem(this, change->CloudItemOld, change->CloudItemNew)) 
-                        tryagain = tryagain | CloudChangeFlag::Move;//move in syncrot -> move & rename                  
-                }
-                else
-                {
-                    if (!DeleteItem(this, change->CloudItemOld))  
-                        tryagain = tryagain | CloudChangeFlag::Deleted;//move out syncroot -> delete
-                }
-            }
-
-            //update
-            if (change->Flag.HasFlag(CloudChangeFlag::Move) ||
-                change->Flag.HasFlag(CloudChangeFlag::Change))
-            {
-                LocalItem^ li = this->Root->FindFromCloudId(change->CloudItemOld->Id);
-                String^ fullpath = li->GetFullPath()->ToString();
-                PinStr(fullpath);
-                PlacehoderResult result = Placeholders::Update(pin_fullpath, change->CloudItemNew);
-                if (result.HasFlag(PlacehoderResult::Failed))
-                {
-                    if (result.HasFlag(PlacehoderResult::FileNotFound))
-                    {
-                        li->Parent->Childs->Remove(li);
-                        LogWriter::WriteLog(std::wstring(L"Placeholders::Update FileNotFound"), 0);
-                        return;
-                    }
-                    tryagain = tryagain | CloudChangeFlag::Change;
-                }
-                else
-                {
-                    li->CloudId = change->CloudItemNew->Id;
-                }
+                li->Parent->Childs->Remove(li);
+                LogWriter::WriteLog(std::wstring(L"Placeholders::Update FileNotFound"), 0);
+                return true;
             }
         }
-
-        if (tryagain != CloudChangeFlag::None)
+        else
         {
-            //add error to db
+            li->CloudId = ci_new->Id;
+            return true;
         }
+        return false;
+    }
+
+    bool SyncRootViewModel::UpdateChange(ICloudItemAction^ change)
+    {
+        bool flag = false;
+        //find with localitem
+
+
+
+
+
+
+        return flag;
     }
 }
